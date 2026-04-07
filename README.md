@@ -1,4 +1,4 @@
-# PayR Repository
+# PayR
 
 Welcome to PayR!
 
