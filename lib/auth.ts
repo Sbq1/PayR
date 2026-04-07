@@ -3,17 +3,19 @@ import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
+let _jwtSecret: Uint8Array | null = null;
+
 function getJwtSecret(): Uint8Array {
+  if (_jwtSecret) return _jwtSecret;
   const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
   if (!secret) {
     throw new Error(
       "AUTH_SECRET or NEXTAUTH_SECRET must be set. Sessions cannot be signed without a secret."
     );
   }
-  return new TextEncoder().encode(secret);
+  _jwtSecret = new TextEncoder().encode(secret);
+  return _jwtSecret;
 }
-
-const JWT_SECRET = getJwtSecret();
 const COOKIE_NAME = "sc-session";
 
 export interface SessionUser {
@@ -58,7 +60,7 @@ export async function login(email: string, password: string): Promise<SessionUse
   const token = await new SignJWT({ user: sessionUser })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 
   // Set cookie
   const cookieStore = await cookies();
@@ -82,7 +84,7 @@ export async function auth(): Promise<{ user: SessionUser } | null> {
     const token = cookieStore.get(COOKIE_NAME)?.value;
     if (!token) return null;
 
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     const user = payload.user as SessionUser;
     if (!user?.id) return null;
 
