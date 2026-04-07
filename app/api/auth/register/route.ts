@@ -1,8 +1,11 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { handleApiError } from "@/lib/utils/errors";
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/utils/rate-limit";
 import bcrypt from "bcryptjs";
 import { z } from "zod/v4";
+
+const limiter = rateLimit("register", { interval: 60 * 60 * 1000, limit: 5 }); // 5/hora
 
 const registerSchema = z.object({
   name: z.string().min(2),
@@ -17,6 +20,10 @@ const registerSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const { success, resetAt } = limiter.check(ip);
+    if (!success) return rateLimitResponse(resetAt);
+
     const body = await request.json();
     const parsed = registerSchema.safeParse(body);
 

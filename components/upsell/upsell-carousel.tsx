@@ -25,8 +25,8 @@ export function UpsellCarousel({
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-white px-4">
-        Agrega algo mas
+      <h3 className="text-sm font-semibold text-gray-900 px-4">
+        Agrega algo más
       </h3>
       <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory scrollbar-hide">
         {products.map((product) => (

@@ -19,10 +19,11 @@ export function UpsellCard({ id, name, description, price, imageUrl, isSelected,
     <button
       onClick={() => onToggle(id)}
       className={cn(
-        "flex-shrink-0 w-36 rounded-2xl p-3 text-left transition-all duration-200 border",
+        "flex-shrink-0 w-36 rounded-2xl p-3 text-left border",
+        "transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)]",
         isSelected
-          ? "border-[var(--r-primary)] bg-indigo-50 shadow-md"
-          : "border-gray-200 bg-white hover:border-gray-300 shadow-sm hover:shadow-md"
+          ? "border-[var(--r-primary)] bg-indigo-50 shadow-md scale-[1.03]"
+          : "border-gray-200 bg-white hover:border-gray-300 shadow-sm hover:shadow-md hover:-translate-y-1"
       )}
     >
       <div className="w-full h-20 rounded-xl bg-gray-100 mb-2 flex items-center justify-center overflow-hidden">

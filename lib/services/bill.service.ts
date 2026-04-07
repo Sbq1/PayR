@@ -80,27 +80,29 @@ export async function getBillForTable(
     throw new NotFoundError("Cuenta abierta para esta mesa");
   }
 
-  // 4. Persistir orden — buscar existente o crear nueva
-  let order = await db.order.findFirst({
-    where: {
-      restaurant_id: restaurant.id,
-      table_id: table.id,
-      siigo_invoice_id: bill.invoiceId,
-      status: { in: ["PENDING", "PAYING"] },
-    },
-  });
-
-  if (order) {
-    order = await db.order.update({
-      where: { id: order.id },
-      data: {
-        subtotal: bill.subtotal,
-        tax: bill.totalTax,
-        total: bill.total,
+  // 4. Persistir orden — transacción para evitar duplicados en scans concurrentes
+  const order = await db.$transaction(async (tx) => {
+    let existing = await tx.order.findFirst({
+      where: {
+        restaurant_id: restaurant.id,
+        table_id: table.id,
+        siigo_invoice_id: bill.invoiceId,
+        status: { in: ["PENDING", "PAYING"] },
       },
     });
-  } else {
-    order = await db.order.create({
+
+    if (existing) {
+      return tx.order.update({
+        where: { id: existing.id },
+        data: {
+          subtotal: bill.subtotal,
+          tax: bill.totalTax,
+          total: bill.total,
+        },
+      });
+    }
+
+    const newOrder = await tx.order.create({
       data: {
         restaurant_id: restaurant.id,
         table_id: table.id,
@@ -112,11 +114,10 @@ export async function getBillForTable(
       },
     });
 
-    // Persistir items de la nueva orden
     if (bill.items.length > 0) {
-      await db.orderItem.createMany({
+      await tx.orderItem.createMany({
         data: bill.items.map((item) => ({
-          order_id: order!.id,
+          order_id: newOrder.id,
           siigo_product_id: item.productId,
           name: item.name,
           quantity: item.quantity,
@@ -126,7 +127,9 @@ export async function getBillForTable(
         })),
       });
     }
-  }
+
+    return newOrder;
+  });
 
   // 5. Obtener upsell products si el plan lo permite
   let upsellProducts: Array<{

@@ -21,18 +21,23 @@ interface BillState {
   toggleUpsell: (id: string) => void;
   getTotal: () => number;
   getUpsellTotal: () => number;
+  reset: () => void;
 }
 
-export const useBillStore = create<BillState>((set, get) => ({
+const initialState = {
   data: null,
   isLoading: true,
   error: null,
   tipPercentage: 0,
   tipAmount: 0,
-  selectedUpsells: new Set(),
+  selectedUpsells: new Set<string>(),
+};
+
+export const useBillStore = create<BillState>((set, get) => ({
+  ...initialState,
 
   setData: (data) => set({ data, isLoading: false, error: null }),
-  setLoading: (isLoading) => set({ isLoading }),
+  setLoading: (isLoading) => set({ isLoading, error: null }),
   setError: (error) => set({ error, isLoading: false }),
 
   setTip: (percentage, amount) =>
@@ -62,4 +67,6 @@ export const useBillStore = create<BillState>((set, get) => ({
     if (!data) return 0;
     return data.bill.total + tipAmount + get().getUpsellTotal();
   },
+
+  reset: () => set({ ...initialState, selectedUpsells: new Set<string>() }),
 }));

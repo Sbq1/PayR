@@ -1,29 +1,38 @@
 import { NextRequest } from "next/server";
 import { handlePaymentWebhook } from "@/lib/services/payment.service";
+import { PaymentError } from "@/lib/utils/errors";
+import { corsHeaders, handlePreflight } from "@/lib/utils/cors";
+import { logger } from "@/lib/utils/logger";
 import type { WompiWebhookEvent } from "@/lib/adapters/payment/types";
 
 /**
  * POST /api/payment/webhook
  *
- * Recibe webhooks de Wompi cuando una transaccion cambia de estado.
- * DEBE retornar 200 siempre — si no, Wompi reintenta (30min, 3h, 24h).
- * La validacion HMAC ocurre dentro del service.
+ * Recibe webhooks de Wompi cuando una transacción cambia de estado.
+ * - HMAC inválido → 401 (Wompi reintentará, lo cual es correcto)
+ * - Payment no encontrado → 200 (evitar reintentos inútiles)
+ * - Error de procesamiento → 200 (ya se intentó)
  */
 export async function POST(request: NextRequest) {
   try {
     const event: WompiWebhookEvent = await request.json();
 
-    // Solo procesamos transaction.updated
     if (event.event !== "transaction.updated") {
       return Response.json({ received: true });
     }
 
     await handlePaymentWebhook(event);
 
-    return Response.json({ received: true });
+    return Response.json({ received: true }, { headers: corsHeaders(request) });
   } catch (error) {
-    // Siempre retornamos 200 para evitar reintentos infinitos de Wompi
-    console.error("Webhook error:", error);
+    // HMAC inválido → 401 para que Wompi reintente (puede ser timing issue)
+    if (error instanceof PaymentError && error.message.includes("Firma")) {
+      logger.error("webhook.hmac_failure", { message: (error as Error).message });
+      return Response.json({ error: "invalid_signature" }, { status: 401 });
+    }
+
+    // Otros errores → 200 para evitar reintentos infinitos
+    logger.error("webhook.processing_error", { message: (error as Error).message });
     return Response.json({ received: true, error: "processing_error" });
   }
 }

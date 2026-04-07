@@ -60,10 +60,11 @@ export function TipSelector({ subtotal, onTipChange }: TipSelectorProps) {
             key={opt.value}
             onClick={() => handleSelect(opt.value)}
             className={cn(
-              "py-3 rounded-xl text-sm font-semibold transition-all duration-200 border",
+              "py-3 rounded-xl text-sm font-semibold border",
+              "transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)]",
               selected === opt.value
-                ? "text-white border-transparent shadow-md"
-                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-800"
+                ? "text-white border-transparent shadow-md scale-[1.03]"
+                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-800 hover:scale-[1.02] active:scale-95"
             )}
             style={selected === opt.value ? { backgroundColor: "var(--r-primary)", boxShadow: "0 4px 12px var(--r-primary)33" } : undefined}
           >

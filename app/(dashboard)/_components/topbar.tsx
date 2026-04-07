@@ -19,11 +19,11 @@ import {
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/tables", label: "Mesas", icon: Table2 },
-  { href: "/qr-codes", label: "Codigos QR", icon: QrCode },
+  { href: "/qr-codes", label: "Códigos QR", icon: QrCode },
   { href: "/orders", label: "Ordenes", icon: Receipt },
   { href: "/payments", label: "Pagos", icon: CreditCard },
   { href: "/upsells", label: "Sugeridos", icon: ShoppingBag },
-  { href: "/settings", label: "Configuracion", icon: Settings },
+  { href: "/settings", label: "Configuración", icon: Settings },
 ];
 
 export function Topbar() {
@@ -31,7 +31,7 @@ export function Topbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-gray-100 bg-white/80 backdrop-blur-xl px-4 md:px-6">
+    <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-gray-100 bg-white/90 backdrop-blur-xl px-4 md:px-6 transition-all duration-300">
       {/* Mobile menu */}
       <button
         onClick={() => setOpen(true)}

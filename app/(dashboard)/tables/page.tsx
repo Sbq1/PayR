@@ -77,23 +77,24 @@ export default function TablesPage() {
     setCreating(false);
   }
 
-  const statusColors: Record<string, string> = {
-    AVAILABLE: "bg-green-500/10 text-green-500",
-    OCCUPIED: "bg-amber-500/10 text-amber-500",
-    PAYING: "bg-blue-500/10 text-blue-500",
+  const statusConfig: Record<string, { bg: string; text: string; label: string; pulse?: boolean }> = {
+    AVAILABLE: { bg: "bg-emerald-50", text: "text-emerald-600", label: "Disponible" },
+    OCCUPIED: { bg: "bg-amber-50", text: "text-amber-600", label: "Ocupada", pulse: true },
+    PAYING: { bg: "bg-blue-50", text: "text-blue-600", label: "Pagando", pulse: true },
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between fade-in-up">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Mesas</h1>
           <p className="text-muted-foreground">
-            {tables.length} mesa{tables.length !== 1 ? "s" : ""} registrada{tables.length !== 1 ? "s" : ""}
+            {tables.length} mesa{tables.length !== 1 ? "s" : ""} registrada
+            {tables.length !== 1 ? "s" : ""}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+          <DialogTrigger className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-600 transition-all shadow-md shadow-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/25">
             <Plus className="h-4 w-4" />
             Agregar mesa
           </DialogTrigger>
@@ -103,7 +104,7 @@ export default function TablesPage() {
             </DialogHeader>
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label>Numero de mesa</Label>
+                <Label>Número de mesa</Label>
                 <Input
                   type="number"
                   min={1}
@@ -154,34 +155,37 @@ export default function TablesPage() {
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {tables.map((table) => (
-            <Card key={table.id}>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">
-                    {table.label || `Mesa ${table.table_number}`}
-                  </CardTitle>
-                  <Badge
-                    variant="secondary"
-                    className={statusColors[table.status] || ""}
-                  >
-                    {table.status === "AVAILABLE"
-                      ? "Disponible"
-                      : table.status === "OCCUPIED"
-                        ? "Ocupada"
-                        : "Pagando"}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-xs text-muted-foreground">
-                  Mesa #{table.table_number}
-                  {table.siigo_cost_center_id &&
-                    ` | POS: ${table.siigo_cost_center_id}`}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+          {tables.map((table, i) => {
+            const status = statusConfig[table.status] || statusConfig.AVAILABLE;
+            return (
+              <Card
+                key={table.id}
+                className="hover-lift card-appear"
+                style={{ "--delay": `${i * 0.06}s` } as React.CSSProperties}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">
+                      {table.label || `Mesa ${table.table_number}`}
+                    </CardTitle>
+                    <Badge
+                      variant="secondary"
+                      className={`${status.bg} ${status.text} border-0 ${status.pulse ? "status-pulse" : ""}`}
+                    >
+                      {status.label}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">
+                    Mesa #{table.table_number}
+                    {table.siigo_cost_center_id &&
+                      ` | POS: ${table.siigo_cost_center_id}`}
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

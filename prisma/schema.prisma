@@ -160,6 +160,7 @@ model Order {
   payments         Payment[]
 
   @@index([restaurant_id, created_at], map: "idx_orders_restaurant_date")
+  @@index([table_id], map: "idx_orders_table")
   @@map("orders")
 }
 
@@ -174,6 +175,7 @@ model OrderItem {
   is_upsell        Boolean @default(false)
   orders           Order   @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+  @@index([order_id], map: "idx_order_items_order")
   @@map("order_items")
 }
 
@@ -192,6 +194,7 @@ model Payment {
   paid_at              DateTime?      @db.Timestamptz(6)
   orders               Order          @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
+  @@index([order_id], map: "idx_payments_order")
   @@index([reference], map: "idx_payments_reference")
   @@index([wompi_transaction_id], map: "idx_payments_wompi_txn")
   @@map("payments")
@@ -210,6 +213,7 @@ model UpsellProduct {
   updated_at    DateTime   @default(now()) @db.Timestamptz(6)
   restaurants   Restaurant @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
+  @@index([restaurant_id], map: "idx_upsell_products_restaurant")
   @@map("upsell_products")
 }
 

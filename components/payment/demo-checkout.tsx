@@ -26,11 +26,9 @@ export function DemoCheckout({ config }: DemoCheckoutProps) {
     if (!selectedMethod) return;
     setStep("processing");
 
-    // Simular procesamiento
     await new Promise((r) => setTimeout(r, 2000));
     setStep("done");
 
-    // Simular webhook aprobado
     try {
       await fetch("/api/payment/webhook", {
         method: "POST",
@@ -64,17 +62,19 @@ export function DemoCheckout({ config }: DemoCheckoutProps) {
       // Ignore webhook errors in demo
     }
 
-    // Redirigir a resultado
     await new Promise((r) => setTimeout(r, 1000));
     window.location.href = `${config.redirectUrl}&status=APPROVED`;
   }
 
   if (step === "processing") {
     return (
-      <div className="text-center py-8 space-y-4">
-        <Loader2 className="w-10 h-10 animate-spin text-[var(--r-primary)] mx-auto" />
-        <p className="text-sm text-gray-500">Procesando tu pago...</p>
-        <p className="text-xs text-gray-400">(Simulacion demo)</p>
+      <div className="text-center py-8 space-y-4 fade-in-up">
+        <div className="relative mx-auto w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-4 border-gray-100" />
+          <div className="absolute inset-0 rounded-full border-4 border-t-[var(--r-primary)] animate-spin" />
+        </div>
+        <p className="text-sm text-gray-600 font-medium">Procesando tu pago...</p>
+        <p className="text-xs text-gray-400">(Simulación demo)</p>
       </div>
     );
   }
@@ -82,17 +82,26 @@ export function DemoCheckout({ config }: DemoCheckoutProps) {
   if (step === "done") {
     return (
       <div className="text-center py-8 space-y-4">
-        <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
-        <p className="text-sm text-gray-900 font-semibold">Pago aprobado</p>
-        <p className="text-xs text-gray-500">Redirigiendo...</p>
+        <div className="scale-in">
+          <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto" />
+        </div>
+        <p className="text-base text-gray-900 font-bold fade-in-up fade-in-up-delay-1">
+          Pago aprobado
+        </p>
+        <p className="text-xs text-gray-500 fade-in-up fade-in-up-delay-2">
+          Redirigiendo...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 fade-in-up">
+      {/* Amount card */}
       <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 text-center">
-        <p className="text-[10px] text-gray-400 uppercase tracking-wider">Modo demo</p>
+        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">
+          Modo demo
+        </p>
         <p className="text-lg font-bold text-gray-900 mt-1">
           {formatCOP(config.amountInCents)}
         </p>
@@ -101,16 +110,18 @@ export function DemoCheckout({ config }: DemoCheckoutProps) {
         </p>
       </div>
 
+      {/* Payment methods with hover lift */}
       <div className="grid grid-cols-2 gap-2">
-        {PAYMENT_METHODS.map((method) => (
+        {PAYMENT_METHODS.map((method, i) => (
           <button
             key={method.id}
             onClick={() => setSelectedMethod(method.id)}
-            className={`p-3 rounded-xl border text-sm font-medium transition-all ${
+            className={`p-3 rounded-xl border text-sm font-medium card-appear transition-all duration-300 ease-[cubic-bezier(0.175,0.885,0.32,1.275)] ${
               selectedMethod === method.id
-                ? "border-[var(--r-primary)] bg-indigo-50 text-gray-900"
-                : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+                ? "border-[var(--r-primary)] bg-indigo-50 text-gray-900 scale-[1.02] shadow-md"
+                : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:shadow-sm hover:-translate-y-0.5"
             }`}
+            style={{ "--delay": `${i * 0.06}s` } as React.CSSProperties}
           >
             <span className="text-lg block mb-1">{method.icon}</span>
             {method.label}
@@ -118,13 +129,16 @@ export function DemoCheckout({ config }: DemoCheckoutProps) {
         ))}
       </div>
 
+      {/* Pay button */}
       <button
         onClick={handlePay}
         disabled={!selectedMethod}
-        className="glow-btn w-full py-4 rounded-2xl text-base font-bold text-white transition-all duration-200 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+        className="glow-btn w-full py-4 rounded-2xl text-base font-bold text-white transition-all duration-300 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
         style={{
           backgroundColor: "var(--r-primary)",
-          boxShadow: selectedMethod ? "0 8px 24px var(--r-primary)33" : "none",
+          boxShadow: selectedMethod
+            ? "0 8px 24px var(--r-primary)33"
+            : "none",
         }}
       >
         Simular pago

@@ -1,16 +1,12 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+"use client";
+
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import Link from "next/link";
 import { Store, Database, CreditCard, Crown } from "lucide-react";
 
 const settingsSections = [
-  {
-    title: "General",
-    description: "Nombre, logo y colores de tu restaurante",
-    href: "/settings",
-    icon: Store,
-    current: true,
-  },
   {
     title: "POS (Siigo)",
     description: "Credenciales de tu sistema de punto de venta",
@@ -24,7 +20,7 @@ const settingsSections = [
     icon: CreditCard,
   },
   {
-    title: "Suscripcion",
+    title: "Suscripción",
     description: "Tu plan actual y opciones de mejora",
     href: "/settings/subscription",
     icon: Crown,
@@ -32,48 +28,164 @@ const settingsSections = [
 ];
 
 export default function SettingsPage() {
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    slug: "",
+    primaryColor: "#6366f1",
+    secondaryColor: "#f59e0b",
+    backgroundColor: "#ffffff",
+  });
+
+  useEffect(() => {
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((s) => {
+        if (s?.restaurantId) {
+          setRestaurantId(s.restaurantId);
+          fetch(`/api/restaurant/${s.restaurantId}`)
+            .then((r) => r.json())
+            .then((r) => {
+              setForm({
+                name: r.name || "",
+                slug: r.slug || "",
+                primaryColor: r.primaryColor || "#6366f1",
+                secondaryColor: r.secondaryColor || "#f59e0b",
+                backgroundColor: r.backgroundColor || "#ffffff",
+              });
+            });
+        }
+      });
+  }, []);
+
+  function update(field: string, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleSave() {
+    if (!restaurantId || !form.name) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/restaurant/${restaurantId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) toast.success("Configuración guardada");
+      else {
+        const data = await res.json();
+        toast.error(data.error || "Error guardando");
+      }
+    } catch {
+      toast.error("Error de red");
+    }
+    setSaving(false);
+  }
+
+  const inputClass =
+    "w-full px-3.5 py-2.5 text-[14px] text-gray-900 bg-white border border-gray-300 rounded-lg outline-none transition-all duration-150 placeholder:text-gray-400 focus:border-gray-900 focus:ring-1 focus:ring-gray-900";
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Configuracion</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight">Configuración</h1>
+        <p className="text-[14px] text-gray-500 mt-1">
           Administra tu restaurante y conexiones
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {settingsSections.map((section) => (
-          <Link key={section.href} href={section.href}>
-            <Card className="hover:border-primary/50 transition-colors cursor-pointer h-full">
-              <CardHeader className="flex flex-row items-center gap-4">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <section.icon className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-base">{section.title}</CardTitle>
-                  <CardDescription>{section.description}</CardDescription>
-                </div>
-              </CardHeader>
-            </Card>
+      {/* Quick links */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        {settingsSections.map((s) => (
+          <Link
+            key={s.href}
+            href={s.href}
+            className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-150"
+          >
+            <div className="p-2 rounded-lg bg-gray-100">
+              <s.icon className="w-4 h-4 text-gray-600" />
+            </div>
+            <div>
+              <p className="text-[14px] font-medium text-gray-900">{s.title}</p>
+              <p className="text-[12px] text-gray-500">{s.description}</p>
+            </div>
           </Link>
         ))}
       </div>
 
-      <Separator />
+      {/* General form */}
+      <div className="border-t border-gray-200 pt-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">General</h2>
+        <div className="space-y-4 max-w-lg">
+          <div>
+            <label className="text-[13px] font-medium text-gray-700 mb-1.5 block">
+              Nombre del restaurante
+            </label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => update("name", e.target.value)}
+              className={inputClass}
+            />
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Configuracion general</CardTitle>
-          <CardDescription>
-            Nombre, slug, logo y colores de tu restaurante
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-sm">
-            Formulario de configuracion — Sprint 5
-          </p>
-        </CardContent>
-      </Card>
+          <div>
+            <label className="text-[13px] font-medium text-gray-700 mb-1.5 block">
+              Slug (URL)
+            </label>
+            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:border-gray-900 focus-within:ring-1 focus-within:ring-gray-900">
+              <span className="text-[13px] text-gray-400 bg-gray-50 px-3 py-2.5 border-r border-gray-300 whitespace-nowrap">
+                smartcheckout.co/
+              </span>
+              <input
+                type="text"
+                value={form.slug}
+                onChange={(e) => update("slug", e.target.value)}
+                className="flex-1 px-3 py-2.5 text-[14px] text-gray-900 bg-white outline-none placeholder:text-gray-400"
+              />
+            </div>
+          </div>
+
+          {/* Colors */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: "Primario", field: "primaryColor" },
+              { label: "Secundario", field: "secondaryColor" },
+              { label: "Fondo", field: "backgroundColor" },
+            ].map((c) => (
+              <div key={c.field}>
+                <label className="text-[13px] font-medium text-gray-700 mb-1.5 block">
+                  {c.label}
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={form[c.field as keyof typeof form]}
+                    onChange={(e) => update(c.field, e.target.value)}
+                    className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={form[c.field as keyof typeof form]}
+                    onChange={(e) => update(c.field, e.target.value)}
+                    className="flex-1 px-2 py-1.5 text-[13px] text-gray-700 bg-white border border-gray-300 rounded-lg outline-none focus:border-gray-900"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={handleSave}
+            disabled={saving || !form.name}
+            className="px-4 py-2.5 mt-2 text-[14px] font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            Guardar cambios
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

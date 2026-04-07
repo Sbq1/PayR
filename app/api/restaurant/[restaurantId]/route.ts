@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { handleApiError } from "@/lib/utils/errors";
+import { encrypt } from "@/lib/utils/crypto";
 import { z } from "zod/v4";
 
 export async function GET(
@@ -55,6 +56,14 @@ const updateSchema = z.object({
   primaryColor: z.string().optional(),
   secondaryColor: z.string().optional(),
   backgroundColor: z.string().optional(),
+  // POS credentials
+  siigoUsername: z.string().optional(),
+  siigoAccessKey: z.string().optional(),
+  // Payment credentials
+  wompiPublicKey: z.string().optional(),
+  wompiPrivateKey: z.string().optional(),
+  wompiEventsSecret: z.string().optional(),
+  wompiIntegritySecret: z.string().optional(),
 });
 
 export async function PUT(
@@ -68,12 +77,18 @@ export async function PUT(
     }
 
     const { restaurantId } = await params;
+
+    // Verificar ownership — solo el dueño puede editar su restaurante
+    if (session.user.restaurantId !== restaurantId) {
+      return Response.json({ error: "No autorizado para editar este restaurante" }, { status: 403 });
+    }
+
     const body = await request.json();
     const parsed = updateSchema.safeParse(body);
 
     if (!parsed.success) {
       return Response.json(
-        { error: "Datos invalidos", details: parsed.error.format() },
+        { error: "Datos inválidos", details: parsed.error.format() },
         { status: 400 }
       );
     }
@@ -84,6 +99,15 @@ export async function PUT(
     if (parsed.data.primaryColor) data.primary_color = parsed.data.primaryColor;
     if (parsed.data.secondaryColor) data.secondary_color = parsed.data.secondaryColor;
     if (parsed.data.backgroundColor) data.background_color = parsed.data.backgroundColor;
+    // POS — encrypt sensitive fields
+    if (parsed.data.siigoUsername) data.siigo_username = encrypt(parsed.data.siigoUsername);
+    if (parsed.data.siigoAccessKey) data.siigo_access_key = encrypt(parsed.data.siigoAccessKey);
+    if (parsed.data.siigoUsername || parsed.data.siigoAccessKey) data.pos_provider = "siigo";
+    // Payment — public key is not encrypted, private keys are
+    if (parsed.data.wompiPublicKey) data.wompi_public_key = parsed.data.wompiPublicKey;
+    if (parsed.data.wompiPrivateKey) data.wompi_private_key = encrypt(parsed.data.wompiPrivateKey);
+    if (parsed.data.wompiEventsSecret) data.wompi_events_secret = encrypt(parsed.data.wompiEventsSecret);
+    if (parsed.data.wompiIntegritySecret) data.wompi_integrity_secret = encrypt(parsed.data.wompiIntegritySecret);
 
     const restaurant = await db.restaurant.update({
       where: { id: restaurantId },

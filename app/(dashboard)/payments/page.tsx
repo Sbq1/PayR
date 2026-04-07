@@ -16,7 +16,7 @@ export default function PaymentsPage() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-sm">
-            Tabla con estado, metodo de pago y monto — Sprint 5
+            Tabla con estado, método de pago y monto — Sprint 5
           </p>
         </CardContent>
       </Card>

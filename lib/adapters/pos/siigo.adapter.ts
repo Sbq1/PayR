@@ -16,6 +16,7 @@ const FETCH_TIMEOUT = 15_000;
  * Cache de tokens por restaurante para evitar re-autenticacion en cada request.
  * Key: "username:accessKey" hash, Value: { token, expiresAt }
  */
+const MAX_CACHE_SIZE = 100;
 const tokenCache = new Map<
   string,
   { token: string; expiresAt: number }
@@ -107,7 +108,11 @@ export class SiigoAdapter implements IPosAdapter {
         );
       }
 
-      // Cache por 15 minutos
+      // Cache por 15 minutos — evict si excede límite
+      if (tokenCache.size >= MAX_CACHE_SIZE) {
+        const oldest = tokenCache.keys().next().value;
+        if (oldest) tokenCache.delete(oldest);
+      }
       tokenCache.set(cacheKey, {
         token,
         expiresAt: Date.now() + 15 * 60 * 1000,
@@ -123,12 +128,10 @@ export class SiigoAdapter implements IPosAdapter {
     }
   }
 
-  async getBill(tableIdentifier: string): Promise<StandardBill | null> {
+  async getBill(tableIdentifier: string, _retried = false): Promise<StandardBill | null> {
     const token = await this.authenticate();
 
     try {
-      // Buscamos facturas abiertas. Siigo no filtra por cost_center en query,
-      // asi que obtenemos las recientes y filtramos en memoria.
       const params = new URLSearchParams({
         page: "1",
         page_size: "50",
@@ -142,10 +145,10 @@ export class SiigoAdapter implements IPosAdapter {
         signal: AbortSignal.timeout(FETCH_TIMEOUT),
       });
 
-      if (res.status === 401) {
-        // Token expirado, limpiar cache y reintentar una vez
+      if (res.status === 401 && !_retried) {
+        // Token expirado — limpiar cache y reintentar UNA vez
         tokenCache.delete(getCacheKey(this.credentials));
-        return this.getBill(tableIdentifier);
+        return this.getBill(tableIdentifier, true);
       }
 
       if (!res.ok) {

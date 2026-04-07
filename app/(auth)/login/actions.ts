@@ -7,7 +7,7 @@ export async function loginAction(formData: { email: string; password: string })
   const user = await login(formData.email, formData.password);
 
   if (!user) {
-    return { error: "Email o contrasena incorrectos" };
+    return { error: "Email o contraseña incorrectos" };
   }
 
   redirect("/dashboard");

@@ -12,7 +12,10 @@ import {
   Loader2,
 } from "lucide-react";
 import { formatCOP } from "@/lib/utils/currency";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
 import type { KpiDashboard, KpiPeriod } from "@/types/kpi";
+
+const kpiAccents = ["kpi-indigo", "kpi-cyan", "kpi-amber", "kpi-emerald"];
 
 export default function DashboardPage() {
   const [period, setPeriod] = useState<KpiPeriod>("month");
@@ -20,7 +23,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
 
-  // Obtener restaurantId de la sesion
   useEffect(() => {
     fetch("/api/auth/session")
       .then((r) => r.json())
@@ -31,7 +33,6 @@ export default function DashboardPage() {
       });
   }, []);
 
-  // Cargar KPIs
   useEffect(() => {
     if (!restaurantId) return;
     setLoading(true);
@@ -45,27 +46,38 @@ export default function DashboardPage() {
   const kpiCards = [
     {
       title: "Ventas",
-      value: data ? formatCOP(data.overview.totalSales) : "$0",
+      rawValue: data?.overview.totalSales ?? 0,
+      prefix: "$",
+      suffix: "",
+      isCurrency: true,
       icon: DollarSign,
     },
     {
       title: "Ordenes",
-      value: data ? String(data.overview.orderCount) : "0",
+      rawValue: data?.overview.orderCount ?? 0,
+      prefix: "",
+      suffix: "",
+      isCurrency: false,
       icon: Receipt,
     },
     {
       title: "Ticket promedio",
-      value: data ? formatCOP(data.overview.avgTicket) : "$0",
+      rawValue: data?.overview.avgTicket ?? 0,
+      prefix: "$",
+      suffix: "",
+      isCurrency: true,
       icon: TrendingUp,
     },
     {
       title: "Propina prom.",
-      value: data ? `${data.overview.avgTipPercentage}%` : "0%",
+      rawValue: data?.overview.avgTipPercentage ?? 0,
+      prefix: "",
+      suffix: "%",
+      isCurrency: false,
       icon: Percent,
     },
   ];
 
-  // Formatear datos para graficas
   const salesChartData = (data?.salesOverTime || []).map((d) => ({
     date: d.date,
     Ventas: d.sales / 100,
@@ -88,12 +100,11 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex items-center justify-between fade-in-up">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Metricas de tu restaurante
-          </p>
+          <p className="text-muted-foreground">Métricas de tu restaurante</p>
         </div>
         <Tabs
           value={period}
@@ -115,26 +126,39 @@ export default function DashboardPage() {
 
       {!loading && (
         <>
-          {/* KPI Cards */}
+          {/* KPI Cards with animated counters */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {kpiCards.map((kpi) => (
-              <Card key={kpi.title}>
+            {kpiCards.map((kpi, i) => (
+              <Card
+                key={kpi.title}
+                className={`${kpiAccents[i]} hover-lift card-appear`}
+                style={{ "--delay": `${i * 0.08}s` } as React.CSSProperties}
+              >
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
                     {kpi.title}
                   </CardTitle>
-                  <kpi.icon className="h-4 w-4 text-muted-foreground" />
+                  <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
+                    <kpi.icon className="h-4 w-4 text-gray-400" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{kpi.value}</div>
+                  <div className="text-2xl font-bold">
+                    <AnimatedCounter
+                      target={kpi.isCurrency ? Math.round(kpi.rawValue / 100) : kpi.rawValue}
+                      prefix={kpi.prefix}
+                      suffix={kpi.suffix}
+                      duration={2000}
+                    />
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
 
-          {/* Charts */}
+          {/* Charts Row 1 */}
           <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
+            <Card className="card-appear hover-lift" style={{ "--delay": "0.32s" } as React.CSSProperties}>
               <CardHeader>
                 <CardTitle>Ventas por dia</CardTitle>
               </CardHeader>
@@ -159,9 +183,9 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="card-appear hover-lift" style={{ "--delay": "0.4s" } as React.CSSProperties}>
               <CardHeader>
-                <CardTitle>Metodos de pago</CardTitle>
+                <CardTitle>Métodos de pago</CardTitle>
               </CardHeader>
               <CardContent>
                 {paymentMethodsData.length > 0 ? (
@@ -181,10 +205,11 @@ export default function DashboardPage() {
             </Card>
           </div>
 
+          {/* Charts Row 2 */}
           <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
+            <Card className="card-appear hover-lift" style={{ "--delay": "0.48s" } as React.CSSProperties}>
               <CardHeader>
-                <CardTitle>Productos mas vendidos</CardTitle>
+                <CardTitle>Productos más vendidos</CardTitle>
               </CardHeader>
               <CardContent>
                 {productsChartData.length > 0 ? (
@@ -205,7 +230,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="card-appear hover-lift" style={{ "--delay": "0.56s" } as React.CSSProperties}>
               <CardHeader>
                 <CardTitle>Horas pico</CardTitle>
               </CardHeader>

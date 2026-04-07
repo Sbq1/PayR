@@ -70,21 +70,28 @@ export default function BillPage() {
         <div className="flex-1 px-4">
           <div className="bg-gray-50 rounded-2xl border border-gray-100 p-4 shadow-sm">
             {bill.items.map((item, i) => (
-              <BillItemRow
+              <div
                 key={item.productId || i}
-                name={item.name}
-                quantity={item.quantity}
-                unitPrice={item.unitPrice}
-                totalPrice={item.totalPrice}
-              />
+                className="card-appear"
+                style={{ "--delay": `${i * 0.06}s` } as React.CSSProperties}
+              >
+                <BillItemRow
+                  name={item.name}
+                  quantity={item.quantity}
+                  unitPrice={item.unitPrice}
+                  totalPrice={item.totalPrice}
+                />
+              </div>
             ))}
-            <BillSummary
-              subtotal={bill.subtotal}
-              tax={bill.totalTax}
-              tip={tipAmount + upsellTotal}
-              total={grandTotal}
-              tipPercentage={tipPercentage || null}
-            />
+            <div className="card-appear shimmer" style={{ "--delay": `${bill.items.length * 0.06 + 0.1}s` } as React.CSSProperties}>
+              <BillSummary
+                subtotal={bill.subtotal}
+                tax={bill.totalTax}
+                tip={tipAmount + upsellTotal}
+                total={grandTotal}
+                tipPercentage={tipPercentage || null}
+              />
+            </div>
           </div>
         </div>
 

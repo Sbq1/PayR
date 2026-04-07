@@ -91,8 +91,9 @@ export class WompiAdapter implements IPaymentAdapter {
     );
 
     if (!res.ok) {
+      const isTransient = res.status >= 500 || res.status === 429;
       throw new PaymentError(
-        `Error consultando transaccion (${res.status})`
+        `Error consultando transacción (${res.status})${isTransient ? " [transient]" : ""}`
       );
     }
 

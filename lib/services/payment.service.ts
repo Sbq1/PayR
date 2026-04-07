@@ -25,51 +25,49 @@ export async function createPayment(params: {
 }> {
   const { orderId, tipPercentage, tipAmount, customerEmail } = params;
 
-  // 1. Buscar orden con restaurante
-  const order = await db.order.findUnique({
-    where: { id: orderId },
-    include: {
-      restaurants: true,
-    },
+  // Transacción atómica para prevenir race conditions (doble pago)
+  const { payment, totalWithTip, restaurant } = await db.$transaction(async (tx) => {
+    // 1. Buscar orden con lock implícito dentro de transacción
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+      include: { restaurants: true },
+    });
+
+    if (!order) throw new NotFoundError("Orden");
+    if (order.status === "PAID") throw new PaymentError("Esta orden ya fue pagada");
+    if (order.status === "PAYING") throw new PaymentError("Ya hay un pago en proceso para esta orden");
+
+    const rest = order.restaurants;
+    const total = order.subtotal + order.tax + tipAmount;
+
+    // 2. Actualizar orden a PAYING
+    await tx.order.update({
+      where: { id: orderId },
+      data: {
+        tip_percentage: tipPercentage,
+        tip_amount: tipAmount,
+        total,
+        status: "PAYING",
+      },
+    });
+
+    // 3. Crear registro de pago con referencia única
+    const reference = `SC-${orderId.slice(-8)}-${Date.now()}`;
+    const pmt = await tx.payment.create({
+      data: {
+        order_id: orderId,
+        reference,
+        amount_in_cents: total,
+        currency: "COP",
+        status: "PENDING",
+        customer_email: customerEmail || null,
+      },
+    });
+
+    return { payment: pmt, totalWithTip: total, restaurant: rest };
   });
 
-  if (!order) {
-    throw new NotFoundError("Orden");
-  }
-
-  if (order.status === "PAID") {
-    throw new PaymentError("Esta orden ya fue pagada");
-  }
-
-  const restaurant = order.restaurants;
-
-  // 2. Actualizar propina y total
-  const totalWithTip = order.subtotal + order.tax + tipAmount;
-
-  await db.order.update({
-    where: { id: orderId },
-    data: {
-      tip_percentage: tipPercentage,
-      tip_amount: tipAmount,
-      total: totalWithTip,
-      status: "PAYING",
-    },
-  });
-
-  // 3. Generar referencia unica
-  const reference = `SC-${orderId.slice(-8)}-${Date.now()}`;
-
-  // 4. Crear registro de pago
-  const payment = await db.payment.create({
-    data: {
-      order_id: orderId,
-      reference,
-      amount_in_cents: totalWithTip,
-      currency: "COP",
-      status: "PENDING",
-      customer_email: customerEmail || null,
-    },
-  });
+  const reference = payment.reference;
 
   // 5. Obtener config del widget Wompi (o demo)
   const adapter = getPaymentAdapter({

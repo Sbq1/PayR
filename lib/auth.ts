@@ -3,9 +3,17 @@ import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "fallback-secret"
-);
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  if (!secret) {
+    throw new Error(
+      "AUTH_SECRET or NEXTAUTH_SECRET must be set. Sessions cannot be signed without a secret."
+    );
+  }
+  return new TextEncoder().encode(secret);
+}
+
+const JWT_SECRET = getJwtSecret();
 const COOKIE_NAME = "sc-session";
 
 export interface SessionUser {

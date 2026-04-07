@@ -69,7 +69,7 @@ export default function QrCodesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Codigos QR</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Códigos QR</h1>
           <p className="text-muted-foreground">
             Genera e imprime los QR para tus mesas
           </p>
