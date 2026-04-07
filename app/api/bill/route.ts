@@ -16,7 +16,7 @@ const limiter = rateLimit("bill", { interval: 60_000, limit: 30 }); // 30/min
 export async function GET(request: NextRequest) {
   try {
     const ip = getClientIp(request);
-    const { success, resetAt } = limiter.check(ip);
+    const { success, resetAt } = await limiter.check(ip);
     if (!success) return rateLimitResponse(resetAt);
 
     const { searchParams } = request.nextUrl;

@@ -21,7 +21,7 @@ const registerSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const ip = getClientIp(request);
-    const { success, resetAt } = limiter.check(ip);
+    const { success, resetAt } = await limiter.check(ip);
     if (!success) return rateLimitResponse(resetAt);
 
     const body = await request.json();

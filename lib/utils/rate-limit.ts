@@ -1,52 +1,52 @@
-/**
- * Rate limiter en memoria con ventana deslizante.
- * Cada instancia serverless tiene su propio estado — suficiente para
- * prevenir brute force básico sin necesidad de Redis.
- */
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
 interface RateLimitConfig {
   interval: number; // Ventana en ms
-  limit: number;    // Max requests por ventana
+  limit: number; // Max requests por ventana
 }
 
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
+let redis: Redis | null = null;
+
+function getRedis(): Redis | null {
+  if (redis) return redis;
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  redis = new Redis({ url, token });
+  return redis;
 }
 
-const stores = new Map<string, Map<string, RateLimitEntry>>();
+const limiters = new Map<string, Ratelimit>();
 
 export function rateLimit(name: string, config: RateLimitConfig) {
-  if (!stores.has(name)) {
-    stores.set(name, new Map());
-  }
-  const store = stores.get(name)!;
-
-  // Cleanup cada 60s para evitar memory leak
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, entry] of store) {
-      if (entry.resetAt < now) store.delete(key);
-    }
-  }, 60_000).unref?.();
-
   return {
-    check(key: string): { success: boolean; remaining: number; resetAt: number } {
-      const now = Date.now();
-      const entry = store.get(key);
-
-      if (!entry || entry.resetAt < now) {
-        store.set(key, { count: 1, resetAt: now + config.interval });
-        return { success: true, remaining: config.limit - 1, resetAt: now + config.interval };
+    async check(
+      key: string
+    ): Promise<{ success: boolean; remaining: number; resetAt: number }> {
+      const client = getRedis();
+      if (!client) {
+        return { success: true, remaining: config.limit, resetAt: 0 };
       }
 
-      entry.count++;
-
-      if (entry.count > config.limit) {
-        return { success: false, remaining: 0, resetAt: entry.resetAt };
+      if (!limiters.has(name)) {
+        const windowSec = Math.max(1, Math.ceil(config.interval / 1000));
+        limiters.set(
+          name,
+          new Ratelimit({
+            redis: client,
+            limiter: Ratelimit.slidingWindow(config.limit, `${windowSec} s`),
+            prefix: `payr:rl:${name}`,
+          })
+        );
       }
 
-      return { success: true, remaining: config.limit - entry.count, resetAt: entry.resetAt };
+      const result = await limiters.get(name)!.limit(key);
+      return {
+        success: result.success,
+        remaining: result.remaining,
+        resetAt: result.reset,
+      };
     },
   };
 }

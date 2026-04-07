@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/nextjs";
+
 export class AppError extends Error {
   constructor(
     message: string,
@@ -43,11 +45,15 @@ export class PlanLimitError extends AppError {
 
 export function handleApiError(error: unknown): Response {
   if (error instanceof AppError) {
+    if (error.statusCode >= 500) {
+      Sentry.captureException(error);
+    }
     return Response.json(
       { error: error.message, code: error.code },
       { status: error.statusCode }
     );
   }
+  Sentry.captureException(error);
   console.error("Unhandled error:", error);
   return Response.json(
     { error: "Error interno del servidor" },
