@@ -10,7 +10,7 @@ const limiter = rateLimit("register", { interval: 60 * 60 * 1000, limit: 5 }); /
 const registerSchema = z.object({
   name: z.string().min(2),
   email: z.email(),
-  password: z.string().min(6),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
   restaurantName: z.string().min(2),
   restaurantSlug: z
     .string()

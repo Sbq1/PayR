@@ -120,9 +120,9 @@ export default function RegisterPage() {
             placeholder=" "
             required
             autoComplete="new-password"
-            minLength={6}
+            minLength={8}
           />
-          <label htmlFor="reg-password">Contraseña (mínimo 6 caracteres)</label>
+          <label htmlFor="reg-password">Contraseña (mínimo 8 caracteres)</label>
         </div>
 
         <div className="pt-2">

@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function BillSkeleton() {
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4 p-4" role="status" aria-busy="true" aria-label="Cargando cuenta">
       <div className="flex items-center gap-3">
         <Skeleton className="w-11 h-11 rounded-xl" />
         <div className="space-y-2">

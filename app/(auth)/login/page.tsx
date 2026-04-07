@@ -106,12 +106,12 @@ export default function LoginPage() {
             <label htmlFor="login-password" className="text-[13px] font-semibold text-gray-600">
               Contraseña
             </label>
-            <Link
-              href="#"
-              className="text-[12px] font-semibold text-indigo-600 hover:text-indigo-500 transition-colors"
+            <span
+              className="text-[12px] font-semibold text-gray-400 cursor-default"
+              title="Próximamente"
             >
               ¿Olvidaste tu contraseña?
-            </Link>
+            </span>
           </div>
           <motion.div
             animate={{
