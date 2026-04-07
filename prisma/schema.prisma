@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name           String?
+  email          String       @unique
+  email_verified DateTime?    @db.Timestamptz(6)
+  password_hash  String?
+  image          String?
+  created_at     DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime     @default(now()) @db.Timestamptz(6)
+  accounts       Account[]
+  restaurants    Restaurant[]
+  sessions       Session[]
+
+  @@map("users")
+}
+
+model Account {
+  user_id             String
+  type                String
+  provider            String
+  provider_account_id String
+  refresh_token       String?
+  access_token        String?
+  expires_at          Int?
+  token_type          String?
+  scope               String?
+  id_token            String?
+  session_state       String?
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @default(now()) @db.Timestamptz(6)
+  users               User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([provider, provider_account_id])
+  @@map("accounts")
+}
+
+model Session {
+  session_token String   @unique
+  user_id       String
+  expires       DateTime @db.Timestamptz(6)
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @default(now()) @db.Timestamptz(6)
+  users         User     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime @db.Timestamptz(6)
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+model SubscriptionPlan {
+  id                 String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  tier               plan_tier    @unique
+  name               String
+  max_tables         Int
+  monthly_price_cop  Int
+  allow_split_bill   Boolean      @default(false)
+  allow_upsell       Boolean      @default(false)
+  allow_analytics    Boolean      @default(false)
+  allow_custom_theme Boolean      @default(false)
+  created_at         DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime     @default(now()) @db.Timestamptz(6)
+  restaurants        Restaurant[]
+
+  @@map("subscription_plans")
+}
+
+model Restaurant {
+  id                     String           @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name                   String
+  slug                   String           @unique
+  owner_id               String
+  plan_id                String
+  logo_url               String?
+  primary_color          String           @default("#6366f1")
+  secondary_color        String           @default("#f59e0b")
+  background_color       String           @default("#ffffff")
+  custom_theme           Json?
+  pos_provider           String           @default("siigo")
+  siigo_username         String?
+  siigo_access_key       String?
+  wompi_public_key       String?
+  wompi_private_key      String?
+  wompi_events_secret    String?
+  wompi_integrity_secret String?
+  is_active              Boolean          @default(true)
+  created_at             DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime         @default(now()) @db.Timestamptz(6)
+  orders                 Order[]
+  users                  User             @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  subscription_plans     SubscriptionPlan @relation(fields: [plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tables                 Table[]
+  upsell_products        UpsellProduct[]
+
+  @@index([slug], map: "idx_restaurants_slug")
+  @@map("restaurants")
+}
+
+model Table {
+  id                   String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  restaurant_id        String
+  table_number         Int
+  label                String?
+  siigo_cost_center_id String?
+  status               table_status @default(AVAILABLE)
+  is_active            Boolean      @default(true)
+  created_at           DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime     @default(now()) @db.Timestamptz(6)
+  orders               Order[]
+  qr_codes             QrCode?
+  restaurants          Restaurant   @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([restaurant_id, table_number])
+  @@map("tables")
+}
+
+model QrCode {
+  id         String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  table_id   String   @unique
+  url        String   @unique
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  tables     Table    @relation(fields: [table_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("qr_codes")
+}
+
+model Order {
+  id               String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  restaurant_id    String
+  table_id         String
+  siigo_invoice_id String?
+  subtotal         Int
+  tax              Int          @default(0)
+  tip_amount       Int          @default(0)
+  tip_percentage   Float?
+  total            Int
+  customer_count   Int          @default(1)
+  status           order_status @default(PENDING)
+  created_at       DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime     @default(now()) @db.Timestamptz(6)
+  order_items      OrderItem[]
+  restaurants      Restaurant   @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tables           Table        @relation(fields: [table_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  payments         Payment[]
+
+  @@index([restaurant_id, created_at], map: "idx_orders_restaurant_date")
+  @@map("orders")
+}
+
+model OrderItem {
+  id               String  @id @default(dbgenerated("(gen_random_uuid())::text"))
+  order_id         String
+  siigo_product_id String?
+  name             String
+  quantity         Int
+  unit_price       Int
+  total_price      Int
+  is_upsell        Boolean @default(false)
+  orders           Order   @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("order_items")
+}
+
+model Payment {
+  id                   String         @id @default(dbgenerated("(gen_random_uuid())::text"))
+  order_id             String
+  wompi_transaction_id String?        @unique
+  reference            String         @unique
+  amount_in_cents      Int
+  currency             String         @default("COP")
+  status               payment_status @default(PENDING)
+  payment_method_type  String?
+  customer_email       String?
+  wompi_response       Json?
+  created_at           DateTime       @default(now()) @db.Timestamptz(6)
+  paid_at              DateTime?      @db.Timestamptz(6)
+  orders               Order          @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([reference], map: "idx_payments_reference")
+  @@index([wompi_transaction_id], map: "idx_payments_wompi_txn")
+  @@map("payments")
+}
+
+model UpsellProduct {
+  id            String     @id @default(dbgenerated("(gen_random_uuid())::text"))
+  restaurant_id String
+  name          String
+  description   String?
+  price         Int
+  image_url     String?
+  is_active     Boolean    @default(true)
+  sort_order    Int        @default(0)
+  created_at    DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime   @default(now()) @db.Timestamptz(6)
+  restaurants   Restaurant @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("upsell_products")
+}
+
+enum order_status {
+  PENDING
+  PAYING
+  PAID
+  CANCELLED
+}
+
+enum payment_status {
+  PENDING
+  APPROVED
+  DECLINED
+  VOIDED
+  ERROR
+}
+
+enum plan_tier {
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum table_status {
+  AVAILABLE
+  OCCUPIED
+  PAYING
+}

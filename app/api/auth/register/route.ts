@@ -1,0 +1,80 @@
+import { NextRequest } from "next/server";
+import { db } from "@/lib/db";
+import { handleApiError } from "@/lib/utils/errors";
+import bcrypt from "bcryptjs";
+import { z } from "zod/v4";
+
+const registerSchema = z.object({
+  name: z.string().min(2),
+  email: z.email(),
+  password: z.string().min(6),
+  restaurantName: z.string().min(2),
+  restaurantSlug: z
+    .string()
+    .min(2)
+    .regex(/^[a-z0-9-]+$/, "Solo letras minusculas, numeros y guiones"),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const parsed = registerSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return Response.json(
+        { error: "Datos invalidos", details: parsed.error.format() },
+        { status: 400 }
+      );
+    }
+
+    const { name, email, password, restaurantName, restaurantSlug } = parsed.data;
+
+    // Verificar email unico
+    const existingUser = await db.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return Response.json({ error: "Este email ya esta registrado" }, { status: 409 });
+    }
+
+    // Verificar slug unico
+    const existingSlug = await db.restaurant.findUnique({
+      where: { slug: restaurantSlug },
+    });
+    if (existingSlug) {
+      return Response.json({ error: "Este slug ya esta en uso" }, { status: 409 });
+    }
+
+    // Obtener plan Starter por defecto
+    const starterPlan = await db.subscriptionPlan.findUnique({
+      where: { tier: "STARTER" },
+    });
+
+    if (!starterPlan) {
+      return Response.json({ error: "Error de configuracion" }, { status: 500 });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    // Crear usuario + restaurante en transaccion
+    const user = await db.user.create({
+      data: {
+        name,
+        email,
+        password_hash: passwordHash,
+      },
+    });
+
+    await db.restaurant.create({
+      data: {
+        name: restaurantName,
+        slug: restaurantSlug,
+        owner_id: user.id,
+        plan_id: starterPlan.id,
+        pos_provider: "demo",
+      },
+    });
+
+    return Response.json({ success: true }, { status: 201 });
+  } catch (error) {
+    return handleApiError(error);
+  }
+}

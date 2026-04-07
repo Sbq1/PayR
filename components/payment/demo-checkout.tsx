@@ -1,0 +1,134 @@
+"use client";
+
+import { useState } from "react";
+import { formatCOP } from "@/lib/utils/currency";
+import { CreditCard, Loader2, CheckCircle } from "lucide-react";
+import type { WompiWidgetConfig } from "@/lib/adapters/payment/types";
+
+interface DemoCheckoutProps {
+  config: WompiWidgetConfig;
+}
+
+type DemoStep = "select" | "processing" | "done";
+
+const PAYMENT_METHODS = [
+  { id: "card", label: "Tarjeta", icon: "💳" },
+  { id: "nequi", label: "Nequi", icon: "📱" },
+  { id: "pse", label: "PSE", icon: "🏦" },
+  { id: "bancolombia", label: "Bancolombia", icon: "🟡" },
+];
+
+export function DemoCheckout({ config }: DemoCheckoutProps) {
+  const [step, setStep] = useState<DemoStep>("select");
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+
+  async function handlePay() {
+    if (!selectedMethod) return;
+    setStep("processing");
+
+    // Simular procesamiento
+    await new Promise((r) => setTimeout(r, 2000));
+    setStep("done");
+
+    // Simular webhook aprobado
+    try {
+      await fetch("/api/payment/webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event: "transaction.updated",
+          data: {
+            transaction: {
+              id: `demo-txn-${Date.now()}`,
+              created_at: new Date().toISOString(),
+              amount_in_cents: config.amountInCents,
+              reference: config.reference,
+              customer_email: config.customerEmail || "demo@test.com",
+              currency: config.currency,
+              payment_method_type: selectedMethod.toUpperCase(),
+              payment_method: {},
+              status: "APPROVED",
+              status_message: null,
+            },
+          },
+          sent_at: new Date().toISOString(),
+          timestamp: Date.now(),
+          signature: {
+            properties: [],
+            checksum: "demo",
+          },
+          environment: "test",
+        }),
+      });
+    } catch {
+      // Ignore webhook errors in demo
+    }
+
+    // Redirigir a resultado
+    await new Promise((r) => setTimeout(r, 1000));
+    window.location.href = `${config.redirectUrl}&status=APPROVED`;
+  }
+
+  if (step === "processing") {
+    return (
+      <div className="text-center py-8 space-y-4">
+        <Loader2 className="w-10 h-10 animate-spin text-[var(--r-primary)] mx-auto" />
+        <p className="text-sm text-gray-500">Procesando tu pago...</p>
+        <p className="text-xs text-gray-400">(Simulacion demo)</p>
+      </div>
+    );
+  }
+
+  if (step === "done") {
+    return (
+      <div className="text-center py-8 space-y-4">
+        <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
+        <p className="text-sm text-gray-900 font-semibold">Pago aprobado</p>
+        <p className="text-xs text-gray-500">Redirigiendo...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 text-center">
+        <p className="text-[10px] text-gray-400 uppercase tracking-wider">Modo demo</p>
+        <p className="text-lg font-bold text-gray-900 mt-1">
+          {formatCOP(config.amountInCents)}
+        </p>
+        <p className="text-xs text-gray-400 font-mono mt-1">
+          Ref: {config.reference}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        {PAYMENT_METHODS.map((method) => (
+          <button
+            key={method.id}
+            onClick={() => setSelectedMethod(method.id)}
+            className={`p-3 rounded-xl border text-sm font-medium transition-all ${
+              selectedMethod === method.id
+                ? "border-[var(--r-primary)] bg-indigo-50 text-gray-900"
+                : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+            }`}
+          >
+            <span className="text-lg block mb-1">{method.icon}</span>
+            {method.label}
+          </button>
+        ))}
+      </div>
+
+      <button
+        onClick={handlePay}
+        disabled={!selectedMethod}
+        className="glow-btn w-full py-4 rounded-2xl text-base font-bold text-white transition-all duration-200 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+        style={{
+          backgroundColor: "var(--r-primary)",
+          boxShadow: selectedMethod ? "0 8px 24px var(--r-primary)33" : "none",
+        }}
+      >
+        Simular pago
+      </button>
+    </div>
+  );
+}
