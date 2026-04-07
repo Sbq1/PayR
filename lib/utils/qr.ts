@@ -22,15 +22,3 @@ export async function generateQrDataUrl(url: string): Promise<string> {
     errorCorrectionLevel: "M",
   });
 }
-
-/**
- * Genera un QR code como SVG string.
- */
-export async function generateQrSvg(url: string): Promise<string> {
-  return QRCode.toString(url, {
-    type: "svg",
-    width: 400,
-    margin: 2,
-    errorCorrectionLevel: "M",
-  });
-}

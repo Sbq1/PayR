@@ -7,11 +7,9 @@ let _jwtSecret: Uint8Array | null = null;
 
 function getJwtSecret(): Uint8Array {
   if (_jwtSecret) return _jwtSecret;
-  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  const secret = process.env.AUTH_SECRET;
   if (!secret) {
-    throw new Error(
-      "AUTH_SECRET or NEXTAUTH_SECRET must be set. Sessions cannot be signed without a secret."
-    );
+    throw new Error("AUTH_SECRET must be set. Sessions cannot be signed without a secret.");
   }
   _jwtSecret = new TextEncoder().encode(secret);
   return _jwtSecret;

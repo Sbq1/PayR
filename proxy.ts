@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
 function getJwtSecret(): Uint8Array {
-  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  const secret = process.env.AUTH_SECRET;
   if (!secret) return new Uint8Array(0);
   return new TextEncoder().encode(secret);
 }

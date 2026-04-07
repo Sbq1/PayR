@@ -12,16 +12,6 @@ export interface WompiWidgetConfig {
 }
 
 /**
- * Resultado de crear una transaccion.
- */
-export interface CreateTransactionResult {
-  paymentId: string;
-  reference: string;
-  amountInCents: number;
-  widgetConfig: WompiWidgetConfig;
-}
-
-/**
  * Evento de webhook de Wompi.
  */
 export interface WompiWebhookEvent {

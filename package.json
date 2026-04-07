@@ -13,7 +13,6 @@
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
-    "@tanstack/react-table": "^8.21.3",
     "@tremor/react": "^3.18.7",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
