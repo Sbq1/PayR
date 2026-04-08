@@ -26,11 +26,11 @@ export function DemoCheckout({ config }: DemoCheckoutProps) {
     if (!selectedMethod) return;
     setStep("processing");
 
-    await new Promise((r) => setTimeout(r, 2000));
-    setStep("done");
+    await new Promise((r) => setTimeout(r, 1500));
 
+    // Complete payment in backend FIRST
     try {
-      await fetch("/api/payment/demo-complete", {
+      const res = await fetch("/api/payment/demo-complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -38,11 +38,16 @@ export function DemoCheckout({ config }: DemoCheckoutProps) {
           paymentMethodType: selectedMethod.toUpperCase(),
         }),
       });
-    } catch {
-      // Ignore errors in demo
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error("Demo complete failed:", res.status, err);
+      }
+    } catch (e) {
+      console.error("Demo complete error:", e);
     }
 
-    await new Promise((r) => setTimeout(r, 1000));
+    setStep("done");
+    await new Promise((r) => setTimeout(r, 1500));
     window.location.href = `${config.redirectUrl}&status=APPROVED`;
   }
 
