@@ -27,7 +27,7 @@ export default function AuthLayout({
   return (
     <div className="min-h-screen flex">
       {/* ===== LEFT — Branding panel ===== */}
-      <div className="hidden lg:flex lg:w-[480px] xl:w-[560px] flex-col justify-between bg-gray-950 text-white p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:flex-1 flex-col justify-between bg-gray-950 text-white p-12 relative overflow-hidden">
 
         {/* — Animated gradient blobs — */}
         <motion.div
@@ -187,7 +187,7 @@ export default function AuthLayout({
       </div>
 
       {/* ===== RIGHT — Form area ===== */}
-      <div className="flex-1 flex flex-col relative bg-gray-50 auth-grid-bg">
+      <div className="lg:w-[520px] xl:w-[560px] flex flex-col relative bg-gray-50 auth-grid-bg">
 
         {/* Mobile top bar */}
         <div className="flex items-center justify-between px-6 py-5 lg:justify-end relative z-10">
