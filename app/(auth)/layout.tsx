@@ -89,9 +89,9 @@ export default function AuthLayout({
             variants={fadeUp}
             className="text-[42px] xl:text-[52px] font-bold leading-[1.08] tracking-tight text-white mb-5"
           >
-            Revoluciona{" "}
+            Tu restaurante{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
-              tus pagos
+              cobra solo
             </span>
           </motion.h1>
 
@@ -99,14 +99,14 @@ export default function AuthLayout({
             variants={fadeUp}
             className="text-[15px] text-gray-400 leading-relaxed mb-8 max-w-[380px]"
           >
-            Más propinas, menos errores y clientes que vuelven. Únete a la plataforma líder en cobros QR.
+            El cliente escanea el QR en su mesa, ve la cuenta de Siigo y paga con tarjeta, Nequi o PSE. La mesa se cierra sola en tu POS.
           </motion.p>
 
           <div className="space-y-3">
             {[
-              "Sin comisiones adicionales",
-              "Integración con el POS en 10 min",
-              "Cierre automático de mesas",
+              "Conecta Siigo en 10 minutos",
+              "Propinas 15% más altas en promedio",
+              "La mesa se cierra sola en el POS",
             ].map((item) => (
               <motion.div
                 key={item}
