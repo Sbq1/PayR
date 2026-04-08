@@ -1,9 +1,9 @@
 "use client";
 
 import { useSearchParams, useParams } from "next/navigation";
-import { CheckCircle, XCircle, Clock, ArrowLeft } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 function ResultContent() {
   const searchParams = useSearchParams();
@@ -11,12 +11,39 @@ function ResultContent() {
 
   const status = searchParams.get("status")?.toUpperCase();
   const reference = searchParams.get("ref");
+  const [verifiedStatus, setVerifiedStatus] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
 
-  const config = getStatusConfig(status);
+  // When status is APPROVED, verify with backend to ensure payment is completed
+  useEffect(() => {
+    if (status !== "APPROVED" || !reference) return;
+
+    setVerifying(true);
+
+    // Small delay to let webhook arrive first
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/payment/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reference }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setVerifiedStatus(data.status);
+        }
+      } catch {}
+      setVerifying(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [status, reference]);
+
+  const displayStatus = verifiedStatus || status;
+  const config = getStatusConfig(displayStatus);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-      {/* Animated icon */}
       <div
         className="w-20 h-20 rounded-full flex items-center justify-center mb-6 scale-in"
         style={{ backgroundColor: `${config.color}15` }}
@@ -24,48 +51,52 @@ function ResultContent() {
         <config.icon className="w-10 h-10" style={{ color: config.color }} />
       </div>
 
-      {/* Animated text */}
-      <h1 className="text-2xl font-bold text-gray-900 mb-2 fade-in-up fade-in-up-delay-1">
+      <h1 className="text-2xl font-bold text-gray-900 mb-2 fade-in-up">
         {config.title}
       </h1>
-      <p className="text-sm text-gray-500 mb-2 fade-in-up fade-in-up-delay-2">
+      <p className="text-sm text-gray-500 mb-2 fade-in-up">
         {config.message}
       </p>
 
       {reference && (
-        <p className="text-xs text-gray-400 font-mono mt-2 fade-in-up fade-in-up-delay-3">
+        <p className="text-xs text-gray-400 font-mono mt-2 fade-in-up">
           Ref: {reference}
         </p>
       )}
 
-      <div className="mt-8 space-y-3 w-full max-w-xs fade-in-up fade-in-up-delay-4">
-        {status === "APPROVED" && (
+      <div className="mt-8 space-y-3 w-full max-w-xs fade-in-up">
+        {displayStatus === "APPROVED" && (
           <>
-            {/* Success pulse ring */}
             <div className="flex justify-center mb-4">
-              <div
-                className="w-3 h-3 rounded-full pulse-ring"
-                style={{ backgroundColor: config.color }}
-              />
+              {verifying ? (
+                <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+              ) : (
+                <div
+                  className="w-3 h-3 rounded-full pulse-ring"
+                  style={{ backgroundColor: config.color }}
+                />
+              )}
             </div>
             <p className="text-xs text-gray-500">
-              Tu mesa se cerrará automáticamente en el sistema del restaurante.
+              {verifying
+                ? "Confirmando pago con el sistema..."
+                : "Tu mesa se cerrará automáticamente en el sistema del restaurante."}
             </p>
           </>
         )}
 
-        {status === "DECLINED" && (
+        {displayStatus === "DECLINED" && (
           <Link href={`/${params.slug}/${params.tableId}`}>
-            <button className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 active:scale-95">
+            <button className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-colors">
               Intentar de nuevo
             </button>
           </Link>
         )}
 
-        {status === "PENDING" && (
+        {displayStatus === "PENDING" && (
           <button
             onClick={() => window.location.reload()}
-            className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 active:scale-95"
+            className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-colors"
           >
             Verificar estado
           </button>
