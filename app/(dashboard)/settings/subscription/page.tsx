@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
+import { useSession } from "@/hooks/use-session";
 
 interface PlanInfo {
   tier: string;
@@ -16,25 +17,20 @@ const planFeatures: Record<string, string[]> = {
 };
 
 export default function SubscriptionPage() {
+  const { restaurantId } = useSession();
   const [plan, setPlan] = useState<PlanInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/auth/session")
+    if (!restaurantId) return;
+    fetch(`/api/restaurant/${restaurantId}`)
       .then((r) => r.json())
-      .then((s) => {
-        if (s?.restaurantId) {
-          fetch(`/api/restaurant/${s.restaurantId}`)
-            .then((r) => r.json())
-            .then((r) => {
-              setPlan(r.plan);
-              setLoading(false);
-            });
-        } else {
-          setLoading(false);
-        }
-      });
-  }, []);
+      .then((r) => {
+        setPlan(r.plan);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [restaurantId]);
 
   if (loading) {
     return (

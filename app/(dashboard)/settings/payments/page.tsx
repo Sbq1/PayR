@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { Loader2, CheckCircle, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "@/hooks/use-session";
 
 export default function PaymentSettingsPage() {
-  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const { restaurantId } = useSession();
   const [hasCredentials, setHasCredentials] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -20,17 +21,11 @@ export default function PaymentSettingsPage() {
     : "";
 
   useEffect(() => {
-    fetch("/api/auth/session")
+    if (!restaurantId) return;
+    fetch(`/api/restaurant/${restaurantId}`)
       .then((r) => r.json())
-      .then((s) => {
-        if (s?.restaurantId) {
-          setRestaurantId(s.restaurantId);
-          fetch(`/api/restaurant/${s.restaurantId}`)
-            .then((r) => r.json())
-            .then((r) => setHasCredentials(r.hasWompiCredentials));
-        }
-      });
-  }, []);
+      .then((r) => setHasCredentials(r.hasWompiCredentials));
+  }, [restaurantId]);
 
   function update(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));

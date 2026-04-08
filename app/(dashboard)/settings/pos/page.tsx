@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "@/hooks/use-session";
 
 export default function PosSettingsPage() {
-  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const { restaurantId } = useSession();
   const [username, setUsername] = useState("");
   const [accessKey, setAccessKey] = useState("");
   const [hasCredentials, setHasCredentials] = useState(false);
@@ -14,17 +15,11 @@ export default function PosSettingsPage() {
   const [testResult, setTestResult] = useState<"success" | "error" | null>(null);
 
   useEffect(() => {
-    fetch("/api/auth/session")
+    if (!restaurantId) return;
+    fetch(`/api/restaurant/${restaurantId}`)
       .then((r) => r.json())
-      .then((s) => {
-        if (s?.restaurantId) {
-          setRestaurantId(s.restaurantId);
-          fetch(`/api/restaurant/${s.restaurantId}`)
-            .then((r) => r.json())
-            .then((r) => setHasCredentials(r.hasSiigoCredentials));
-        }
-      });
-  }, []);
+      .then((r) => setHasCredentials(r.hasSiigoCredentials));
+  }, [restaurantId]);
 
   async function handleTest() {
     if (!restaurantId || !username || !accessKey) return;

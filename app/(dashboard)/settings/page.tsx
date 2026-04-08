@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Store, Database, CreditCard, Crown } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
-import { Store, Database, CreditCard, Crown } from "lucide-react";
+import { useSession } from "@/hooks/use-session";
 
 const settingsSections = [
   {
@@ -28,7 +28,7 @@ const settingsSections = [
 ];
 
 export default function SettingsPage() {
-  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const { restaurantId } = useSession();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -39,25 +39,19 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    fetch("/api/auth/session")
+    if (!restaurantId) return;
+    fetch(`/api/restaurant/${restaurantId}`)
       .then((r) => r.json())
-      .then((s) => {
-        if (s?.restaurantId) {
-          setRestaurantId(s.restaurantId);
-          fetch(`/api/restaurant/${s.restaurantId}`)
-            .then((r) => r.json())
-            .then((r) => {
-              setForm({
-                name: r.name || "",
-                slug: r.slug || "",
-                primaryColor: r.primaryColor || "#6366f1",
-                secondaryColor: r.secondaryColor || "#f59e0b",
-                backgroundColor: r.backgroundColor || "#ffffff",
-              });
-            });
-        }
+      .then((r) => {
+        setForm({
+          name: r.name || "",
+          slug: r.slug || "",
+          primaryColor: r.primaryColor || "#6366f1",
+          secondaryColor: r.secondaryColor || "#f59e0b",
+          backgroundColor: r.backgroundColor || "#ffffff",
+        });
       });
-  }, []);
+  }, [restaurantId]);
 
   function update(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
