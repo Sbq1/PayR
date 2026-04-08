@@ -25,7 +25,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex bg-gray-50/50">
+    <div className="min-h-screen flex">
       {/* ===== LEFT — Branding panel ===== */}
       <div className="hidden lg:flex lg:w-[480px] xl:w-[560px] flex-col justify-between bg-gray-950 text-white p-12 relative overflow-hidden">
 
@@ -192,10 +192,7 @@ export default function AuthLayout({
       </div>
 
       {/* ===== RIGHT — Form area ===== */}
-      <div className="flex-1 flex flex-col relative">
-        {/* Decorative gradients */}
-        <div className="absolute top-0 right-0 w-2/3 h-2/3 bg-gradient-to-bl from-indigo-50/40 to-transparent z-0 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-gradient-to-tr from-purple-50/30 to-transparent z-0 pointer-events-none" />
+      <div className="flex-1 flex flex-col relative bg-gray-50 auth-grid-bg">
 
         {/* Mobile top bar */}
         <div className="flex items-center justify-between px-6 py-5 lg:justify-end relative z-10">

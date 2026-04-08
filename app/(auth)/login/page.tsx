@@ -217,7 +217,7 @@ export default function LoginPage() {
           <div className="w-full border-t border-gray-200" />
         </div>
         <div className="relative flex justify-center text-[13px]">
-          <span className="px-4 text-gray-400 bg-white">¿No tienes cuenta?</span>
+          <span className="px-4 text-gray-400 bg-white rounded">¿No tienes cuenta?</span>
         </div>
       </motion.div>
 
