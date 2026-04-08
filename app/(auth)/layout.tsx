@@ -113,35 +113,6 @@ export default function AuthLayout({
             </Link>
           </motion.div>
 
-          {/* Product flow visual */}
-          <motion.div variants={fadeUp} className="mb-10">
-            <div className="flex items-center gap-3">
-              {[
-                { step: "1", label: "Escanea QR", icon: "📱" },
-                { step: "2", label: "Ve la cuenta", icon: "🧾" },
-                { step: "3", label: "Paga y listo", icon: "✅" },
-              ].map((s, i) => (
-                <div key={s.step} className="flex items-center gap-3">
-                  <div className="flex flex-col items-center gap-1.5">
-                    <div className="w-12 h-12 rounded-xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-lg">
-                      {s.icon}
-                    </div>
-                    <span className="text-[11px] text-gray-500 font-medium">{s.label}</span>
-                  </div>
-                  {i < 2 && (
-                    <div className="w-6 h-px bg-gray-700 mb-5" />
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 flex items-center gap-2 text-[12px] text-gray-500">
-              <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-gray-400">Tarjeta</span>
-              <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-gray-400">Nequi</span>
-              <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-gray-400">PSE</span>
-              <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-gray-400">Daviplata</span>
-            </div>
-          </motion.div>
-
           {/* Business benefits */}
           <motion.div variants={fadeUp} className="space-y-2.5 mb-10">
             {[
