@@ -61,7 +61,7 @@ export function WompiCheckout({ config, onClose }: WompiCheckoutProps) {
       amountInCents: config.amountInCents,
       reference: config.reference,
       publicKey: config.publicKey,
-      signatureIntegrity: config.signatureIntegrity,
+      "signature:integrity": config.signatureIntegrity,
       redirectUrl: config.redirectUrl,
       customerData: config.customerEmail
         ? { email: config.customerEmail }
