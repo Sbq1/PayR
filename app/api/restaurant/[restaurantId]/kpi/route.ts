@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { getKpiDashboard } from "@/lib/services/kpi.service";
 import { handleApiError } from "@/lib/utils/errors";
+import { verifyOwnership } from "@/lib/utils/verify-ownership";
 import type { KpiPeriod } from "@/types/kpi";
 
 export async function GET(
@@ -15,6 +16,8 @@ export async function GET(
     }
 
     const { restaurantId } = await params;
+    await verifyOwnership(restaurantId, session.user.id);
+
     const period = (request.nextUrl.searchParams.get("period") ||
       "month") as KpiPeriod;
 

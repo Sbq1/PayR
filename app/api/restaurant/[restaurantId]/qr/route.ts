@@ -1,24 +1,12 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { handleApiError, AppError } from "@/lib/utils/errors";
+import { handleApiError } from "@/lib/utils/errors";
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/utils/rate-limit";
+import { verifyOwnership } from "@/lib/utils/verify-ownership";
 import { getTableQrUrl, generateQrDataUrl } from "@/lib/utils/qr";
 
 const qrLimiter = rateLimit("qr", { interval: 60_000, limit: 20 });
-
-async function verifyOwnership(restaurantId: string, userId: string) {
-  const restaurant = await db.restaurant.findUnique({
-    where: { id: restaurantId },
-  });
-  if (!restaurant) {
-    throw new AppError("Restaurante no encontrado", 404, "NOT_FOUND");
-  }
-  if (restaurant.owner_id !== userId) {
-    throw new AppError("No autorizado", 403, "FORBIDDEN");
-  }
-  return restaurant;
-}
 
 /**
  * POST /api/restaurant/[restaurantId]/qr

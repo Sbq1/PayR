@@ -5,26 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import {
-  LayoutDashboard,
-  Table2,
-  QrCode,
-  Receipt,
-  CreditCard,
-  ShoppingBag,
-  Settings,
-  Menu,
-} from "lucide-react";
-
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/tables", label: "Mesas", icon: Table2 },
-  { href: "/qr-codes", label: "Códigos QR", icon: QrCode },
-  { href: "/orders", label: "Ordenes", icon: Receipt },
-  { href: "/payments", label: "Pagos", icon: CreditCard },
-  { href: "/upsells", label: "Sugeridos", icon: ShoppingBag },
-  { href: "/settings", label: "Configuración", icon: Settings },
-];
+import { Menu } from "lucide-react";
+import { navItems } from "@/lib/constants/nav";
 
 export function Topbar() {
   const pathname = usePathname();

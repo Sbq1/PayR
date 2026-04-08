@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { handleApiError } from "@/lib/utils/errors";
+import { verifyOwnership } from "@/lib/utils/verify-ownership";
 import { z } from "zod/v4";
 
 export async function GET(
@@ -15,6 +16,7 @@ export async function GET(
     }
 
     const { restaurantId } = await params;
+    await verifyOwnership(restaurantId, session.user.id);
 
     const products = await db.upsellProduct.findMany({
       where: { restaurant_id: restaurantId },
@@ -46,6 +48,8 @@ export async function POST(
     }
 
     const { restaurantId } = await params;
+    await verifyOwnership(restaurantId, session.user.id);
+
     const body = await request.json();
     const parsed = createUpsellSchema.safeParse(body);
 

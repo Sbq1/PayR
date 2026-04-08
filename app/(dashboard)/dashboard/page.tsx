@@ -6,23 +6,14 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, AreaChart, DonutChart } from "@tremor/react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
+import { useSession } from "@/hooks/use-session";
 import type { KpiDashboard, KpiPeriod } from "@/types/kpi";
 
 export default function DashboardPage() {
+  const { restaurantId } = useSession();
   const [period, setPeriod] = useState<KpiPeriod>("month");
   const [data, setData] = useState<KpiDashboard | null>(null);
   const [loading, setLoading] = useState(true);
-  const [restaurantId, setRestaurantId] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/auth/session")
-      .then((r) => r.json())
-      .then((session) => {
-        if (session?.restaurantId) {
-          setRestaurantId(session.restaurantId);
-        }
-      });
-  }, []);
 
   useEffect(() => {
     if (!restaurantId) return;

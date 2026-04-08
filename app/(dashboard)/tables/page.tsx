@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "@/hooks/use-session";
 
 interface TableData {
   id: string;
@@ -26,11 +27,11 @@ interface TableData {
 }
 
 export default function TablesPage() {
+  const { restaurantId } = useSession();
   const [tables, setTables] = useState<TableData[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [open, setOpen] = useState(false);
-  const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [newTable, setNewTable] = useState({ tableNumber: "", label: "" });
 
   // Edit state
@@ -44,17 +45,9 @@ export default function TablesPage() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    fetch("/api/auth/session")
-      .then((r) => r.json())
-      .then((s) => {
-        if (s?.restaurantId) {
-          setRestaurantId(s.restaurantId);
-          loadTables(s.restaurantId);
-        } else {
-          setLoading(false);
-        }
-      });
-  }, []);
+    if (!restaurantId) return;
+    loadTables(restaurantId);
+  }, [restaurantId]);
 
   async function loadTables(rid: string) {
     const res = await fetch(`/api/restaurant/${rid}/tables`);
