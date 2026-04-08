@@ -85,7 +85,7 @@ function ResultContent() {
           </>
         )}
 
-        {displayStatus === "DECLINED" && (
+        {(displayStatus === "DECLINED" || displayStatus === "ERROR" || displayStatus === "VOIDED") && (
           <Link href={`/${params.slug}/${params.tableId}`}>
             <button className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-colors">
               Intentar de nuevo
@@ -100,6 +100,14 @@ function ResultContent() {
           >
             Verificar estado
           </button>
+        )}
+
+        {!["APPROVED", "DECLINED", "ERROR", "VOIDED", "PENDING"].includes(displayStatus || "") && (
+          <Link href={`/${params.slug}/${params.tableId}`}>
+            <button className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-colors">
+              Volver a la cuenta
+            </button>
+          </Link>
         )}
       </div>
     </div>
@@ -144,6 +152,22 @@ function getStatusConfig(status: string | null | undefined) {
         message:
           "Tu pago está siendo procesado. Te notificaremos cuando se confirme.",
         color: "#f59e0b",
+      };
+    case "ERROR":
+      return {
+        icon: XCircle,
+        title: "Error en el pago",
+        message:
+          "Hubo un error procesando tu pago. Intenta de nuevo.",
+        color: "#ef4444",
+      };
+    case "VOIDED":
+      return {
+        icon: XCircle,
+        title: "Pago anulado",
+        message:
+          "Tu pago fue anulado. Puedes intentar con otro método de pago.",
+        color: "#ef4444",
       };
     default:
       return {

@@ -71,10 +71,12 @@ export function WompiCheckout({ config, onClose }: WompiCheckoutProps) {
     checkout.open((result) => {
       const status = result?.transaction?.status;
       if (status) {
-        // Redirigir a resultado
+        // Redirigir a resultado (APPROVED, DECLINED, PENDING, etc.)
         window.location.href = `${config.redirectUrl}&status=${status}`;
+      } else {
+        // Usuario cerró el widget sin completar — permitir reintentar
+        onClose?.();
       }
-      onClose?.();
     });
   }
 

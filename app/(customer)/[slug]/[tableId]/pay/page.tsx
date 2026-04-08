@@ -137,7 +137,12 @@ export default function PayPage() {
             widgetConfig.publicKey === "pub_test_DEMO" ? (
               <DemoCheckout config={widgetConfig} />
             ) : (
-              <WompiCheckout config={widgetConfig} />
+              <WompiCheckout
+              config={widgetConfig}
+              onClose={() => {
+                setError("Pago cancelado. Haz clic en Confirmar pago para intentar de nuevo.");
+              }}
+            />
             )
           ) : (
             <button
