@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface TableData {
@@ -32,6 +32,16 @@ export default function TablesPage() {
   const [open, setOpen] = useState(false);
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [newTable, setNewTable] = useState({ tableNumber: "", label: "" });
+
+  // Edit state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTable, setEditTable] = useState<TableData | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  // Delete state
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/session")
@@ -77,6 +87,57 @@ export default function TablesPage() {
     setCreating(false);
   }
 
+  async function handleEdit() {
+    if (!restaurantId || !editTable) return;
+    setSaving(true);
+
+    const res = await fetch(`/api/restaurant/${restaurantId}/tables`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tableId: editTable.id,
+        label: editLabel,
+      }),
+    });
+
+    if (res.ok) {
+      toast.success("Mesa actualizada");
+      setEditOpen(false);
+      setEditTable(null);
+      loadTables(restaurantId);
+    } else {
+      const data = await res.json();
+      toast.error(data.error || "Error actualizando mesa");
+    }
+    setSaving(false);
+  }
+
+  async function handleDelete(tableId: string) {
+    if (!restaurantId) return;
+    setDeleting(true);
+
+    const res = await fetch(
+      `/api/restaurant/${restaurantId}/tables?tableId=${tableId}`,
+      { method: "DELETE" }
+    );
+
+    if (res.ok) {
+      toast.success("Mesa eliminada");
+      setDeleteConfirm(null);
+      loadTables(restaurantId);
+    } else {
+      const data = await res.json();
+      toast.error(data.error || "Error eliminando mesa");
+    }
+    setDeleting(false);
+  }
+
+  function openEdit(table: TableData) {
+    setEditTable(table);
+    setEditLabel(table.label || `Mesa ${table.table_number}`);
+    setEditOpen(true);
+  }
+
   const statusConfig: Record<string, { bg: string; text: string; label: string; pulse?: boolean }> = {
     AVAILABLE: { bg: "bg-emerald-50", text: "text-emerald-600", label: "Disponible" },
     OCCUPIED: { bg: "bg-amber-50", text: "text-amber-600", label: "Ocupada", pulse: true },
@@ -85,10 +146,10 @@ export default function TablesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between fade-in-up">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-[15px] font-semibold text-gray-900">Mesas</h1>
-          <p className="text-muted-foreground">
+          <p className="text-[13px] text-gray-500">
             {tables.length} mesa{tables.length !== 1 ? "s" : ""} registrada
             {tables.length !== 1 ? "s" : ""}
           </p>
@@ -123,6 +184,7 @@ export default function TablesPage() {
                     setNewTable((p) => ({ ...p, label: e.target.value }))
                   }
                   placeholder="Mesa 1 - Terraza"
+                  maxLength={100}
                 />
               </div>
               <Button
@@ -143,49 +205,118 @@ export default function TablesPage() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
       ) : tables.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">
+            <p className="text-[13px] text-gray-500">
               No tienes mesas registradas. Crea tu primera mesa.
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {tables.map((table, i) => {
+          {tables.map((table) => {
             const status = statusConfig[table.status] || statusConfig.AVAILABLE;
+            const isConfirmingDelete = deleteConfirm === table.id;
+
             return (
-              <Card
-                key={table.id}
-              >
+              <Card key={table.id}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">
+                    <CardTitle className="text-[14px]">
                       {table.label || `Mesa ${table.table_number}`}
                     </CardTitle>
                     <Badge
                       variant="secondary"
-                      className={`${status.bg} ${status.text} border-0 ${status.pulse ? "status-pulse" : ""}`}
+                      className={`${status.bg} ${status.text} border-0 text-[11px] ${status.pulse ? "status-pulse" : ""}`}
                     >
                       {status.label}
                     </Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[12px] text-gray-400 mb-3">
                     Mesa #{table.table_number}
                     {table.siigo_cost_center_id &&
-                      ` | POS: ${table.siigo_cost_center_id}`}
+                      ` · POS: ${table.siigo_cost_center_id}`}
                   </p>
+
+                  {isConfirmingDelete ? (
+                    <div className="flex items-center gap-2">
+                      <p className="text-[12px] text-red-500 flex-1">Eliminar?</p>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="h-7 text-[12px]"
+                        onClick={() => handleDelete(table.id)}
+                        disabled={deleting}
+                      >
+                        {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : "Sí"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-[12px]"
+                        onClick={() => setDeleteConfirm(null)}
+                      >
+                        No
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => openEdit(table)}
+                        className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm(table.id)}
+                        className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
           })}
         </div>
       )}
+
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar mesa #{editTable?.table_number}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Etiqueta</Label>
+              <Input
+                value={editLabel}
+                onChange={(e) => setEditLabel(e.target.value)}
+                placeholder="Mesa 1 - Terraza"
+                maxLength={100}
+              />
+            </div>
+            <Button
+              className="w-full"
+              onClick={handleEdit}
+              disabled={saving}
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Guardar cambios"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,15 +1,31 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { handleApiError } from "@/lib/utils/errors";
+import { handleApiError, AppError } from "@/lib/utils/errors";
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/utils/rate-limit";
 import { getTableQrUrl, generateQrDataUrl } from "@/lib/utils/qr";
+
+const qrLimiter = rateLimit("qr", { interval: 60_000, limit: 20 });
+
+async function verifyOwnership(restaurantId: string, userId: string) {
+  const restaurant = await db.restaurant.findUnique({
+    where: { id: restaurantId },
+  });
+  if (!restaurant) {
+    throw new AppError("Restaurante no encontrado", 404, "NOT_FOUND");
+  }
+  if (restaurant.owner_id !== userId) {
+    throw new AppError("No autorizado", 403, "FORBIDDEN");
+  }
+  return restaurant;
+}
 
 /**
  * POST /api/restaurant/[restaurantId]/qr
  * Genera QR codes para todas las mesas que no tienen uno.
  */
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ restaurantId: string }> }
 ) {
   try {
@@ -18,17 +34,12 @@ export async function POST(
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
+    const rl = await qrLimiter.check(getClientIp(request));
+    if (!rl.success) return rateLimitResponse(rl.resetAt);
+
     const { restaurantId } = await params;
+    const restaurant = await verifyOwnership(restaurantId, session.user.id);
 
-    const restaurant = await db.restaurant.findUnique({
-      where: { id: restaurantId },
-    });
-
-    if (!restaurant) {
-      return Response.json({ error: "Restaurante no encontrado" }, { status: 404 });
-    }
-
-    // Mesas sin QR
     const tablesWithoutQr = await db.table.findMany({
       where: {
         restaurant_id: restaurantId,
@@ -66,7 +77,7 @@ export async function POST(
  * Retorna todos los QR codes con su imagen data URL.
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ restaurantId: string }> }
 ) {
   try {
@@ -76,6 +87,7 @@ export async function GET(
     }
 
     const { restaurantId } = await params;
+    await verifyOwnership(restaurantId, session.user.id);
 
     const tables = await db.table.findMany({
       where: { restaurant_id: restaurantId, is_active: true },
