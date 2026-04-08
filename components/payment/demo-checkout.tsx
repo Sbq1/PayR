@@ -30,36 +30,16 @@ export function DemoCheckout({ config }: DemoCheckoutProps) {
     setStep("done");
 
     try {
-      await fetch("/api/payment/webhook", {
+      await fetch("/api/payment/demo-complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          event: "transaction.updated",
-          data: {
-            transaction: {
-              id: `demo-txn-${Date.now()}`,
-              created_at: new Date().toISOString(),
-              amount_in_cents: config.amountInCents,
-              reference: config.reference,
-              customer_email: config.customerEmail || "demo@test.com",
-              currency: config.currency,
-              payment_method_type: selectedMethod.toUpperCase(),
-              payment_method: {},
-              status: "APPROVED",
-              status_message: null,
-            },
-          },
-          sent_at: new Date().toISOString(),
-          timestamp: Date.now(),
-          signature: {
-            properties: [],
-            checksum: "demo",
-          },
-          environment: "test",
+          reference: config.reference,
+          paymentMethodType: selectedMethod.toUpperCase(),
         }),
       });
     } catch {
-      // Ignore webhook errors in demo
+      // Ignore errors in demo
     }
 
     await new Promise((r) => setTimeout(r, 1000));
