@@ -50,4 +50,4 @@ export interface KpiDashboard {
   comparison: KpiComparison;
 }
 
-export type KpiPeriod = "today" | "week" | "month" | "custom";
+export type KpiPeriod = "today" | "week" | "month";

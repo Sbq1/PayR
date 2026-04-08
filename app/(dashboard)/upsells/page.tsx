@@ -7,7 +7,7 @@ export default function UpsellsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Productos sugeridos</h1>
+          <h1 className="text-[15px] font-semibold text-gray-900">Productos sugeridos</h1>
           <p className="text-muted-foreground">
             Configura los productos para cross-selling
           </p>

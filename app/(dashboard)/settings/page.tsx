@@ -89,7 +89,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Configuración</h1>
+        <h1 className="text-[15px] font-semibold text-gray-900">Configuración</h1>
         <p className="text-[14px] text-gray-500 mt-1">
           Administra tu restaurante y conexiones
         </p>

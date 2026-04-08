@@ -4,7 +4,7 @@ export default function PaymentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Pagos</h1>
+        <h1 className="text-[15px] font-semibold text-gray-900">Pagos</h1>
         <p className="text-muted-foreground">
           Historial de transacciones y pagos recibidos
         </p>

@@ -70,7 +70,7 @@ export default function PaymentSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Configuración de Pagos</h1>
+        <h1 className="text-[15px] font-semibold text-gray-900">Configuración de Pagos</h1>
         <p className="text-[14px] text-gray-500 mt-1">
           Conecta tu cuenta Wompi para recibir pagos reales
         </p>

@@ -49,7 +49,7 @@ export default function SubscriptionPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Suscripción</h1>
+        <h1 className="text-[15px] font-semibold text-gray-900">Suscripción</h1>
         <p className="text-[14px] text-gray-500 mt-1">Tu plan actual y límites</p>
       </div>
 

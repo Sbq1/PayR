@@ -81,7 +81,7 @@ export default function PosSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Configuración POS</h1>
+        <h1 className="text-[15px] font-semibold text-gray-900">Configuración POS</h1>
         <p className="text-[14px] text-gray-500 mt-1">
           Conecta tu sistema Siigo para leer comandas automáticamente
         </p>

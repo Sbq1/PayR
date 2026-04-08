@@ -87,14 +87,14 @@ export default function TablesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between fade-in-up">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Mesas</h1>
+          <h1 className="text-[15px] font-semibold text-gray-900">Mesas</h1>
           <p className="text-muted-foreground">
             {tables.length} mesa{tables.length !== 1 ? "s" : ""} registrada
             {tables.length !== 1 ? "s" : ""}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-600 transition-all shadow-md shadow-indigo-500/20 hover:shadow-lg hover:shadow-indigo-500/25">
+          <DialogTrigger className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 transition-colors">
             <Plus className="h-4 w-4" />
             Agregar mesa
           </DialogTrigger>
@@ -160,8 +160,6 @@ export default function TablesPage() {
             return (
               <Card
                 key={table.id}
-                className="hover-lift card-appear"
-                style={{ "--delay": `${i * 0.06}s` } as React.CSSProperties}
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
