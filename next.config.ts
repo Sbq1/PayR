@@ -36,6 +36,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https://*.supabase.co",
               "connect-src 'self' https://*.supabase.co https://production.wompi.co https://sandbox.wompi.co https://*.ingest.sentry.io",
               "frame-src https://checkout.wompi.co",
+              "worker-src 'self' blob:",
             ].join("; "),
           },
         ],
