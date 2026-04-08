@@ -83,6 +83,40 @@
   --sidebar-ring: #6366f1;
 }
 
+.dark {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #18181b;
+  --card-foreground: #fafafa;
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #09090b;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --destructive: #ef4444;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #a1a1aa;
+  --chart-1: #fafafa;
+  --chart-2: #a1a1aa;
+  --chart-3: #71717a;
+  --chart-4: #52525b;
+  --chart-5: #3f3f46;
+  --sidebar: #09090b;
+  --sidebar-foreground: #a1a1aa;
+  --sidebar-primary: #fafafa;
+  --sidebar-primary-foreground: #09090b;
+  --sidebar-accent: #18181b;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: #27272a;
+  --sidebar-ring: #a1a1aa;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -107,50 +141,6 @@
   --transition-spring: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* ============================================
-   VISUAL EFFECTS
-   ============================================ */
-
-/* Glow button */
-.glow-btn {
-  position: relative;
-  transition: all var(--transition-base);
-}
-.glow-btn::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: inherit;
-  opacity: 0;
-  filter: blur(20px);
-  transition: opacity var(--transition-base);
-  z-index: -1;
-}
-.glow-btn:hover::after {
-  opacity: 0.4;
-}
-.glow-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(99, 102, 241, 0.2);
-}
-.glow-btn:active {
-  transform: translateY(0) scale(0.98);
-}
-
-/* Glass card */
-.glass-card {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(99, 102, 241, 0.1);
-  transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
-}
-.glass-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(99, 102, 241, 0.18);
-  box-shadow: 0 20px 60px rgba(99, 102, 241, 0.1), 0 8px 24px rgba(0, 0, 0, 0.04);
-}
 
 /* ============================================
    FADE IN (immediate, no scroll trigger)
@@ -158,77 +148,13 @@
 
 .fade-in-up {
   opacity: 0;
-  transform: translateY(20px);
-  animation: fadeInUp 0.6s var(--ease-out) forwards;
+  transform: translateY(8px);
+  animation: fadeInUp 0.3s var(--ease-out) forwards;
 }
 @keyframes fadeInUp {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.fade-in-up-delay-1 { animation-delay: 0.1s; }
-.fade-in-up-delay-2 { animation-delay: 0.2s; }
-.fade-in-up-delay-3 { animation-delay: 0.3s; }
-.fade-in-up-delay-4 { animation-delay: 0.4s; }
-
-/* ============================================
-   CARD APPEAR (staggered, for dynamic lists)
-   ============================================ */
-
-@keyframes cardAppear {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.card-appear {
-  animation: cardAppear 0.5s var(--ease-out) forwards;
-  animation-delay: var(--delay, 0s);
-  opacity: 0;
-}
-
-/* ============================================
-   PULSE & SHIMMER EFFECTS
-   ============================================ */
-
-/* Subtle pulse ring for CTA */
-.pulse-ring {
-  position: relative;
-}
-.pulse-ring::before {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  border-radius: inherit;
-  border: 2px solid #6366f1;
-  opacity: 0;
-  animation: pulseRing 2s ease-out infinite;
-}
-@keyframes pulseRing {
-  0% { opacity: 0.6; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.08); }
-}
-
-/* Shimmer effect */
-.shimmer {
-  position: relative;
-  overflow: hidden;
-}
-.shimmer::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.04), transparent);
-  animation: shimmerSlide 3s infinite;
-}
-@keyframes shimmerSlide {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
 
 /* Scale in — for icons/checkmarks */
 @keyframes scaleIn {
@@ -248,17 +174,6 @@
   animation: scaleIn 0.5s var(--ease-spring) forwards;
 }
 
-/* ============================================
-   HOVER LIFT (reusable utility)
-   ============================================ */
-
-.hover-lift {
-  transition: transform var(--transition-base), box-shadow var(--transition-base);
-}
-.hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
-}
 
 /* ============================================
    FLOATING LABEL (auth forms)
@@ -304,14 +219,6 @@
   outline: none;
 }
 
-/* ============================================
-   KPI CARD ACCENTS
-   ============================================ */
-
-.kpi-indigo { border-top: 3px solid #6366f1; }
-.kpi-cyan { border-top: 3px solid #06b6d4; }
-.kpi-amber { border-top: 3px solid #f59e0b; }
-.kpi-emerald { border-top: 3px solid #10b981; }
 
 /* ============================================
    STATUS PULSE (for badges)
@@ -325,19 +232,6 @@
   animation: statusPulse 2s ease-in-out infinite;
 }
 
-/* ============================================
-   GRADIENT MESH (hero backgrounds)
-   ============================================ */
-
-.gradient-mesh {
-  background:
-    radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 40% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 60% 10%, rgba(167, 139, 250, 0.05) 0%, transparent 40%),
-    #ffffff;
-  background-size: 100% 100%;
-}
 
 /* ============================================
    ANIMATED GRID (auth background)
@@ -351,10 +245,83 @@
 }
 
 /* ============================================
+   CUSTOMER-FACING EFFECTS (landing, bill, pay pages)
+   ============================================ */
+
+.glow-btn {
+  position: relative;
+  transition: all var(--transition-base);
+}
+.glow-btn:hover {
+  transform: translateY(-1px);
+}
+.glow-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.gradient-mesh {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 50%),
+    #ffffff;
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.pulse-ring {
+  position: relative;
+}
+.pulse-ring::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid #6366f1;
+  opacity: 0;
+  animation: pulseRing 2s ease-out infinite;
+}
+@keyframes pulseRing {
+  0% { opacity: 0.6; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.08); }
+}
+
+.hover-lift {
+  transition: transform 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+@keyframes cardAppear {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.card-appear {
+  animation: cardAppear 0.3s var(--ease-out) forwards;
+  animation-delay: var(--delay, 0s);
+  opacity: 0;
+}
+
+.fade-in-up-delay-1 { animation-delay: 0.05s; }
+.fade-in-up-delay-2 { animation-delay: 0.1s; }
+.fade-in-up-delay-3 { animation-delay: 0.15s; }
+.fade-in-up-delay-4 { animation-delay: 0.2s; }
+
+/* ============================================
    UTILITY
    ============================================ */
 
-/* Hide scrollbar for carousels */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;

@@ -29,6 +29,11 @@ export interface PeakHour {
   sales: number; // COP cents
 }
 
+export interface KpiComparison {
+  salesDelta: number;  // percentage change vs previous period
+  ordersDelta: number; // percentage change vs previous period
+}
+
 export interface KpiDashboard {
   overview: KpiOverview;
   salesOverTime: SalesDataPoint[];
@@ -40,6 +45,9 @@ export interface KpiDashboard {
     accepted: number;
     rate: number;
   };
+  bestSeller: TopProduct | null;
+  avgDailyRevenue: number; // COP cents
+  comparison: KpiComparison;
 }
 
 export type KpiPeriod = "today" | "week" | "month" | "custom";

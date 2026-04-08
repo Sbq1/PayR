@@ -4,18 +4,9 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, AreaChart, DonutChart } from "@tremor/react";
-import {
-  DollarSign,
-  Receipt,
-  TrendingUp,
-  Percent,
-  Loader2,
-} from "lucide-react";
-import { formatCOP } from "@/lib/utils/currency";
+import { ArrowUp, ArrowDown } from "lucide-react";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import type { KpiDashboard, KpiPeriod } from "@/types/kpi";
-
-const kpiAccents = ["kpi-indigo", "kpi-cyan", "kpi-amber", "kpi-emerald"];
 
 export default function DashboardPage() {
   const [period, setPeriod] = useState<KpiPeriod>("month");
@@ -50,7 +41,7 @@ export default function DashboardPage() {
       prefix: "$",
       suffix: "",
       isCurrency: true,
-      icon: DollarSign,
+      delta: data?.comparison?.salesDelta ?? 0,
     },
     {
       title: "Ordenes",
@@ -58,7 +49,7 @@ export default function DashboardPage() {
       prefix: "",
       suffix: "",
       isCurrency: false,
-      icon: Receipt,
+      delta: data?.comparison?.ordersDelta ?? 0,
     },
     {
       title: "Ticket promedio",
@@ -66,7 +57,7 @@ export default function DashboardPage() {
       prefix: "$",
       suffix: "",
       isCurrency: true,
-      icon: TrendingUp,
+      delta: null,
     },
     {
       title: "Propina prom.",
@@ -74,7 +65,7 @@ export default function DashboardPage() {
       prefix: "",
       suffix: "%",
       isCurrency: false,
-      icon: Percent,
+      delta: null,
     },
   ];
 
@@ -101,11 +92,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between fade-in-up">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Métricas de tu restaurante</p>
-        </div>
+      <div className="flex items-center justify-between">
+        <h1 className="text-[15px] font-semibold text-gray-900">Dashboard</h1>
         <Tabs
           value={period}
           onValueChange={(v) => setPeriod(v as KpiPeriod)}
@@ -118,49 +106,87 @@ export default function DashboardPage() {
         </Tabs>
       </div>
 
-      {loading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      {loading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-24 rounded-lg bg-gray-50 animate-pulse" />
+          ))}
         </div>
-      )}
-
-      {!loading && (
+      ) : (
         <>
-          {/* KPI Cards with animated counters */}
+          {/* KPI Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {kpiCards.map((kpi, i) => (
-              <Card
-                key={kpi.title}
-                className={`${kpiAccents[i]} hover-lift card-appear`}
-                style={{ "--delay": `${i * 0.08}s` } as React.CSSProperties}
-              >
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
+            {kpiCards.map((kpi) => (
+              <Card key={kpi.title}>
+                <CardContent className="pt-4">
+                  <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                     {kpi.title}
-                  </CardTitle>
-                  <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center">
-                    <kpi.icon className="h-4 w-4 text-gray-400" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    <AnimatedCounter
-                      target={kpi.isCurrency ? Math.round(kpi.rawValue / 100) : kpi.rawValue}
-                      prefix={kpi.prefix}
-                      suffix={kpi.suffix}
-                      duration={2000}
-                    />
+                  </p>
+                  <div className="flex items-end gap-2 mt-1">
+                    <span className="text-2xl font-semibold text-gray-900">
+                      <AnimatedCounter
+                        target={kpi.isCurrency ? Math.round(kpi.rawValue / 100) : kpi.rawValue}
+                        prefix={kpi.prefix}
+                        suffix={kpi.suffix}
+                        duration={1500}
+                      />
+                    </span>
+                    {kpi.delta !== null && kpi.delta !== 0 && (
+                      <span
+                        className={`flex items-center gap-0.5 text-[11px] font-medium pb-0.5 ${
+                          kpi.delta > 0 ? "text-emerald-600" : "text-red-500"
+                        }`}
+                      >
+                        {kpi.delta > 0 ? (
+                          <ArrowUp className="h-3 w-3" />
+                        ) : (
+                          <ArrowDown className="h-3 w-3" />
+                        )}
+                        {Math.abs(kpi.delta)}%
+                      </span>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
 
+          {/* Best seller + insights */}
+          {data?.bestSeller && (
+            <div className="flex flex-wrap gap-x-6 gap-y-1 text-[13px] text-gray-500">
+              <p>
+                Plato estrella:{" "}
+                <span className="font-medium text-gray-900">
+                  {data.bestSeller.name}
+                </span>{" "}
+                — {data.bestSeller.quantity} vendidos
+              </p>
+              {data.avgDailyRevenue > 0 && (
+                <p>
+                  Promedio diario:{" "}
+                  <span className="font-medium text-gray-900">
+                    ${new Intl.NumberFormat("es-CO").format(Math.round(data.avgDailyRevenue / 100))}
+                  </span>
+                </p>
+              )}
+              {data.upsellConversion.rate > 0 && (
+                <p>
+                  Conversión sugeridos:{" "}
+                  <span className="font-medium text-gray-900">
+                    {data.upsellConversion.rate}%
+                  </span>
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Charts Row 1 */}
           <div className="grid gap-4 lg:grid-cols-2">
-            <Card className="card-appear hover-lift" style={{ "--delay": "0.32s" } as React.CSSProperties}>
+            <Card>
               <CardHeader>
-                <CardTitle>Ventas por dia</CardTitle>
+                <CardTitle className="text-[13px] font-medium text-gray-500">
+                  Ventas por día
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {salesChartData.length > 0 ? (
@@ -168,36 +194,39 @@ export default function DashboardPage() {
                     data={salesChartData}
                     index="date"
                     categories={["Ventas"]}
-                    colors={["indigo"]}
+                    colors={["gray"]}
                     valueFormatter={(v) =>
                       `$${new Intl.NumberFormat("es-CO").format(v)}`
                     }
-                    className="h-56"
+                    className="h-52"
                     showLegend={false}
                   />
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-12">
+                  <p className="text-[13px] text-gray-400 text-center py-12">
                     Sin datos para este periodo
                   </p>
                 )}
               </CardContent>
             </Card>
 
-            <Card className="card-appear hover-lift" style={{ "--delay": "0.4s" } as React.CSSProperties}>
+            <Card>
               <CardHeader>
-                <CardTitle>Métodos de pago</CardTitle>
+                <CardTitle className="text-[13px] font-medium text-gray-500">
+                  Horas pico
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                {paymentMethodsData.length > 0 ? (
-                  <DonutChart
-                    data={paymentMethodsData}
-                    category="value"
-                    index="name"
-                    colors={["indigo", "cyan", "amber", "emerald", "rose"]}
-                    className="h-56"
+                {peakHoursData.length > 0 ? (
+                  <BarChart
+                    data={peakHoursData}
+                    index="Hora"
+                    categories={["Ordenes"]}
+                    colors={["gray"]}
+                    className="h-52"
+                    showLegend={false}
                   />
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-12">
+                  <p className="text-[13px] text-gray-400 text-center py-12">
                     Sin datos para este periodo
                   </p>
                 )}
@@ -207,9 +236,11 @@ export default function DashboardPage() {
 
           {/* Charts Row 2 */}
           <div className="grid gap-4 lg:grid-cols-2">
-            <Card className="card-appear hover-lift" style={{ "--delay": "0.48s" } as React.CSSProperties}>
+            <Card>
               <CardHeader>
-                <CardTitle>Productos más vendidos</CardTitle>
+                <CardTitle className="text-[13px] font-medium text-gray-500">
+                  Productos más vendidos
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {productsChartData.length > 0 ? (
@@ -217,35 +248,36 @@ export default function DashboardPage() {
                     data={productsChartData}
                     index="name"
                     categories={["Cantidad"]}
-                    colors={["indigo"]}
-                    className="h-56"
+                    colors={["gray"]}
+                    className="h-52"
                     showLegend={false}
                     layout="vertical"
                   />
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-12">
+                  <p className="text-[13px] text-gray-400 text-center py-12">
                     Sin datos para este periodo
                   </p>
                 )}
               </CardContent>
             </Card>
 
-            <Card className="card-appear hover-lift" style={{ "--delay": "0.56s" } as React.CSSProperties}>
+            <Card>
               <CardHeader>
-                <CardTitle>Horas pico</CardTitle>
+                <CardTitle className="text-[13px] font-medium text-gray-500">
+                  Métodos de pago
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                {peakHoursData.length > 0 ? (
-                  <BarChart
-                    data={peakHoursData}
-                    index="Hora"
-                    categories={["Ordenes"]}
-                    colors={["amber"]}
-                    className="h-56"
-                    showLegend={false}
+                {paymentMethodsData.length > 0 ? (
+                  <DonutChart
+                    data={paymentMethodsData}
+                    category="value"
+                    index="name"
+                    colors={["slate", "gray", "zinc", "neutral", "stone"]}
+                    className="h-52"
                   />
                 ) : (
-                  <p className="text-sm text-muted-foreground text-center py-12">
+                  <p className="text-[13px] text-gray-400 text-center py-12">
                     Sin datos para este periodo
                   </p>
                 )}

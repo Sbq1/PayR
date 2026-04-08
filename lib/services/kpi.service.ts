@@ -1,6 +1,6 @@
 import { Prisma } from "@/lib/generated/prisma/client";
 import { db } from "@/lib/db";
-import { getDayRange, getWeekRange, getMonthRange } from "@/lib/utils/date";
+import { getDayRange, getWeekRange, getMonthRange, getPreviousRange } from "@/lib/utils/date";
 import type { KpiDashboard, KpiPeriod } from "@/types/kpi";
 
 export async function getKpiDashboard(
@@ -34,7 +34,8 @@ export async function getKpiDashboard(
   const avgTipPercentage = Math.round(tipAgg._avg.tip_percentage ?? 0);
 
   // 2. Remaining queries in parallel
-  const [salesRaw, topProducts, paymentMethodsRaw, peakHoursRaw, upsellOrders] =
+  const prevRange = getPreviousRange(period);
+  const [salesRaw, topProducts, paymentMethodsRaw, peakHoursRaw, upsellOrders, prevAgg] =
     await Promise.all([
       // Sales over time
       db.$queryRaw<Array<{ date: string; sales: bigint; orders: bigint }>>`
@@ -94,6 +95,17 @@ export async function getKpiDashboard(
           orders: where,
         },
       }),
+
+      // Previous period aggregates for comparison
+      db.order.aggregate({
+        where: {
+          restaurant_id: restaurantId,
+          status: "PAID" as const,
+          created_at: { gte: prevRange.start, lte: prevRange.end },
+        },
+        _sum: { total: true },
+        _count: { id: true },
+      }),
     ]);
 
   // 3. Transform results
@@ -129,6 +141,20 @@ export async function getKpiDashboard(
     rate: orderCount > 0 ? Math.round((upsellAccepted / orderCount) * 100) : 0,
   };
 
+  // Derived: best seller, avg daily revenue, comparison deltas
+  const bestSeller = topProductsMapped.length > 0 ? topProductsMapped[0] : null;
+  const avgDailyRevenue =
+    salesOverTime.length > 0
+      ? Math.round(totalSales / salesOverTime.length)
+      : 0;
+
+  const prevSales = prevAgg._sum.total ?? 0;
+  const prevOrders = prevAgg._count.id;
+  const salesDelta =
+    prevSales > 0 ? Math.round(((totalSales - prevSales) / prevSales) * 100) : 0;
+  const ordersDelta =
+    prevOrders > 0 ? Math.round(((orderCount - prevOrders) / prevOrders) * 100) : 0;
+
   return {
     overview: { totalSales, orderCount, avgTicket, avgTipPercentage },
     salesOverTime,
@@ -136,6 +162,9 @@ export async function getKpiDashboard(
     paymentMethods,
     peakHours,
     upsellConversion,
+    bestSeller,
+    avgDailyRevenue,
+    comparison: { salesDelta, ordersDelta },
   };
 }
 
