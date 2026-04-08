@@ -1,9 +1,7 @@
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
-import { handleApiError, AppError } from "@/lib/utils/errors";
-import { getPaymentAdapter } from "@/lib/adapters/payment";
+import { handleApiError } from "@/lib/utils/errors";
 import { getPosAdapter } from "@/lib/adapters/pos";
-import { decrypt } from "@/lib/utils/crypto";
 import { z } from "zod/v4";
 
 const schema = z.object({
@@ -58,16 +56,7 @@ export async function POST(request: NextRequest) {
       restaurant.wompi_events_secret &&
       restaurant.wompi_integrity_secret
     ) {
-      // Try to find the transaction via Wompi API by reference
-      const adapter = getPaymentAdapter({
-        posProvider: restaurant.pos_provider,
-        wompiPublicKey: restaurant.wompi_public_key,
-        wompiPrivateKey: decrypt(restaurant.wompi_private_key),
-        wompiEventsSecret: decrypt(restaurant.wompi_events_secret),
-        wompiIntegritySecret: decrypt(restaurant.wompi_integrity_secret),
-      });
-
-      // Wompi sandbox: search transaction by reference
+      // Wompi API: search transaction by reference (only needs public key)
       const env = (process.env.WOMPI_ENVIRONMENT || "sandbox").replace(/\\n|\n/g, "").trim();
       const baseUrl = env === "production"
         ? "https://production.wompi.co"
