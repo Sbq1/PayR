@@ -35,7 +35,26 @@ export async function createPayment(params: {
 
     if (!order) throw new NotFoundError("Orden");
     if (order.status === "PAID") throw new PaymentError("Esta orden ya fue pagada");
-    if (order.status === "PAYING") throw new PaymentError("Ya hay un pago en proceso para esta orden");
+    if (order.status === "CANCELLED") throw new PaymentError("Esta orden fue cancelada");
+
+    // If PAYING, check if previous payment is stale (>10 min old)
+    if (order.status === "PAYING") {
+      const lastPayment = await tx.payment.findFirst({
+        where: { order_id: orderId, status: "PENDING" },
+        orderBy: { created_at: "desc" },
+      });
+      const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000);
+      if (lastPayment && lastPayment.created_at > tenMinAgo) {
+        throw new PaymentError("Ya hay un pago en proceso para esta orden");
+      }
+      // Stale payment — mark as expired and allow retry
+      if (lastPayment) {
+        await tx.payment.update({
+          where: { id: lastPayment.id },
+          data: { status: "ERROR" },
+        });
+      }
+    }
 
     const rest = order.restaurants;
     const total = order.subtotal + order.tax + tipAmount;
