@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { QrCode, Download, Loader2, RefreshCw } from "lucide-react";
+import { QrCode, Download, Loader2, RefreshCw, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "@/hooks/use-session";
 
 interface QrData {
   tableId: string;
@@ -14,23 +14,16 @@ interface QrData {
 }
 
 export default function QrCodesPage() {
+  const { restaurantId } = useSession();
   const [qrCodes, setQrCodes] = useState<QrData[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/auth/session")
-      .then((r) => r.json())
-      .then((s) => {
-        if (s?.restaurantId) {
-          setRestaurantId(s.restaurantId);
-          loadQrCodes(s.restaurantId);
-        } else {
-          setLoading(false);
-        }
-      });
-  }, []);
+    if (!restaurantId) return;
+    loadQrCodes(restaurantId);
+  }, [restaurantId]);
 
   async function loadQrCodes(rid: string) {
     const res = await fetch(`/api/restaurant/${rid}/qr`);
@@ -48,7 +41,7 @@ export default function QrCodesPage() {
 
     if (res.ok) {
       const data = await res.json();
-      toast.success(`${data.generated} QR codes generados`);
+      toast.success(`${data.generated} QR generados`);
       loadQrCodes(restaurantId);
     } else {
       toast.error("Error generando QR codes");
@@ -63,38 +56,54 @@ export default function QrCodesPage() {
     a.click();
   }
 
+  async function copyUrl(url: string, tableId: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(tableId);
+      toast.success("URL copiada");
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      toast.error("No se pudo copiar");
+    }
+  }
+
   const tablesWithoutQr = qrCodes.filter((q) => !q.qr);
+  const tablesWithQr = qrCodes.filter((q) => q.qr);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-[15px] font-semibold text-gray-900">Códigos QR</h1>
-          <p className="text-muted-foreground">
-            Genera e imprime los QR para tus mesas
+          <p className="text-[13px] text-gray-500">
+            {tablesWithQr.length} de {qrCodes.length} mesas con QR
           </p>
         </div>
         {tablesWithoutQr.length > 0 && (
-          <Button onClick={handleGenerate} disabled={generating}>
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-[13px] font-medium text-white hover:bg-gray-800 transition-colors disabled:opacity-50"
+          >
             {generating ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <RefreshCw className="w-4 h-4 mr-2" />
+              <RefreshCw className="w-3.5 h-3.5" />
             )}
-            Generar ({tablesWithoutQr.length})
-          </Button>
+            Generar QR ({tablesWithoutQr.length})
+          </button>
         )}
       </div>
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
         </div>
       ) : qrCodes.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <QrCode className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">
+            <QrCode className="w-10 h-10 mx-auto text-gray-300 mb-3" />
+            <p className="text-[13px] text-gray-500">
               Primero crea mesas, luego genera los QR codes.
             </p>
           </CardContent>
@@ -103,8 +112,8 @@ export default function QrCodesPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {qrCodes.map((item) => (
             <Card key={item.tableId}>
-              <CardContent className="pt-6 text-center space-y-3">
-                <p className="font-semibold">
+              <CardContent className="pt-5 text-center space-y-3">
+                <p className="text-[14px] font-medium text-gray-900">
                   {item.label || `Mesa ${item.tableNumber}`}
                 </p>
                 {item.qr ? (
@@ -112,30 +121,42 @@ export default function QrCodesPage() {
                     <img
                       src={item.qr.dataUrl}
                       alt={`QR Mesa ${item.tableNumber}`}
-                      className="w-48 h-48 mx-auto rounded-lg"
+                      className="w-44 h-44 mx-auto rounded-lg border border-gray-100"
                     />
-                    <p className="text-xs text-muted-foreground break-all">
+                    <p className="text-[11px] text-gray-400 break-all px-2 leading-relaxed">
                       {item.qr.url}
                     </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        downloadQr(
-                          item.qr!.dataUrl,
-                          item.label || `mesa-${item.tableNumber}`
-                        )
-                      }
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Descargar
-                    </Button>
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => copyUrl(item.qr!.url, item.tableId)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        {copiedId === item.tableId ? (
+                          <Check className="w-3 h-3 text-emerald-500" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
+                        {copiedId === item.tableId ? "Copiado" : "Copiar"}
+                      </button>
+                      <button
+                        onClick={() =>
+                          downloadQr(
+                            item.qr!.dataUrl,
+                            item.label || `mesa-${item.tableNumber}`
+                          )
+                        }
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <Download className="w-3 h-3" />
+                        Descargar
+                      </button>
+                    </div>
                   </>
                 ) : (
-                  <div className="py-8">
-                    <QrCode className="w-12 h-12 mx-auto text-muted-foreground/30" />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Sin QR — click "Generar"
+                  <div className="py-6">
+                    <QrCode className="w-10 h-10 mx-auto text-gray-200" />
+                    <p className="text-[12px] text-gray-400 mt-2">
+                      Sin QR — usa "Generar QR"
                     </p>
                   </div>
                 )}

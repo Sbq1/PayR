@@ -4,7 +4,7 @@ import QRCode from "qrcode";
  * Genera la URL del QR para una mesa.
  */
 export function getTableQrUrl(slug: string, tableId: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\\n|\n/g, "").trim();
   return `${baseUrl}/${slug}/${tableId}`;
 }
 
