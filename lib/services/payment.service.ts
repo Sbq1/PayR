@@ -26,7 +26,7 @@ export async function createPayment(params: {
   const { orderId, tipPercentage, tipAmount, customerEmail } = params;
 
   // Transacción atómica para prevenir race conditions (doble pago)
-  const { payment, totalWithTip, restaurant } = await db.$transaction(async (tx) => {
+  const { payment, totalWithTip, restaurant, tableId } = await db.$transaction(async (tx) => {
     // 1. Buscar orden con lock implícito dentro de transacción
     const order = await tx.order.findUnique({
       where: { id: orderId },
@@ -64,7 +64,7 @@ export async function createPayment(params: {
       },
     });
 
-    return { payment: pmt, totalWithTip: total, restaurant: rest };
+    return { payment: pmt, totalWithTip: total, restaurant: rest, tableId: order.table_id };
   });
 
   const reference = payment.reference;
@@ -79,7 +79,7 @@ export async function createPayment(params: {
   });
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const redirectUrl = `${appUrl}/${restaurant.slug}/result?ref=${reference}`;
+  const redirectUrl = `${appUrl}/${restaurant.slug}/${tableId}/result?ref=${reference}`;
 
   const widgetConfig = await adapter.createTransaction({
     amountInCents: totalWithTip,
