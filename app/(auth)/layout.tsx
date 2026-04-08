@@ -60,13 +60,11 @@ export default function AuthLayout({
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
             <Link href="/" className="flex items-center gap-3 group w-fit">
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: -8 }}
-                transition={{ type: "spring", stiffness: 400, damping: 15 }}
+              <div
                 className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30"
               >
                 <span className="text-white font-black text-sm">SC</span>
-              </motion.div>
+              </div>
               <span className="font-bold text-[18px] text-white group-hover:text-indigo-300 transition-colors duration-300">
                 Smart Checkout
               </span>
@@ -96,14 +94,11 @@ export default function AuthLayout({
             >
               Revoluciona
               <br />
-              <motion.span
+              <span
                 className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 inline-block"
-                animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-                style={{ backgroundSize: "200% 200%" }}
               >
                 tus pagos
-              </motion.span>
+              </span>
             </motion.h1>
 
             <motion.p
