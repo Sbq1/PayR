@@ -19,26 +19,27 @@ interface RestaurantPaymentConfig {
 export function getPaymentAdapter(
   restaurant: RestaurantPaymentConfig
 ): IPaymentAdapter {
-  // Modo demo
+  // Si tiene credenciales de Wompi, usar Wompi real (incluso en modo demo POS)
+  if (
+    restaurant.wompiPublicKey &&
+    restaurant.wompiPrivateKey &&
+    restaurant.wompiEventsSecret &&
+    restaurant.wompiIntegritySecret
+  ) {
+    return new WompiAdapter({
+      publicKey: restaurant.wompiPublicKey,
+      privateKey: decrypt(restaurant.wompiPrivateKey),
+      eventsSecret: decrypt(restaurant.wompiEventsSecret),
+      integritySecret: decrypt(restaurant.wompiIntegritySecret),
+    });
+  }
+
+  // Sin credenciales Wompi: modo demo si POS es demo, error si no
   if (restaurant.posProvider === "demo") {
     return new DemoPaymentAdapter();
   }
 
-  if (
-    !restaurant.wompiPublicKey ||
-    !restaurant.wompiPrivateKey ||
-    !restaurant.wompiEventsSecret ||
-    !restaurant.wompiIntegritySecret
-  ) {
-    throw new PaymentError(
-      "Credenciales de Wompi no configuradas para este restaurante"
-    );
-  }
-
-  return new WompiAdapter({
-    publicKey: restaurant.wompiPublicKey,
-    privateKey: decrypt(restaurant.wompiPrivateKey),
-    eventsSecret: decrypt(restaurant.wompiEventsSecret),
-    integritySecret: decrypt(restaurant.wompiIntegritySecret),
-  });
+  throw new PaymentError(
+    "Credenciales de Wompi no configuradas para este restaurante"
+  );
 }
