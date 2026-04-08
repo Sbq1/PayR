@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Loader2, Pencil, Trash2 } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/hooks/use-session";
 
@@ -26,6 +26,8 @@ interface TableData {
   siigo_cost_center_id: string | null;
 }
 
+const POLL_INTERVAL = 15_000; // 15 seconds
+
 export default function TablesPage() {
   const { restaurantId } = useSession();
   const [tables, setTables] = useState<TableData[]>([]);
@@ -33,6 +35,8 @@ export default function TablesPage() {
   const [creating, setCreating] = useState(false);
   const [open, setOpen] = useState(false);
   const [newTable, setNewTable] = useState({ tableNumber: "", label: "" });
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [recentlyPaid, setRecentlyPaid] = useState<Set<string>>(new Set());
 
   // Edit state
   const [editOpen, setEditOpen] = useState(false);
@@ -44,14 +48,70 @@ export default function TablesPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const prevStatusRef = useRef<Map<string, string>>(new Map());
+
+  const playPaymentSound = useCallback(() => {
+    if (!soundEnabled) return;
+    try {
+      const ctx = new AudioContext();
+      // Two-tone chime
+      [520, 660].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = "sine";
+        gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.4);
+        osc.start(ctx.currentTime + i * 0.15);
+        osc.stop(ctx.currentTime + i * 0.15 + 0.4);
+      });
+    } catch {}
+  }, [soundEnabled]);
+
   useEffect(() => {
     if (!restaurantId) return;
     loadTables(restaurantId);
+
+    // Polling
+    const interval = setInterval(() => {
+      loadTables(restaurantId, true);
+    }, POLL_INTERVAL);
+
+    return () => clearInterval(interval);
   }, [restaurantId]);
 
-  async function loadTables(rid: string) {
+  async function loadTables(rid: string, isPolling = false) {
     const res = await fetch(`/api/restaurant/${rid}/tables`);
-    if (res.ok) setTables(await res.json());
+    if (!res.ok) { setLoading(false); return; }
+
+    const newTables: TableData[] = await res.json();
+
+    // Detect newly paid tables (status changed from OCCUPIED/PAYING → AVAILABLE)
+    if (isPolling && prevStatusRef.current.size > 0) {
+      const newlyPaid = new Set<string>();
+      for (const t of newTables) {
+        const prev = prevStatusRef.current.get(t.id);
+        if (prev && (prev === "OCCUPIED" || prev === "PAYING") && t.status === "AVAILABLE") {
+          const label = t.label || `Mesa ${t.table_number}`;
+          toast.success(`${label} pagó y está libre`, { duration: 8000 });
+          newlyPaid.add(t.id);
+        }
+      }
+      if (newlyPaid.size > 0) {
+        playPaymentSound();
+        setRecentlyPaid(newlyPaid);
+        setTimeout(() => setRecentlyPaid(new Set()), 10000);
+      }
+    }
+
+    // Update prev status map
+    const map = new Map<string, string>();
+    for (const t of newTables) map.set(t.id, t.status);
+    prevStatusRef.current = map;
+
+    setTables(newTables);
     setLoading(false);
   }
 
@@ -137,16 +197,32 @@ export default function TablesPage() {
     PAYING: { bg: "bg-blue-50", text: "text-blue-600", label: "Pagando", pulse: true },
   };
 
+  const occupiedCount = tables.filter((t) => t.status === "OCCUPIED").length;
+  const payingCount = tables.filter((t) => t.status === "PAYING").length;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-[15px] font-semibold text-gray-900">Mesas</h1>
           <p className="text-[13px] text-gray-500">
-            {tables.length} mesa{tables.length !== 1 ? "s" : ""} registrada
-            {tables.length !== 1 ? "s" : ""}
+            {tables.length} mesa{tables.length !== 1 ? "s" : ""}
+            {occupiedCount > 0 && ` · ${occupiedCount} ocupada${occupiedCount !== 1 ? "s" : ""}`}
+            {payingCount > 0 && ` · ${payingCount} pagando`}
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSoundEnabled((v) => !v)}
+            className={`p-2 rounded-lg border transition-colors ${
+              soundEnabled
+                ? "border-gray-200 text-gray-600 hover:bg-gray-50"
+                : "border-gray-200 text-gray-300"
+            }`}
+            title={soundEnabled ? "Sonido activado" : "Sonido desactivado"}
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </button>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 transition-colors">
             <Plus className="h-4 w-4" />
@@ -194,6 +270,7 @@ export default function TablesPage() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {loading ? (
@@ -215,7 +292,7 @@ export default function TablesPage() {
             const isConfirmingDelete = deleteConfirm === table.id;
 
             return (
-              <Card key={table.id}>
+              <Card key={table.id} className={recentlyPaid.has(table.id) ? "ring-2 ring-emerald-400 ring-offset-2 transition-all" : ""}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-[14px]">

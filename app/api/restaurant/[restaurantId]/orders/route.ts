@@ -153,6 +153,12 @@ export async function PATCH(
       data: { status: "CANCELLED" },
     });
 
+    // Release table back to available
+    await db.table.update({
+      where: { id: order.table_id },
+      data: { status: "AVAILABLE" },
+    });
+
     return Response.json(updated);
   } catch (error) {
     return handleApiError(error);

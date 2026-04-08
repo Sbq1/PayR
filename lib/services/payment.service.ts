@@ -64,6 +64,12 @@ export async function createPayment(params: {
       },
     });
 
+    // 4. Mark table as paying
+    await tx.table.update({
+      where: { id: order.table_id },
+      data: { status: "PAYING" },
+    });
+
     return { payment: pmt, totalWithTip: total, restaurant: rest, tableId: order.table_id };
   });
 
@@ -169,11 +175,17 @@ export async function handlePaymentWebhook(
     },
   });
 
-  // 5. Si aprobado: cerrar orden y mesa en POS
+  // 5. Si aprobado: cerrar orden, liberar mesa, cerrar en POS
   if (mappedStatus === "APPROVED") {
     await db.order.update({
       where: { id: payment.order_id },
       data: { status: "PAID" },
+    });
+
+    // Mark table as available
+    await db.table.update({
+      where: { id: payment.orders.table_id },
+      data: { status: "AVAILABLE" },
     });
 
     // Cerrar mesa en POS (no-op si es demo)

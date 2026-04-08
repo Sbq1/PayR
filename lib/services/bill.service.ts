@@ -114,6 +114,12 @@ export async function getBillForTable(
       },
     });
 
+    // Mark table as occupied
+    await tx.table.update({
+      where: { id: table.id },
+      data: { status: "OCCUPIED" },
+    });
+
     if (bill.items.length > 0) {
       await tx.orderItem.createMany({
         data: bill.items.map((item) => ({
