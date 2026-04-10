@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         : "https://sandbox.wompi.co";
 
       const searchRes = await fetch(
-        `${baseUrl}/v1/transactions?reference=${reference}`,
+        `${baseUrl}/v1/transactions?reference=${encodeURIComponent(reference)}`,
         {
           headers: {
             Authorization: `Bearer ${restaurant.wompi_public_key}`,
@@ -144,7 +144,10 @@ export async function POST(request: NextRequest) {
             });
 
             if (!result.applied) {
-              return Response.json({ status: result.status ?? "APPROVED", already: true });
+              if (result.status === null) {
+                return Response.json({ error: "Pago no encontrado" }, { status: 404 });
+              }
+              return Response.json({ status: result.status, already: true });
             }
 
             // Cerrar en POS fuera de la transacción DB.
@@ -157,7 +160,9 @@ export async function POST(request: NextRequest) {
                 });
                 await posAdapter.closeTable(payment.orders.siigo_invoice_id, payment.amount_in_cents);
               }
-            } catch {}
+            } catch (error) {
+              console.error("Error closing table in POS:", error);
+            }
 
             return Response.json({ status: "APPROVED", updated: true });
           }

@@ -2,7 +2,6 @@ import { db } from "@/lib/db";
 import { getPaymentAdapter } from "@/lib/adapters/payment";
 import { getPosAdapter } from "@/lib/adapters/pos";
 import { NotFoundError, PaymentError } from "@/lib/utils/errors";
-import { randomUUID } from "crypto";
 import type { WompiWebhookEvent, WompiWidgetConfig } from "@/lib/adapters/payment/types";
 
 /**

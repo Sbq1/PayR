@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
-      return Response.json({ error: "Datos inválidos" }, { status: 400 });
+      return Response.json({ error: "Datos inválidos" }, { status: 400, headers: corsHeaders(request) });
     }
 
     const { reference, paymentMethodType } = parsed.data;
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!payment) {
-      return Response.json({ error: "Pago no encontrado" }, { status: 404 });
+      return Response.json({ error: "Pago no encontrado" }, { status: 404, headers: corsHeaders(request) });
     }
 
     // Gate principal: solo restaurantes en modo DEMO pueden usar este endpoint.
@@ -120,7 +120,9 @@ export async function POST(request: NextRequest) {
         });
         await posAdapter.closeTable(payment.orders.siigo_invoice_id, payment.amount_in_cents);
       }
-    } catch {}
+    } catch (error) {
+      console.error("Error closing table in POS:", error);
+    }
 
     return Response.json({ received: true, status: "APPROVED" }, { headers: corsHeaders(request) });
   } catch (error) {
