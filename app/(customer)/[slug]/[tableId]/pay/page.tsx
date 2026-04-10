@@ -55,6 +55,8 @@ export default function PayPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           orderId: data!.orderId,
+          slug: params.slug,
+          tableId: params.tableId,
           tipPercentage,
           tipAmount: tipAmount + upsellTotal,
           customerEmail: undefined,

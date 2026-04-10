@@ -78,29 +78,76 @@ export async function POST(request: NextRequest) {
           const txn = data[0];
 
           if (txn.status === "APPROVED") {
-            // Complete the payment
-            await db.payment.update({
-              where: { id: payment.id },
-              data: {
-                wompi_transaction_id: txn.id,
-                status: "APPROVED",
-                payment_method_type: txn.payment_method_type,
-                customer_email: txn.customer_email || payment.customer_email,
-                paid_at: new Date(),
-              },
+            // Validación estricta antes de marcar APPROVED:
+            // - reference exact-match (no confiar en match parcial de la API)
+            // - amount exact-match (prevenir price tampering / reference collision)
+            // - currency COP (prevenir bypass multimoneda)
+            if (txn.reference !== payment.reference) {
+              console.error(
+                `verify: reference mismatch ${txn.reference} vs ${payment.reference}`
+              );
+              return Response.json(
+                { error: "Referencia inválida" },
+                { status: 409 }
+              );
+            }
+            if (txn.amount_in_cents !== payment.amount_in_cents) {
+              console.error(
+                `verify: amount mismatch ${txn.amount_in_cents} vs ${payment.amount_in_cents}`
+              );
+              return Response.json(
+                { error: "Discrepancia de monto" },
+                { status: 409 }
+              );
+            }
+            if (txn.currency !== "COP") {
+              console.error(`verify: invalid currency ${txn.currency}`);
+              return Response.json(
+                { error: "Moneda inválida" },
+                { status: 409 }
+              );
+            }
+
+            // Transacción atómica con re-check dentro para prevenir
+            // race conditions si llegan verify y webhook simultáneos.
+            const result = await db.$transaction(async (tx) => {
+              const fresh = await tx.payment.findUnique({
+                where: { id: payment.id },
+                select: { status: true },
+              });
+              if (!fresh || fresh.status !== "PENDING") {
+                return { applied: false, status: fresh?.status ?? null };
+              }
+
+              await tx.payment.update({
+                where: { id: payment.id },
+                data: {
+                  wompi_transaction_id: txn.id,
+                  status: "APPROVED",
+                  payment_method_type: txn.payment_method_type,
+                  customer_email: txn.customer_email || payment.customer_email,
+                  paid_at: new Date(),
+                },
+              });
+
+              await tx.order.update({
+                where: { id: payment.order_id },
+                data: { status: "PAID" },
+              });
+
+              await tx.table.update({
+                where: { id: payment.orders.table_id },
+                data: { status: "AVAILABLE" },
+              });
+
+              return { applied: true, status: "APPROVED" };
             });
 
-            await db.order.update({
-              where: { id: payment.order_id },
-              data: { status: "PAID" },
-            });
+            if (!result.applied) {
+              return Response.json({ status: result.status ?? "APPROVED", already: true });
+            }
 
-            await db.table.update({
-              where: { id: payment.orders.table_id },
-              data: { status: "AVAILABLE" },
-            });
-
-            // Close in POS
+            // Cerrar en POS fuera de la transacción DB.
             try {
               if (payment.orders.siigo_invoice_id) {
                 const posAdapter = getPosAdapter({
@@ -113,6 +160,36 @@ export async function POST(request: NextRequest) {
             } catch {}
 
             return Response.json({ status: "APPROVED", updated: true });
+          }
+
+          // Failed payment — update DB so retry is allowed.
+          // Re-check reference para evitar actualizar un payment distinto.
+          if (["DECLINED", "ERROR", "VOIDED"].includes(txn.status)) {
+            if (txn.reference !== payment.reference) {
+              return Response.json(
+                { error: "Referencia inválida" },
+                { status: 409 }
+              );
+            }
+
+            await db.$transaction(async (tx) => {
+              const fresh = await tx.payment.findUnique({
+                where: { id: payment.id },
+                select: { status: true },
+              });
+              if (!fresh || fresh.status !== "PENDING") return;
+
+              await tx.payment.update({
+                where: { id: payment.id },
+                data: {
+                  wompi_transaction_id: txn.id,
+                  status: txn.status,
+                  payment_method_type: txn.payment_method_type,
+                },
+              });
+            });
+
+            return Response.json({ status: txn.status, updated: true });
           }
 
           return Response.json({ status: txn.status });

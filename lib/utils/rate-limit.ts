@@ -26,6 +26,15 @@ export function rateLimit(name: string, config: RateLimitConfig) {
     ): Promise<{ success: boolean; remaining: number; resetAt: number }> {
       const client = getRedis();
       if (!client) {
+        // Fail-CLOSED en producción: si Redis no está configurado/accesible,
+        // rechazamos la request en vez de permitir fuerza bruta silenciosa.
+        // En dev seguimos fail-open para no bloquear desarrollo local.
+        if (process.env.NODE_ENV === "production") {
+          console.error(
+            `[rate-limit] Redis no disponible — rechazando request (${name}:${key})`
+          );
+          return { success: false, remaining: 0, resetAt: Date.now() + config.interval };
+        }
         return { success: true, remaining: config.limit, resetAt: 0 };
       }
 

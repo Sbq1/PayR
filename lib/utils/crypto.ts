@@ -5,8 +5,15 @@ const IV_LENGTH = 16;
 const TAG_LENGTH = 16;
 
 function getKey(): Buffer {
-  const key = process.env.ENCRYPTION_KEY;
-  if (!key) throw new Error("ENCRYPTION_KEY env var is required");
+  const raw = process.env.ENCRYPTION_KEY;
+  if (!raw) throw new Error("ENCRYPTION_KEY env var is required");
+  // Strip literal `\n` (bug común al poblar env vars desde CLI) y whitespace
+  const key = raw.replace(/\\n|\n/g, "").trim();
+  if (!/^[0-9a-f]{64}$/i.test(key)) {
+    throw new Error(
+      "ENCRYPTION_KEY debe ser 64 caracteres hex (32 bytes). Usa: openssl rand -hex 32"
+    );
+  }
   return Buffer.from(key, "hex");
 }
 

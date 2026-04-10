@@ -14,30 +14,30 @@ function ResultContent() {
   const [verifiedStatus, setVerifiedStatus] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
 
-  // When status is APPROVED, verify with backend to ensure payment is completed
-  useEffect(() => {
-    if (status !== "APPROVED" || !reference) return;
-
+  async function callVerify() {
+    if (!reference) return;
     setVerifying(true);
+    try {
+      const res = await fetch("/api/payment/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setVerifiedStatus(data.status);
+      }
+    } catch {}
+    setVerifying(false);
+  }
 
-    // Small delay to let webhook arrive first
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch("/api/payment/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ reference }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setVerifiedStatus(data.status);
-        }
-      } catch {}
-      setVerifying(false);
-    }, 2000);
-
+  // Auto-verify on mount with small delay for webhook to arrive
+  useEffect(() => {
+    if (!reference) return;
+    const timer = setTimeout(callVerify, 2000);
     return () => clearTimeout(timer);
-  }, [status, reference]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reference]);
 
   const displayStatus = verifiedStatus || status;
   const config = getStatusConfig(displayStatus);
@@ -94,12 +94,27 @@ function ResultContent() {
         )}
 
         {displayStatus === "PENDING" && (
-          <button
-            onClick={() => window.location.reload()}
-            className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-colors"
-          >
-            Verificar estado
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={callVerify}
+              disabled={verifying}
+              className="w-full py-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {verifying ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Verificando...
+                </>
+              ) : (
+                "Verificar estado"
+              )}
+            </button>
+            <Link href={`/${params.slug}/${params.tableId}`}>
+              <button className="w-full py-3 rounded-xl text-gray-400 text-sm font-medium transition-colors hover:text-gray-600">
+                Intentar con otro método
+              </button>
+            </Link>
+          </div>
         )}
 
         {!["APPROVED", "DECLINED", "ERROR", "VOIDED", "PENDING"].includes(displayStatus || "") && (
