@@ -24,10 +24,10 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
           </span>
         </Link>
         <nav className="hidden md:flex items-center gap-8">
-          {["Funciones", "Cómo funciona", "Precios"].map((item) => (
+          {["Proceso", "Precios"].map((item) => (
             <a
               key={item}
-              href={`#${item === "Funciones" ? "funciones" : item === "Cómo funciona" ? "como-funciona" : "precios"}`}
+              href={`#${item === "Proceso" ? "historia" : "precios"}`}
               className="text-[14px] font-medium text-gray-500 hover:text-gray-900 transition-colors"
             >
               {item}

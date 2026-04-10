@@ -10,10 +10,10 @@ export function Footer() {
             <span className="text-[14px] font-semibold text-gray-900">Smart Checkout</span>
           </div>
           <div className="flex items-center gap-8 text-[13px] text-gray-500">
-            {["Funciones", "Proceso", "Precios"].map((item) => (
+            {["Flujo", "Precios"].map((item) => (
               <a
                 key={item}
-                href={`#${item.toLowerCase().replace(" ", "-")}`}
+                href={`#${item === "Flujo" ? "historia" : "precios"}`}
                 className="hover:text-gray-900 transition-colors"
               >
                 {item}
