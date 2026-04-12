@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useBillStore } from "@/lib/stores/bill.store";
 import { formatCOP } from "@/lib/utils/currency";
 import { ThemeProvider } from "@/components/restaurant/theme-provider";
@@ -15,7 +15,6 @@ import type { WompiWidgetConfig } from "@/lib/adapters/payment/types";
 
 export default function PayPage() {
   const params = useParams<{ slug: string; tableId: string }>();
-  const router = useRouter();
   const { data, tipPercentage, tipAmount, getTotal, getUpsellTotal } =
     useBillStore();
 

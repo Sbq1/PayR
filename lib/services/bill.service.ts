@@ -82,7 +82,7 @@ export async function getBillForTable(
 
   // 4. Persistir orden — transacción para evitar duplicados en scans concurrentes
   const order = await db.$transaction(async (tx) => {
-    let existing = await tx.order.findFirst({
+    const existing = await tx.order.findFirst({
       where: {
         restaurant_id: restaurant.id,
         table_id: table.id,

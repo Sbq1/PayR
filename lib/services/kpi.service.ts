@@ -1,4 +1,3 @@
-import { Prisma } from "@/lib/generated/prisma/client";
 import { db } from "@/lib/db";
 import { getDayRange, getWeekRange, getMonthRange, getPreviousRange } from "@/lib/utils/date";
 import type { KpiDashboard, KpiPeriod } from "@/types/kpi";

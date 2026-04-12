@@ -17,6 +17,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!restaurantId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     fetch(`/api/restaurant/${restaurantId}/kpi?period=${period}`)
       .then((r) => r.json())

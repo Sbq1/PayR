@@ -55,7 +55,7 @@ export function Journey() {
               </span>
               
               <div className="relative">
-                {steps.map((step, idx) => (
+                {steps.map((step) => (
                   <div 
                     key={step.id} 
                     className={`absolute inset-x-0 top-0 transition-all duration-700 ease-out transform ${

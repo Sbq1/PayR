@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { handlePaymentWebhook } from "@/lib/services/payment.service";
 import { PaymentError } from "@/lib/utils/errors";
-import { corsHeaders, handlePreflight } from "@/lib/utils/cors";
+import { corsHeaders } from "@/lib/utils/cors";
 import { logger } from "@/lib/utils/logger";
 import type { WompiWebhookEvent } from "@/lib/adapters/payment/types";
 

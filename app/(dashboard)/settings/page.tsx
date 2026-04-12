@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Store, Database, CreditCard, Crown } from "lucide-react";
+import { Loader2, Database, CreditCard, Crown } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useSession } from "@/hooks/use-session";

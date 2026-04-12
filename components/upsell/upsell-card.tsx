@@ -28,6 +28,8 @@ export function UpsellCard({ id, name, description, price, imageUrl, isSelected,
     >
       <div className="w-full h-20 rounded-xl bg-gray-100 mb-2 flex items-center justify-center overflow-hidden">
         {imageUrl ? (
+          // URLs externas arbitrarias — configurar remotePatterns en next.config.ts para usar <Image />
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={imageUrl} alt={name} className="w-full h-full object-cover rounded-xl" />
         ) : (
           <span className="text-2xl">{name.includes("Postre") ? "🍰" : name.includes("Cafe") ? "☕" : "🍷"}</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,19 +46,21 @@ export default function TablesPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const loadTables = useCallback(async (rid: string) => {
+    const res = await fetch(`/api/restaurant/${rid}/tables`);
+    if (res.ok) setTables(await res.json());
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
     if (!restaurantId) return;
+    // loadTables is async — setState inside runs after await
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadTables(restaurantId);
     // Polling to keep status fresh
     const interval = setInterval(() => loadTables(restaurantId), POLL_INTERVAL);
     return () => clearInterval(interval);
-  }, [restaurantId]);
-
-  async function loadTables(rid: string) {
-    const res = await fetch(`/api/restaurant/${rid}/tables`);
-    if (res.ok) setTables(await res.json());
-    setLoading(false);
-  }
+  }, [restaurantId, loadTables]);
 
   async function handleCreate() {
     if (!restaurantId || !newTable.tableNumber) return;

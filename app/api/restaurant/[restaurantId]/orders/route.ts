@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { handleApiError, AppError } from "@/lib/utils/errors";
+import { handleApiError } from "@/lib/utils/errors";
 import { verifyOwnership } from "@/lib/utils/verify-ownership";
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/utils/rate-limit";
 import { z } from "zod/v4";

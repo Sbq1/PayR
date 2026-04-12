@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useSession } from "@/hooks/use-session";
 import { Check, X, Bell } from "lucide-react";
-import { formatCOP } from "@/lib/utils/currency";
 
 interface TableSnapshot {
   id: string;
@@ -59,6 +58,8 @@ export function PaymentAlerts() {
 
   useEffect(() => {
     if (!restaurantId) return;
+    // fetchTables is async — setAlerts inside runs in a microtask after await
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchTables();
     const interval = setInterval(fetchTables, POLL_INTERVAL);
     return () => clearInterval(interval);

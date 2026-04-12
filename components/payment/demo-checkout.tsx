@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatCOP } from "@/lib/utils/currency";
-import { CreditCard, Loader2, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import type { WompiWidgetConfig } from "@/lib/adapters/payment/types";
 
 interface DemoCheckoutProps {

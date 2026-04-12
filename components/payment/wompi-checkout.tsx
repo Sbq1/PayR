@@ -24,6 +24,7 @@ export function WompiCheckout({ config, onClose }: WompiCheckoutProps) {
   useEffect(() => {
     // Cargar script de Wompi si no existe
     if (scriptLoaded.current) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false);
       return;
     }

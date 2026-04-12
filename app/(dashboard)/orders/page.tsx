@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -99,12 +99,7 @@ export default function OrdersPage() {
   const [detailOrder, setDetailOrder] = useState<OrderData | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
-  useEffect(() => {
-    if (!restaurantId) return;
-    loadOrders();
-  }, [restaurantId, statusFilter, periodFilter, page]);
-
-  async function loadOrders() {
+  const loadOrders = useCallback(async () => {
     if (!restaurantId) return;
     setLoading(true);
 
@@ -124,7 +119,14 @@ export default function OrdersPage() {
       toast.error("Error cargando órdenes");
     }
     setLoading(false);
-  }
+  }, [restaurantId, statusFilter, periodFilter, page]);
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    // loadOrders is async — setState inside runs after await
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadOrders();
+  }, [restaurantId, loadOrders]);
 
   async function handleCancel(orderId: string) {
     if (!restaurantId) return;

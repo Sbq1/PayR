@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { QrCode, Download, Loader2, RefreshCw, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
@@ -20,16 +20,18 @@ export default function QrCodesPage() {
   const [generating, setGenerating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!restaurantId) return;
-    loadQrCodes(restaurantId);
-  }, [restaurantId]);
-
-  async function loadQrCodes(rid: string) {
+  const loadQrCodes = useCallback(async (rid: string) => {
     const res = await fetch(`/api/restaurant/${rid}/qr`);
     if (res.ok) setQrCodes(await res.json());
     setLoading(false);
-  }
+  }, []);
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    // loadQrCodes is async — setState inside runs after await
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadQrCodes(restaurantId);
+  }, [restaurantId, loadQrCodes]);
 
   async function handleGenerate() {
     if (!restaurantId) return;
@@ -118,6 +120,8 @@ export default function QrCodesPage() {
                 </p>
                 {item.qr ? (
                   <>
+                    {/* next/image no optimiza data URIs — usar <img> directo */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={item.qr.dataUrl}
                       alt={`QR Mesa ${item.tableNumber}`}
@@ -156,7 +160,7 @@ export default function QrCodesPage() {
                   <div className="py-6">
                     <QrCode className="w-10 h-10 mx-auto text-gray-200" />
                     <p className="text-[12px] text-gray-400 mt-2">
-                      Sin QR — usa "Generar QR"
+                      Sin QR — usa &quot;Generar QR&quot;
                     </p>
                   </div>
                 )}
