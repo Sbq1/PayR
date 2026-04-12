@@ -56,14 +56,16 @@ function testCrypto() {
     try {
       decrypt("texto-plano-sin-formato");
       assert("decrypt de texto plano lanza error", false, "no lanzó error");
-    } catch (e: any) {
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
       assert(
         "decrypt de texto plano lanza error",
-        e.message === "Invalid encrypted text format"
+        msg === "Invalid encrypted text format"
       );
     }
-  } catch (e: any) {
-    assert("crypto funciona", false, e.message);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    assert("crypto funciona", false, msg);
   }
 }
 
@@ -180,8 +182,9 @@ async function testVerifyFlow() {
       );
 
       log("→", `response: ${JSON.stringify(data)}`);
-    } catch (e: any) {
-      assert("verify endpoint accesible", false, `servidor corriendo en ${BASE_URL}? — ${e.message}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      assert("verify endpoint accesible", false, `servidor corriendo en ${BASE_URL}? — ${msg}`);
     }
 
     // --- Test 3b: Verify con referencia inexistente ---
@@ -193,8 +196,9 @@ async function testVerifyFlow() {
         body: JSON.stringify({ reference: "REF-NO-EXISTE-999" }),
       });
       assert("referencia inexistente retorna 404", res.status === 404);
-    } catch (e: any) {
-      assert("verify ref inexistente", false, e.message);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      assert("verify ref inexistente", false, msg);
     }
 
     // --- Test 3c: Verify sin body ---
@@ -206,8 +210,9 @@ async function testVerifyFlow() {
         body: JSON.stringify({}),
       });
       assert("sin reference retorna 400", res.status === 400);
-    } catch (e: any) {
-      assert("verify sin body", false, e.message);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      assert("verify sin body", false, msg);
     }
 
   } finally {
@@ -221,8 +226,9 @@ async function testVerifyFlow() {
       if (restaurantId) await db.restaurant.delete({ where: { id: restaurantId } });
       if (planId) await db.subscriptionPlan.delete({ where: { id: planId } });
       log("✓", "datos de prueba eliminados");
-    } catch (e: any) {
-      log("⚠", `cleanup parcial: ${e.message}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      log("⚠", `cleanup parcial: ${msg}`);
     }
 
     await db.$disconnect();

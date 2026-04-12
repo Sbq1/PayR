@@ -142,10 +142,11 @@ async function main() {
         updates[field] = reEncrypted;
         totalFieldsToRotate++;
         console.log(`  ✓ ${field}: decrypt+encrypt+verify OK`);
-      } catch (e: any) {
+      } catch (e) {
         fieldErrors++;
         totalErrors++;
-        console.error(`  ✗ ${field}: ${e.message}`);
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error(`  ✗ ${field}: ${msg}`);
       }
     }
 
@@ -195,6 +196,7 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error("\nFatal error:", e.message);
+  const msg = e instanceof Error ? e.message : String(e);
+  console.error("\nFatal error:", msg);
   process.exit(1);
 });

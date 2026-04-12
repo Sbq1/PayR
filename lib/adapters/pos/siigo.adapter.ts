@@ -84,8 +84,8 @@ export class SiigoAdapter implements IPosAdapter {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userName: this.credentials.username,
-          accessKey: this.credentials.accessKey,
+          username: this.credentials.username,
+          access_key: this.credentials.accessKey,
         }),
         signal: AbortSignal.timeout(FETCH_TIMEOUT),
       });

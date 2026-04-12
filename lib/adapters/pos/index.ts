@@ -27,10 +27,17 @@ export function getPosAdapter(restaurant: RestaurantPosConfig): IPosAdapter {
         );
       }
 
-      return new SiigoAdapter({
-        username: decrypt(restaurant.siigoUsername),
-        accessKey: decrypt(restaurant.siigoAccessKey),
-      });
+      const username = decrypt(restaurant.siigoUsername);
+      const accessKey = decrypt(restaurant.siigoAccessKey);
+
+      if (!username || !accessKey) {
+        throw new PosError(
+          "Credenciales de Siigo desencriptan a valor vacio (ENCRYPTION_KEY desalineada o dato corrupto)",
+          "siigo"
+        );
+      }
+
+      return new SiigoAdapter({ username, accessKey });
     }
 
     default:
