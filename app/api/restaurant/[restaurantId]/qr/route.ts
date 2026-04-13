@@ -75,7 +75,7 @@ export async function GET(
     }
 
     const { restaurantId } = await params;
-    await verifyOwnership(restaurantId, session.user.id);
+    const restaurant = await verifyOwnership(restaurantId, session.user.id);
 
     const tables = await db.table.findMany({
       where: { restaurant_id: restaurantId, is_active: true },
@@ -83,12 +83,18 @@ export async function GET(
       orderBy: { table_number: "asc" },
     });
 
+    const qrOptions = {
+      dark: restaurant.qr_dark_color,
+      light: restaurant.qr_light_color,
+      errorCorrection: restaurant.qr_error_correction as "L" | "M" | "Q" | "H",
+    };
+
     const qrCodes = await Promise.all(
       tables.map(async (table) => {
         const qr = table.qr_codes;
         if (!qr) return { tableId: table.id, tableNumber: table.table_number, label: table.label, qr: null };
 
-        const dataUrl = await generateQrDataUrl(qr.url);
+        const dataUrl = await generateQrDataUrl(qr.url, qrOptions);
         return {
           tableId: table.id,
           tableNumber: table.table_number,

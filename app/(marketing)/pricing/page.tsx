@@ -102,6 +102,7 @@ const comparisonFeatures: { category: string; features: FeatureRow[] }[] = [
     features: [
       { name: "Integración Siigo POS", starter: false, pro: true, enterprise: true },
       { name: "API + Webhooks", starter: false, pro: false, enterprise: true },
+      { name: "Colores de QR custom", starter: false, pro: true, enterprise: true },
       { name: "Tema y branding custom", starter: false, pro: false, enterprise: true },
     ],
   },

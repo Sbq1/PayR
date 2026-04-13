@@ -1,5 +1,23 @@
 import QRCode from "qrcode";
 
+export type QrErrorCorrection = "L" | "M" | "Q" | "H";
+
+export interface QrRenderOptions {
+  dark?: string;
+  light?: string;
+  errorCorrection?: QrErrorCorrection;
+  width?: number;
+  margin?: number;
+}
+
+const DEFAULTS: Required<QrRenderOptions> = {
+  dark: "#000000",
+  light: "#ffffff",
+  errorCorrection: "M",
+  width: 400,
+  margin: 2,
+};
+
 /**
  * Genera la URL del QR para una mesa.
  */
@@ -9,16 +27,21 @@ export function getTableQrUrl(slug: string, tableId: string): string {
 }
 
 /**
- * Genera un QR code como data URL (base64 PNG).
+ * Genera un QR code como data URL (base64 PNG) con opciones personalizadas.
+ * Valores fuera de spec caen a default — nunca lanza.
  */
-export async function generateQrDataUrl(url: string): Promise<string> {
+export async function generateQrDataUrl(
+  url: string,
+  opts: QrRenderOptions = {},
+): Promise<string> {
+  const merged = { ...DEFAULTS, ...opts };
   return QRCode.toDataURL(url, {
-    width: 400,
-    margin: 2,
+    width: merged.width,
+    margin: merged.margin,
     color: {
-      dark: "#000000",
-      light: "#ffffff",
+      dark: merged.dark,
+      light: merged.light,
     },
-    errorCorrectionLevel: "M",
+    errorCorrectionLevel: merged.errorCorrection,
   });
 }

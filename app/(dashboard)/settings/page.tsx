@@ -1,12 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Database, CreditCard, Crown } from "lucide-react";
+import { Loader2, Database, CreditCard, Crown, QrCode } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useSession } from "@/hooks/use-session";
 
 const settingsSections = [
+  {
+    title: "Diseño del QR",
+    description: "Colores y personalización del código de mesa",
+    href: "/settings/qr-design",
+    icon: QrCode,
+  },
   {
     title: "POS (Siigo)",
     description: "Credenciales de tu sistema de punto de venta",
@@ -90,7 +96,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Quick links */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {settingsSections.map((s) => (
           <Link
             key={s.href}

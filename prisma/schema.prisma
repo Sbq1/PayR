@@ -58,6 +58,9 @@ model Restaurant {
   wompi_private_key      String?
   wompi_events_secret    String?
   wompi_integrity_secret String?
+  qr_dark_color          String           @default("#000000")
+  qr_light_color         String           @default("#ffffff")
+  qr_error_correction    String           @default("M")
   is_active              Boolean          @default(true)
   created_at             DateTime         @default(now()) @db.Timestamptz(6)
   updated_at             DateTime         @default(now()) @db.Timestamptz(6)
