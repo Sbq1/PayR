@@ -7,7 +7,7 @@ import { ArrowRight } from "lucide-react";
 const navLinks = [
   { label: "Producto", href: "#historia" },
   { label: "Features", href: "#features" },
-  { label: "Precios", href: "#precios" },
+  { label: "Precios", href: "/pricing" },
 ];
 
 export function Navbar({ scrolled }: { scrolled: boolean }) {
