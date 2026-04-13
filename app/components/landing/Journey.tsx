@@ -265,117 +265,242 @@ function Visual1() {
   );
 }
 
-// ─── Visual 2: payment methods ────────────────────────────────────
+// ─── Visual 2: client phone + merchant dashboard ──────────────────
 
 function Visual2() {
   return (
-    <div className="relative w-full max-w-[540px] h-[500px]">
-      <div className="absolute top-[20px] left-1/2 -translate-x-1/2 w-[260px] rounded-[32px] bg-gray-900 p-2 shadow-[0_30px_60px_-20px_rgba(217,70,239,0.4)]">
-        <div className="rounded-[24px] bg-white overflow-hidden">
-          <div className="px-5 pt-3 pb-2 flex items-center justify-between text-[11px] font-medium text-gray-900">
+    <div className="relative w-full max-w-[620px] h-[500px]">
+      {/* Client phone — left */}
+      <div
+        className="absolute top-[20px] left-0 w-[250px] rounded-[36px] bg-gradient-to-br from-gray-800 via-gray-900 to-black p-[8px]"
+        style={{
+          boxShadow:
+            "0 40px 80px -20px rgba(217,70,239,0.35), 0 20px 40px -16px rgba(0,0,0,0.25), inset 0 0 0 1.5px rgba(255,255,255,0.05)",
+        }}
+      >
+        <div className="relative rounded-[28px] bg-white overflow-hidden">
+          {/* Dynamic island */}
+          <div className="absolute top-1.5 left-1/2 -translate-x-1/2 z-30 w-[72px] h-[20px] rounded-full bg-black" />
+
+          {/* Status bar */}
+          <div className="flex items-center justify-between px-5 pt-3 pb-1.5 text-[9px] font-semibold text-gray-900">
             <span>9:41</span>
-            <span className="flex gap-0.5">
-              <span className="w-1 h-1 rounded-full bg-gray-900" />
-              <span className="w-1 h-1 rounded-full bg-gray-900" />
-              <span className="w-1 h-1 rounded-full bg-gray-900" />
+            <span className="flex items-center gap-0.5">
+              <span className="flex items-end gap-[1px] h-2">
+                <span className="w-[2px] h-[3px] rounded-[1px] bg-gray-900" />
+                <span className="w-[2px] h-[5px] rounded-[1px] bg-gray-900" />
+                <span className="w-[2px] h-[6.5px] rounded-[1px] bg-gray-900" />
+                <span className="w-[2px] h-[8px] rounded-[1px] bg-gray-900" />
+              </span>
+              <span className="w-5 h-2 rounded-[2px] border border-gray-900/80 relative ml-0.5">
+                <span className="absolute inset-[1px] rounded-[1px] bg-gray-900" style={{ width: "70%" }} />
+              </span>
             </span>
           </div>
-          <div className="px-5 pt-4 pb-3">
-            <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">
-              Total a pagar
-            </p>
-            <p className="text-[32px] font-[900] text-gray-900 tabular-nums mb-4">
-              $84.500
-            </p>
-            <div className="space-y-2 mb-4">
-              <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
-                Método
-              </p>
-              {[
-                { name: "Nequi", badge: "Recomendado", selected: true },
-                { name: "Daviplata", badge: null, selected: false },
-                { name: "Tarjeta de crédito", badge: null, selected: false },
-              ].map((method) => (
-                <div
-                  key={method.name}
-                  className={`flex items-center justify-between p-2.5 rounded-lg border ${
-                    method.selected
-                      ? "border-violet-500 bg-violet-50"
-                      : "border-gray-200 bg-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`w-4 h-4 rounded-full border-2 ${
-                        method.selected
-                          ? "border-violet-500 bg-violet-500"
-                          : "border-gray-300"
-                      } flex items-center justify-center`}
-                    >
-                      {method.selected && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                      )}
-                    </div>
-                    <span className="text-[11px] font-medium text-gray-900">
-                      {method.name}
-                    </span>
-                  </div>
-                  {method.badge && (
-                    <span className="text-[9px] font-semibold text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded">
-                      {method.badge}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-            <button className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-[12px] font-bold">
-              Confirmar pago
-            </button>
-          </div>
-        </div>
-      </div>
 
-      <div className="absolute top-[220px] left-0 w-[180px] rounded-xl border border-gray-200 bg-white shadow-[0_16px_40px_-16px_rgba(217,70,239,0.3)] p-3">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-6 h-6 rounded-md bg-violet-100 flex items-center justify-center text-[10px] font-bold text-violet-600">
-            ÷
-          </div>
-          <p className="text-[11px] font-semibold text-gray-900">
-            Dividir cuenta
-          </p>
-        </div>
-        <div className="space-y-1.5">
-          {["Ana", "Carlos", "Sofía"].map((name) => (
-            <div
-              key={name}
-              className="flex items-center justify-between text-[10px]"
-            >
-              <span className="text-gray-600">{name}</span>
-              <span className="text-gray-900 font-medium tabular-nums">
-                $28.166
+          {/* URL bar */}
+          <div className="px-3 pt-2 pb-2">
+            <div className="flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1">
+              <svg width="9" height="9" viewBox="0 0 9 9" className="text-gray-500 shrink-0">
+                <path d="M7 4V3a2.5 2.5 0 00-5 0v1M1.5 4h6v4.5h-6z" stroke="currentColor" strokeWidth="0.8" fill="none" />
+              </svg>
+              <span className="text-[8.5px] text-gray-600 truncate">
+                smart-checkout.co/la-barra
               </span>
             </div>
-          ))}
+          </div>
+
+          {/* Total */}
+          <div className="px-4 pt-2 pb-3">
+            <p className="text-[9px] uppercase tracking-widest text-gray-400 mb-0.5">
+              Total a pagar
+            </p>
+            <p className="text-[26px] font-[900] text-gray-900 tabular-nums leading-none">
+              $84.500
+            </p>
+          </div>
+
+          {/* Payment method list */}
+          <div className="px-4 pb-3 space-y-1.5">
+            <p className="text-[9px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              Método de pago
+            </p>
+            {[
+              { name: "Nequi", logo: "N", color: "bg-fuchsia-500", selected: true, badge: "Recomendado" },
+              { name: "Daviplata", logo: "D", color: "bg-red-500", selected: false, badge: null },
+              { name: "Tarjeta", logo: "T", color: "bg-gray-900", selected: false, badge: null },
+            ].map((method) => (
+              <div
+                key={method.name}
+                className={`flex items-center gap-2 p-2 rounded-lg border ${
+                  method.selected
+                    ? "border-violet-500 bg-violet-50"
+                    : "border-gray-200 bg-white"
+                }`}
+              >
+                <div className={`w-6 h-6 rounded-md ${method.color} flex items-center justify-center text-white text-[10px] font-bold shrink-0`}>
+                  {method.logo}
+                </div>
+                <span className="text-[10.5px] font-semibold text-gray-900 flex-1">
+                  {method.name}
+                </span>
+                {method.badge && (
+                  <span className="text-[8px] font-semibold text-violet-700 bg-violet-100 px-1.5 py-0.5 rounded">
+                    {method.badge}
+                  </span>
+                )}
+                <div
+                  className={`w-3.5 h-3.5 rounded-full border-2 ${
+                    method.selected ? "border-violet-500 bg-violet-500" : "border-gray-300"
+                  } flex items-center justify-center shrink-0`}
+                >
+                  {method.selected && <div className="w-1 h-1 rounded-full bg-white" />}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Pay CTA */}
+          <div className="px-4 pb-4">
+            <button className="relative w-full py-2.5 rounded-xl overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-pink-500" />
+              <span className="relative text-white text-[11px] font-bold">
+                Pagar con Nequi
+              </span>
+            </button>
+          </div>
+
+          {/* Home indicator */}
+          <div className="flex justify-center pb-1.5">
+            <div className="w-[70px] h-[3px] rounded-full bg-gray-900/80" />
+          </div>
         </div>
       </div>
 
-      <div className="absolute top-[60px] right-0 w-[150px] rounded-xl border border-gray-200 bg-white shadow-[0_16px_40px_-16px_rgba(217,70,239,0.3)] p-3">
-        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-2">
-          Propina
-        </p>
-        <div className="flex gap-1">
-          {["5%", "10%", "15%"].map((t) => (
+      {/* Signal arrow — phone → dashboard */}
+      <svg
+        className="absolute top-[220px] left-[240px] z-20"
+        width="140"
+        height="60"
+        viewBox="0 0 140 60"
+        fill="none"
+      >
+        <defs>
+          <linearGradient id="j2-flow" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#a855f7" />
+            <stop offset="100%" stopColor="#ec4899" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M 4 30 Q 70 0 136 30"
+          stroke="url(#j2-flow)"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeDasharray="4 4"
+        />
+        <circle cx="4" cy="30" r="3" fill="#a855f7" />
+        <circle cx="136" cy="30" r="3" fill="#ec4899" />
+      </svg>
+
+      {/* Merchant dashboard — right */}
+      <div
+        className="absolute top-[60px] right-0 w-[310px] rounded-2xl bg-white border border-gray-200 overflow-hidden"
+        style={{
+          boxShadow:
+            "0 40px 80px -20px rgba(236,72,153,0.25), 0 20px 40px -16px rgba(0,0,0,0.1)",
+        }}
+      >
+        {/* Window chrome */}
+        <div className="px-3 py-2 border-b border-gray-100 flex items-center gap-2">
+          <div className="flex gap-1">
+            <span className="w-2 h-2 rounded-full bg-red-400" />
+            <span className="w-2 h-2 rounded-full bg-amber-400" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+          </div>
+          <div className="flex-1 mx-2 h-4 rounded bg-gray-50 flex items-center px-2">
+            <span className="text-[8px] text-gray-400">
+              app.smart-checkout.co/dashboard
+            </span>
+          </div>
+        </div>
+
+        {/* Live notification — highlighted */}
+        <div className="relative px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-violet-50 via-fuchsia-50 to-pink-50">
+          <div className="flex items-start gap-3">
+            <div className="relative shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500 border-2 border-white" />
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-bold text-gray-900">
+                  Pago recibido
+                </p>
+                <span className="text-[9px] text-gray-400">hace 2s</span>
+              </div>
+              <p className="text-[10px] text-gray-600 mt-0.5">
+                Mesa 05 · Nequi · $84.500
+              </p>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-[9px] font-semibold text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">
+                  APPROVED
+                </span>
+                <span className="text-[9px] text-gray-400">
+                  Ref: INV-2847
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Older notifications */}
+        <div className="px-4 py-2 space-y-2">
+          {[
+            { table: "Mesa 08", method: "Daviplata", amount: "$46.200", time: "1m" },
+            { table: "Mesa 03", method: "Tarjeta", amount: "$92.100", time: "3m" },
+            { table: "Mesa 07", method: "PSE", amount: "$28.500", time: "5m" },
+          ].map((n) => (
             <div
-              key={t}
-              className={`flex-1 py-1.5 rounded-md text-center text-[10px] font-semibold ${
-                t === "10%"
-                  ? "bg-fuchsia-500 text-white"
-                  : "bg-gray-50 text-gray-600"
-              }`}
+              key={n.table}
+              className="flex items-center gap-2.5 py-1.5"
             >
-              {t}
+              <div className="w-6 h-6 rounded-md bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0 flex items-center justify-between">
+                <div>
+                  <p className="text-[10.5px] font-medium text-gray-900">
+                    {n.table} · {n.method}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10.5px] text-gray-700 tabular-nums font-medium">
+                    {n.amount}
+                  </span>
+                  <span className="text-[9px] text-gray-400 w-6 text-right">
+                    {n.time}
+                  </span>
+                </div>
+              </div>
             </div>
           ))}
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 py-2 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between">
+          <span className="text-[9px] font-semibold text-gray-500 uppercase tracking-wide">
+            Actividad reciente
+          </span>
+          <span className="text-[9px] text-violet-600 font-semibold">Ver todo →</span>
         </div>
       </div>
     </div>

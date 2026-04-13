@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion, MotionValue } from "framer-motion";
-import { ArrowRight, QrCode, Sparkles, Check } from "lucide-react";
+import { ArrowRight, Sparkles, Check, Lock, ChevronRight } from "lucide-react";
 
 export function Hero({
   heroY,
@@ -173,77 +173,140 @@ export function Hero({
                 </p>
               </motion.div>
 
-              {/* Phone frame */}
-              <div className="relative mx-auto w-[300px] h-[600px] rounded-[44px] bg-gray-900 p-3 shadow-[0_40px_80px_-20px_rgba(79,70,229,0.4),0_20px_40px_-16px_rgba(0,0,0,0.2)]">
-                <div className="relative h-full w-full rounded-[32px] bg-white overflow-hidden flex flex-col">
+              {/* Phone frame — layered shadows for depth */}
+              <div
+                className="relative mx-auto w-[310px] h-[640px] rounded-[48px] bg-gradient-to-br from-gray-800 via-gray-900 to-black p-[10px]"
+                style={{
+                  boxShadow:
+                    "0 60px 120px -30px rgba(79,70,229,0.45), 0 30px 60px -20px rgba(0,0,0,0.25), inset 0 0 0 2px rgba(255,255,255,0.05)",
+                }}
+              >
+                {/* Screen */}
+                <div className="relative h-full w-full rounded-[38px] bg-white overflow-hidden flex flex-col">
+                  {/* Dynamic island */}
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 w-[92px] h-[26px] rounded-full bg-black" />
+
                   {/* Status bar */}
-                  <div className="flex items-center justify-between px-6 pt-3 pb-2 text-[11px] font-medium text-gray-900">
+                  <div className="flex items-center justify-between px-6 pt-3.5 pb-2 text-[11px] font-semibold text-gray-900 z-20 relative">
                     <span>9:41</span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-1 h-1 rounded-full bg-gray-900" />
-                      <span className="w-1 h-1 rounded-full bg-gray-900" />
-                      <span className="w-1 h-1 rounded-full bg-gray-900" />
+                    <span className="flex items-center gap-[3px]">
+                      {/* Signal */}
+                      <span className="flex items-end gap-[1.5px] h-2.5">
+                        <span className="w-[2.5px] h-[4px] rounded-[1px] bg-gray-900" />
+                        <span className="w-[2.5px] h-[6px] rounded-[1px] bg-gray-900" />
+                        <span className="w-[2.5px] h-[8px] rounded-[1px] bg-gray-900" />
+                        <span className="w-[2.5px] h-[10px] rounded-[1px] bg-gray-900" />
+                      </span>
+                      {/* Wifi */}
+                      <svg width="12" height="9" viewBox="0 0 12 9" fill="none" className="ml-0.5">
+                        <path d="M6 8a1 1 0 100-2 1 1 0 000 2z" fill="#111827" />
+                        <path d="M2.5 4.5a5 5 0 017 0" stroke="#111827" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+                        <path d="M0.5 2.5a8 8 0 0111 0" stroke="#111827" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+                      </svg>
+                      {/* Battery */}
+                      <span className="flex items-center ml-1">
+                        <span className="relative w-6 h-2.5 rounded-[3px] border border-gray-900/80 flex items-center">
+                          <span className="absolute inset-[1.5px] rounded-[1.5px] bg-gray-900" style={{ width: "75%" }} />
+                        </span>
+                        <span className="w-[1.5px] h-[4px] rounded-r-sm bg-gray-900/60 ml-[1px]" />
+                      </span>
                     </span>
+                  </div>
+
+                  {/* Safari-style URL bar */}
+                  <div className="px-4 pt-5 pb-3">
+                    <div className="flex items-center gap-1.5 rounded-[10px] bg-gray-100 px-3 py-1.5">
+                      <Lock className="w-3 h-3 text-gray-500 shrink-0" strokeWidth={2.5} />
+                      <span className="text-[10.5px] text-gray-600 font-medium truncate">
+                        smart-checkout.co/la-barra/m05
+                      </span>
+                    </div>
                   </div>
 
                   {/* Restaurant header */}
-                  <div className="px-6 pt-4 pb-3 border-b border-gray-100 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-fuchsia-500 flex items-center justify-center text-white text-[11px] font-bold">
+                  <div className="px-5 pb-4 flex items-center gap-3">
+                    <div className="relative w-11 h-11 rounded-xl overflow-hidden shadow-sm">
+                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500" />
+                      <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[15px] tracking-tighter">
                         LB
                       </div>
-                      <span className="text-[13px] font-semibold text-gray-900">
+                    </div>
+                    <div>
+                      <p className="text-[14px] font-bold text-gray-900 leading-tight">
                         La Barra
+                      </p>
+                      <p className="text-[11px] text-gray-500 flex items-center gap-1">
+                        <span className="inline-block w-1 h-1 rounded-full bg-emerald-500" />
+                        Mesa 05 · 3 personas
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bill card */}
+                  <div className="flex-1 mx-4 mb-3 rounded-2xl border border-gray-100 bg-gray-50/50 overflow-hidden">
+                    <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
+                        Tu cuenta
+                      </span>
+                      <span className="text-[10px] text-gray-400">#INV-2847</span>
+                    </div>
+                    <div className="px-4 py-3 space-y-2">
+                      {[
+                        { name: "Hamburguesa artesanal", qty: 2, total: "$56.000" },
+                        { name: "Cerveza Club", qty: 3, total: "$27.000" },
+                        { name: "Postre de la casa", qty: 1, total: "$15.000" },
+                      ].map((item) => (
+                        <div
+                          key={item.name}
+                          className="flex items-center justify-between text-[11.5px]"
+                        >
+                          <span className="text-gray-800">
+                            <span className="text-gray-400 mr-1.5 tabular-nums">{item.qty}×</span>
+                            {item.name}
+                          </span>
+                          <span className="text-gray-700 tabular-nums font-medium">
+                            {item.total}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="px-4 py-2.5 border-t border-gray-100 bg-white flex items-center justify-between">
+                      <span className="text-[11px] text-gray-500">Propina (10%)</span>
+                      <span className="text-[11px] tabular-nums text-gray-700">$9.800</span>
+                    </div>
+                  </div>
+
+                  {/* Total + CTA */}
+                  <div className="px-5 pb-5 space-y-3">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-[11px] text-gray-500 uppercase tracking-wider font-medium">
+                        Total
+                      </span>
+                      <span className="text-[28px] font-[900] text-gray-900 tabular-nums tracking-tight">
+                        $107.800
                       </span>
                     </div>
-                    <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
-                      Mesa 05
-                    </span>
-                  </div>
-
-                  {/* Bill items */}
-                  <div className="flex-1 px-6 py-4 space-y-2.5">
-                    {[
-                      { name: "Hamburguesa", qty: 2, total: "$56.000" },
-                      { name: "Cerveza artesanal", qty: 3, total: "$27.000" },
-                      { name: "Postre casa", qty: 1, total: "$15.000" },
-                    ].map((item) => (
+                    <motion.button
+                      whileHover={{ scale: 1.01 }}
+                      className="relative w-full py-3.5 rounded-2xl overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500" />
                       <div
-                        key={item.name}
-                        className="flex items-center justify-between text-[12px]"
-                      >
-                        <span className="text-gray-900">
-                          {item.qty}× {item.name}
-                        </span>
-                        <span className="text-gray-600 tabular-nums">
-                          {item.total}
-                        </span>
-                      </div>
-                    ))}
+                        aria-hidden="true"
+                        className="absolute inset-0 bg-gradient-to-r from-indigo-400 via-violet-400 to-fuchsia-400 opacity-0 motion-safe:animate-pulse"
+                      />
+                      <span className="relative flex items-center justify-center gap-1.5 text-white text-[13px] font-bold">
+                        Pagar $107.800
+                        <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
+                      </span>
+                    </motion.button>
+                    <p className="text-center text-[10px] text-gray-400">
+                      Procesado de forma segura por Wompi
+                    </p>
                   </div>
 
-                  {/* QR section */}
-                  <div className="px-6 pb-6 pt-3 border-t border-gray-100 flex flex-col items-center">
-                    <div className="relative w-[132px] h-[132px] rounded-2xl border border-gray-200 bg-white p-3 mb-3">
-                      <QrCode className="w-full h-full text-gray-900" strokeWidth={1.5} />
-                      {/* Scan line */}
-                      <motion.div
-                        animate={{ y: [0, 106, 0] }}
-                        transition={{
-                          duration: 2.6,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                        }}
-                        className="absolute left-3 right-3 top-3 h-[2px] rounded-full bg-gradient-to-r from-transparent via-indigo-500 to-transparent"
-                      />
-                    </div>
-                    <p className="text-[10px] uppercase tracking-widest text-gray-400 font-medium mb-1">
-                      Total a pagar
-                    </p>
-                    <p className="text-[22px] font-bold text-gray-900 tabular-nums">
-                      $84.500
-                    </p>
-                  </div>
+                  {/* Home indicator */}
+                  <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-[110px] h-[4px] rounded-full bg-gray-900/80" />
                 </div>
               </div>
 
