@@ -7,6 +7,8 @@ import { Navbar } from "./components/landing/Navbar";
 import { Hero } from "./components/landing/Hero";
 import { SocialProof } from "./components/landing/SocialProof";
 import { Stats } from "./components/landing/Stats";
+import { ProductShowcase } from "./components/landing/ProductShowcase";
+import { Features } from "./components/landing/Features";
 import { Journey } from "./components/landing/Journey";
 import { Pricing } from "./components/landing/Pricing";
 import { CTA } from "./components/landing/CTA";
@@ -31,7 +33,9 @@ export default function HomePage() {
         <Hero heroY={heroY} heroOpacity={heroOpacity} />
         <SocialProof />
         <Stats />
+        <ProductShowcase />
         <Journey />
+        <Features />
         <Pricing />
         <CTA />
       </main>
