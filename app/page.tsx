@@ -5,6 +5,8 @@ import { useScroll, useTransform } from "framer-motion";
 
 import { Navbar } from "./components/landing/Navbar";
 import { Hero } from "./components/landing/Hero";
+import { SocialProof } from "./components/landing/SocialProof";
+import { Stats } from "./components/landing/Stats";
 import { Journey } from "./components/landing/Journey";
 import { Pricing } from "./components/landing/Pricing";
 import { CTA } from "./components/landing/CTA";
@@ -27,6 +29,8 @@ export default function HomePage() {
       <Navbar scrolled={scrolled} />
       <main>
         <Hero heroY={heroY} heroOpacity={heroOpacity} />
+        <SocialProof />
+        <Stats />
         <Journey />
         <Pricing />
         <CTA />
