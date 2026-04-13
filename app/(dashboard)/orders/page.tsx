@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Loader2, Eye, X, ChevronLeft, ChevronRight, Search, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/hooks/use-session";
 import { formatCOP } from "@/lib/utils/currency";
@@ -24,10 +24,17 @@ interface OrderItem {
 }
 
 interface OrderPayment {
+  reference?: string;
   status: string;
   payment_method_type: string | null;
   amount_in_cents: number;
   paid_at: string | null;
+}
+
+interface CancelledBy {
+  id: string;
+  name: string | null;
+  email: string;
 }
 
 interface OrderData {
@@ -41,6 +48,8 @@ interface OrderData {
   customer_count: number;
   status: string;
   created_at: string;
+  cancelled_at: string | null;
+  cancelled_by: CancelledBy | null;
   tables: { table_number: number; label: string | null };
   order_items: OrderItem[];
   payments: OrderPayment[];
@@ -98,6 +107,18 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [detailOrder, setDetailOrder] = useState<OrderData | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchDebounced, setSearchDebounced] = useState("");
+  const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setSearchDebounced(searchInput.trim()), 350);
+    return () => window.clearTimeout(id);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchDebounced]);
 
   const loadOrders = useCallback(async () => {
     if (!restaurantId) return;
@@ -109,24 +130,67 @@ export default function OrdersPage() {
     if (range.from) params.set("from", range.from);
     if (range.to) params.set("to", range.to);
     params.set("page", String(page));
+    if (searchDebounced) params.set("q", searchDebounced);
 
     const res = await fetch(
       `/api/restaurant/${restaurantId}/orders?${params.toString()}`
     );
     if (res.ok) {
       setData(await res.json());
+    } else if (res.status === 429) {
+      toast.error("Demasiadas solicitudes — espera un momento");
     } else {
       toast.error("Error cargando órdenes");
     }
     setLoading(false);
-  }, [restaurantId, statusFilter, periodFilter, page]);
+  }, [restaurantId, statusFilter, periodFilter, page, searchDebounced]);
 
   useEffect(() => {
     if (!restaurantId) return;
-    // loadOrders is async — setState inside runs after await
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadOrders();
   }, [restaurantId, loadOrders]);
+
+  async function handleExport() {
+    if (!restaurantId) return;
+    setExporting(true);
+    try {
+      const params = new URLSearchParams();
+      if (statusFilter) params.set("status", statusFilter);
+      const range = getDateRange(periodFilter);
+      if (range.from) params.set("from", range.from);
+      if (range.to) params.set("to", range.to);
+
+      const res = await fetch(
+        `/api/restaurant/${restaurantId}/orders/export?${params.toString()}`
+      );
+
+      if (!res.ok) {
+        if (res.status === 429) toast.error("Demasiadas exportaciones — espera un momento");
+        else if (res.status === 400) {
+          const err = await res.json().catch(() => ({ error: "Rango inválido" }));
+          toast.error(err.error || "Rango inválido");
+        } else toast.error("No se pudo exportar");
+        return;
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get("content-disposition") || "";
+      const match = disposition.match(/filename="?([^"]+)"?/i);
+      const filename = match?.[1] || `ordenes-${new Date().toISOString().slice(0, 10)}.csv`;
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Exportación lista");
+    } catch {
+      toast.error("No se pudo exportar");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   async function handleCancel(orderId: string) {
     if (!restaurantId) return;
@@ -196,7 +260,7 @@ export default function OrdersPage() {
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-lg bg-white text-gray-700 outline-none"
+          className="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-lg bg-white text-gray-700 outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-1"
         >
           <option value="">Todos los estados</option>
           <option value="PENDING">Pendiente</option>
@@ -204,6 +268,42 @@ export default function OrdersPage() {
           <option value="PAID">Pagada</option>
           <option value="CANCELLED">Cancelada</option>
         </select>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          <input
+            type="search"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value.slice(0, 80))}
+            placeholder="Buscar por mesa, producto, ID, referencia..."
+            aria-label="Buscar órdenes"
+            className="pl-8 pr-7 py-1.5 text-[12px] w-[260px] border border-gray-200 rounded-lg bg-white text-gray-700 outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-1"
+          />
+          {searchInput && (
+            <button
+              onClick={() => setSearchInput("")}
+              aria-label="Limpiar búsqueda"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+
+        {/* Export */}
+        <button
+          onClick={handleExport}
+          disabled={exporting}
+          className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-lg bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-1"
+        >
+          {exporting ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Download className="w-3.5 h-3.5" />
+          )}
+          Exportar CSV
+        </button>
       </div>
 
       {/* Table */}
@@ -411,6 +511,22 @@ export default function OrdersPage() {
                   Pago: {detailOrder.payments[0].payment_method_type || "N/A"} · {formatCOP(detailOrder.payments[0].amount_in_cents)}
                   {detailOrder.payments[0].paid_at && (
                     <> · {formatDate(detailOrder.payments[0].paid_at)}</>
+                  )}
+                  {detailOrder.payments[0].reference && (
+                    <> · Ref: <span className="font-mono">{detailOrder.payments[0].reference}</span></>
+                  )}
+                </div>
+              )}
+
+              {/* Cancellation audit */}
+              {detailOrder.status === "CANCELLED" && detailOrder.cancelled_by && (
+                <div className="rounded-lg border border-red-100 bg-red-50/60 px-3 py-2 text-[12px] text-red-700">
+                  Cancelada por{" "}
+                  <span className="font-medium">
+                    {detailOrder.cancelled_by.name || detailOrder.cancelled_by.email}
+                  </span>
+                  {detailOrder.cancelled_at && (
+                    <> · {formatDate(detailOrder.cancelled_at)}</>
                   )}
                 </div>
               )}

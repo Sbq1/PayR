@@ -5,13 +5,27 @@ import { handleApiError } from "@/lib/utils/errors";
 import { verifyOwnership } from "@/lib/utils/verify-ownership";
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/utils/rate-limit";
 import { z } from "zod/v4";
+import { Prisma } from "@/lib/generated/prisma/client";
 
-const ordersLimiter = rateLimit("orders", { interval: 60_000, limit: 30 });
+const ordersListLimiter = rateLimit("orders-list", { interval: 60_000, limit: 60 });
+const ordersCancelLimiter = rateLimit("orders-cancel", { interval: 60_000, limit: 30 });
 const PAGE_SIZE = 20;
+const MAX_PAGE = 500;
+const MAX_DATE_RANGE_DAYS = 366;
 
 const validStatuses = ["PENDING", "PAYING", "PAID", "CANCELLED"] as const;
+type OrderStatus = (typeof validStatuses)[number];
 
-// GET /api/restaurant/[restaurantId]/orders?status=PAID&from=...&to=...&page=1
+// ─── Helpers ──────────────────────────────────────────────────────
+
+function parseDateParam(raw: string | null): Date | null | "invalid" {
+  if (!raw) return null;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "invalid";
+  return d;
+}
+
+// GET /api/restaurant/[restaurantId]/orders?status=&from=&to=&page=&q=
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ restaurantId: string }> }
@@ -22,37 +36,77 @@ export async function GET(
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
+    const rl = await ordersListLimiter.check(getClientIp(request));
+    if (!rl.success) return rateLimitResponse(rl.resetAt);
+
     const { restaurantId } = await params;
     await verifyOwnership(restaurantId, session.user.id);
 
     const url = request.nextUrl;
-    const status = url.searchParams.get("status");
-    const from = url.searchParams.get("from");
-    const to = url.searchParams.get("to");
-    const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+    const statusRaw = url.searchParams.get("status");
+    const fromRaw = url.searchParams.get("from");
+    const toRaw = url.searchParams.get("to");
+    const pageRaw = url.searchParams.get("page");
+    const qRaw = url.searchParams.get("q");
 
-    // Validate status if provided
-    if (status && !validStatuses.includes(status as typeof validStatuses[number])) {
+    // Status validation
+    if (statusRaw && !validStatuses.includes(statusRaw as OrderStatus)) {
       return Response.json({ error: "Estado inválido" }, { status: 400 });
     }
 
-    const where: Record<string, unknown> = {
-      restaurant_id: restaurantId,
-    };
-
-    if (status) {
-      where.status = status;
+    // Date validation (reject malformed)
+    const from = parseDateParam(fromRaw);
+    const to = parseDateParam(toRaw);
+    if (from === "invalid" || to === "invalid") {
+      return Response.json({ error: "Fecha inválida" }, { status: 400 });
     }
 
-    if (from || to) {
-      const dateFilter: Record<string, Date> = {};
-      if (from) dateFilter.gte = new Date(from);
-      if (to) {
-        const toDate = new Date(to);
-        toDate.setHours(23, 59, 59, 999);
-        dateFilter.lte = toDate;
+    // Range limit
+    if (from && to) {
+      const days = (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24);
+      if (days < 0) {
+        return Response.json({ error: "El rango de fechas está invertido" }, { status: 400 });
       }
-      where.created_at = dateFilter;
+      if (days > MAX_DATE_RANGE_DAYS) {
+        return Response.json(
+          { error: `Rango de fechas no puede exceder ${MAX_DATE_RANGE_DAYS} días` },
+          { status: 400 },
+        );
+      }
+    }
+
+    // Page validation
+    const parsedPage = Number(pageRaw);
+    const page = Math.min(
+      MAX_PAGE,
+      Math.max(1, Number.isFinite(parsedPage) ? Math.floor(parsedPage) : 1),
+    );
+
+    // Search — limit length to avoid DoS via huge LIKE patterns
+    const q = qRaw ? qRaw.trim().slice(0, 80) : null;
+
+    const where: Prisma.OrderWhereInput = { restaurant_id: restaurantId };
+    if (statusRaw) where.status = statusRaw as OrderStatus;
+
+    if (from || to) {
+      where.created_at = {};
+      if (from) where.created_at.gte = from;
+      if (to) {
+        to.setHours(23, 59, 59, 999);
+        where.created_at.lte = to;
+      }
+    }
+
+    if (q) {
+      // Search across: order id prefix, table number/label, item name, payment reference
+      const tableNumber = /^\d+$/.test(q) ? Number(q) : undefined;
+      where.OR = [
+        { id: { startsWith: q } },
+        { tables: { label: { contains: q, mode: "insensitive" } } },
+        ...(tableNumber !== undefined ? [{ tables: { table_number: tableNumber } }] : []),
+        { order_items: { some: { name: { contains: q, mode: "insensitive" } } } },
+        { payments: { some: { reference: { contains: q, mode: "insensitive" } } } },
+      ];
     }
 
     const [orders, total] = await Promise.all([
@@ -72,6 +126,7 @@ export async function GET(
           },
           payments: {
             select: {
+              reference: true,
               status: true,
               payment_method_type: true,
               amount_in_cents: true,
@@ -79,6 +134,9 @@ export async function GET(
             },
             orderBy: { created_at: "desc" },
             take: 1,
+          },
+          cancelled_by: {
+            select: { id: true, name: true, email: true },
           },
         },
         orderBy: { created_at: "desc" },
@@ -99,8 +157,10 @@ export async function GET(
   }
 }
 
+// ─── Cancel ───────────────────────────────────────────────────────
+
 const cancelSchema = z.object({
-  orderId: z.string(),
+  orderId: z.string().min(1).max(64),
   status: z.literal("CANCELLED"),
 });
 
@@ -115,13 +175,17 @@ export async function PATCH(
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const rl = await ordersLimiter.check(getClientIp(request));
+    const rl = await ordersCancelLimiter.check(getClientIp(request));
     if (!rl.success) return rateLimitResponse(rl.resetAt);
 
     const { restaurantId } = await params;
     await verifyOwnership(restaurantId, session.user.id);
 
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return Response.json({ error: "Body inválido" }, { status: 400 });
+    }
+
     const parsed = cancelSchema.safeParse(body);
     if (!parsed.success) {
       return Response.json(
@@ -131,35 +195,65 @@ export async function PATCH(
     }
 
     const { orderId } = parsed.data;
+    const userId = session.user.id;
 
-    // Verify order belongs to restaurant
-    const order = await db.order.findFirst({
-      where: { id: orderId, restaurant_id: restaurantId },
+    // Atomic: verify + guard Payment + update order + release table
+    const result = await db.$transaction(async (tx) => {
+      const order = await tx.order.findFirst({
+        where: { id: orderId, restaurant_id: restaurantId },
+        select: {
+          id: true,
+          status: true,
+          table_id: true,
+          payments: {
+            select: { status: true },
+            where: { status: { in: ["PENDING", "APPROVED"] } },
+          },
+        },
+      });
+
+      if (!order) {
+        return { ok: false as const, status: 404, error: "Orden no encontrada" };
+      }
+
+      if (order.status !== "PENDING") {
+        return {
+          ok: false as const,
+          status: 409,
+          error: `No se puede cancelar una orden con estado ${order.status}`,
+        };
+      }
+
+      if (order.payments.length > 0) {
+        return {
+          ok: false as const,
+          status: 409,
+          error: "La orden tiene un pago en proceso o aprobado — no se puede cancelar",
+        };
+      }
+
+      const updated = await tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: "CANCELLED",
+          cancelled_by_user_id: userId,
+          cancelled_at: new Date(),
+        },
+      });
+
+      await tx.table.update({
+        where: { id: order.table_id },
+        data: { status: "AVAILABLE" },
+      });
+
+      return { ok: true as const, order: updated };
     });
 
-    if (!order) {
-      return Response.json({ error: "Orden no encontrada" }, { status: 404 });
+    if (!result.ok) {
+      return Response.json({ error: result.error }, { status: result.status });
     }
 
-    if (order.status !== "PENDING") {
-      return Response.json(
-        { error: `No se puede cancelar una orden con estado ${order.status}` },
-        { status: 409 }
-      );
-    }
-
-    const updated = await db.order.update({
-      where: { id: orderId },
-      data: { status: "CANCELLED" },
-    });
-
-    // Release table back to available
-    await db.table.update({
-      where: { id: order.table_id },
-      data: { status: "AVAILABLE" },
-    });
-
-    return Response.json(updated);
+    return Response.json(result.order);
   } catch (error) {
     return handleApiError(error);
   }

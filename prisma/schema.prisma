@@ -8,15 +8,16 @@ datasource db {
 }
 
 model User {
-  id             String       @id @default(dbgenerated("(gen_random_uuid())::text"))
-  name           String?
-  email          String       @unique
-  email_verified DateTime?    @db.Timestamptz(6)
-  password_hash  String?
-  image          String?
-  created_at     DateTime     @default(now()) @db.Timestamptz(6)
-  updated_at     DateTime     @default(now()) @db.Timestamptz(6)
-  restaurants    Restaurant[]
+  id                String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name              String?
+  email             String       @unique
+  email_verified    DateTime?    @db.Timestamptz(6)
+  password_hash     String?
+  image             String?
+  created_at        DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime     @default(now()) @db.Timestamptz(6)
+  restaurants       Restaurant[]
+  cancelled_orders  Order[]      @relation("OrderCancelledBy")
 
   @@map("users")
 }
@@ -100,26 +101,30 @@ model QrCode {
 }
 
 model Order {
-  id               String       @id @default(dbgenerated("(gen_random_uuid())::text"))
-  restaurant_id    String
-  table_id         String
-  siigo_invoice_id String?
-  subtotal         Int
-  tax              Int          @default(0)
-  tip_amount       Int          @default(0)
-  tip_percentage   Float?
-  total            Int
-  customer_count   Int          @default(1)
-  status           order_status @default(PENDING)
-  created_at       DateTime     @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime     @default(now()) @db.Timestamptz(6)
-  order_items      OrderItem[]
-  restaurants      Restaurant   @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  tables           Table        @relation(fields: [table_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  payments         Payment[]
+  id                   String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  restaurant_id        String
+  table_id             String
+  siigo_invoice_id     String?
+  subtotal             Int
+  tax                  Int          @default(0)
+  tip_amount           Int          @default(0)
+  tip_percentage       Float?
+  total                Int
+  customer_count       Int          @default(1)
+  status               order_status @default(PENDING)
+  cancelled_by_user_id String?
+  cancelled_at         DateTime?    @db.Timestamptz(6)
+  created_at           DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime     @default(now()) @db.Timestamptz(6)
+  order_items          OrderItem[]
+  restaurants          Restaurant   @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tables               Table        @relation(fields: [table_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cancelled_by         User?        @relation("OrderCancelledBy", fields: [cancelled_by_user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  payments             Payment[]
 
   @@index([restaurant_id, created_at], map: "idx_orders_restaurant_date")
   @@index([table_id], map: "idx_orders_table")
+  @@index([cancelled_by_user_id], map: "idx_orders_cancelled_by")
   @@map("orders")
 }
 
