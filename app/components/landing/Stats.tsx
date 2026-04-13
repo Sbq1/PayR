@@ -1,102 +1,71 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Zap, PackageMinus, Cable, Clock } from "lucide-react";
+import { Timer, MonitorSmartphone, RefreshCw } from "lucide-react";
 
 const stats = [
   {
     value: "30s",
-    label: "Tiempo promedio de pago",
-    sub: "Desde que escanean hasta que confirman",
-    icon: Zap,
-    accent: "from-indigo-500 to-violet-500",
+    label: "Tiempo de pago",
+    desc: "Reducimos el tiempo de espera en caja un 40%. Tus clientes lo agradecerán.",
+    icon: Timer,
+    bg: "bg-[#e1e0ff]",
+    color: "text-[#4648d4]",
   },
   {
     value: "0",
     label: "Hardware adicional",
-    sub: "Cero terminales, cero datáfonos extra",
-    icon: PackageMinus,
-    accent: "from-violet-500 to-fuchsia-500",
+    desc: "Usa lo que ya tienes. Sin cables, sin terminales costosas, sin complicaciones.",
+    icon: MonitorSmartphone,
+    bg: "bg-[#e9ddff]",
+    color: "text-[#6b38d4]",
   },
   {
     value: "100%",
     label: "Sincronización POS",
-    sub: "La cuenta viene directo de tu sistema",
-    icon: Cable,
-    accent: "from-fuchsia-500 to-pink-500",
-  },
-  {
-    value: "24/7",
-    label: "Visibilidad operativa",
-    sub: "Mesas, pagos y métricas en vivo",
-    icon: Clock,
-    accent: "from-pink-500 to-rose-500",
+    desc: "Tus inventarios y ventas actualizados en tiempo real en todos tus dispositivos.",
+    icon: RefreshCw,
+    bg: "bg-[#ffd6fd]",
+    color: "text-[#9e00b5]",
   },
 ];
 
 export function Stats() {
   return (
-    <section className="relative bg-white py-24 md:py-32 border-t border-gray-100 overflow-hidden grain">
-      {/* Subtle gradient backdrop */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(ellipse 70% 50% at 50% 0%, rgb(165 180 252 / 0.15) 0%, transparent 60%)",
-        }}
-      />
-
-      <div className="max-w-[1280px] mx-auto px-6">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6 }}
-          className="max-w-[720px] mb-16"
-        >
-          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.2em] block mb-4">
-            Los números
-          </span>
-          <h2 className="text-[36px] md:text-[52px] font-[900] tracking-[-0.03em] leading-[1.05] text-gray-900">
-            Cobros más rápidos.
-            <br />
-            <span className="bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
-              Operación más simple.
-            </span>
+    <section className="py-24 md:py-32 px-6">
+      <div className="max-w-[1100px] mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="font-[var(--font-manrope)] text-[28px] md:text-[44px] font-bold text-[#141b2b] mb-4">
+            Eficiencia que se siente
           </h2>
-        </motion.div>
+          <p className="text-[16px] text-[#464554] max-w-xl mx-auto">
+            Diseñado para negocios que no tienen un segundo que perder. Menos pasos, más ventas.
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.5, delay: i * 0.08 }}
-              className="group relative rounded-2xl border border-gray-200 bg-white p-6 overflow-hidden glow-hover"
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              className="rounded-3xl bg-white p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(20,27,43,0.05)] transition-shadow duration-300"
             >
-              {/* Gradient corner accent */}
               <div
-                aria-hidden="true"
-                className={`absolute -top-10 -right-10 h-32 w-32 rounded-full bg-gradient-to-br ${stat.accent} opacity-0 group-hover:opacity-20 blur-2xl transition-opacity duration-500`}
-              />
-
-              <div
-                className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${stat.accent} text-white mb-5 shadow-sm`}
+                className={`w-14 h-14 rounded-2xl ${stat.bg} flex items-center justify-center mb-6`}
               >
-                <stat.icon className="w-5 h-5" strokeWidth={2.2} />
+                <stat.icon className={`w-6 h-6 ${stat.color}`} strokeWidth={2} />
               </div>
-
-              <p className="text-[52px] md:text-[60px] font-[900] tracking-[-0.04em] leading-none text-gray-900 mb-2">
+              <p className="font-[var(--font-manrope)] text-[48px] font-extrabold text-[#141b2b] tracking-tight leading-none mb-2">
                 {stat.value}
               </p>
-              <p className="text-[14px] font-semibold text-gray-900 mb-1">
+              <h3 className="text-[16px] font-bold text-[#141b2b] mb-2">
                 {stat.label}
-              </p>
-              <p className="text-[12px] text-gray-500 leading-relaxed">
-                {stat.sub}
+              </h3>
+              <p className="text-[14px] text-[#464554] leading-relaxed">
+                {stat.desc}
               </p>
             </motion.div>
           ))}

@@ -1,63 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { motion, MotionValue } from "framer-motion";
-import { ArrowRight, Sparkles, Check, Lock, ChevronRight } from "lucide-react";
-import { ParticleField } from "./ParticleField";
+import { motion } from "framer-motion";
+import { ArrowRight, Check, Lock, ChevronRight } from "lucide-react";
 
-export function Hero({
-  heroY,
-  heroOpacity,
-  phoneY,
-  meshY,
-}: {
-  heroY: MotionValue<number>;
-  heroOpacity: MotionValue<number>;
-  phoneY: MotionValue<number>;
-  meshY: MotionValue<number>;
-}) {
+export function Hero() {
   return (
-    <section className="relative pt-36 pb-24 md:pt-44 md:pb-32 overflow-hidden bg-white grain">
-      {/* Animated aurora mesh background — parallax */}
-      <motion.div
-        aria-hidden="true"
-        style={{ y: meshY }}
-        className="pointer-events-none absolute inset-0 -z-10 aurora"
-      />
-      {/* Spinning conic accent */}
+    <section className="relative pt-36 pb-24 md:pt-44 md:pb-32 overflow-hidden bg-[#f9f9ff]">
+      {/* Subtle radial glow */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-40 right-[-15%] h-[720px] w-[720px] rounded-full opacity-50 blur-3xl motion-safe:animate-[spin_32s_linear_infinite] -z-10"
+        className="pointer-events-none absolute inset-0 -z-10"
         style={{
           background:
-            "conic-gradient(from 180deg at 50% 50%, #a5b4fc 0deg, #c4b5fd 120deg, #f0abfc 240deg, #a5b4fc 360deg)",
+            "radial-gradient(ellipse 70% 50% at 50% 0%, rgba(70,72,212,0.08) 0%, transparent 60%)",
         }}
       />
-      {/* Dot grid overlay */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.3]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, rgb(17 24 39 / 0.12) 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-          maskImage:
-            "radial-gradient(ellipse 60% 60% at 50% 40%, black 40%, transparent 80%)",
-        }}
-      />
-      {/* Canvas particle network */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 opacity-50"
-      >
-        <ParticleField count={50} connectDistance={130} className="w-full h-full" />
-      </div>
 
-      <motion.div
-        style={{ y: heroY, opacity: heroOpacity }}
-        className="max-w-[1280px] mx-auto px-6"
-      >
-        <div className="grid lg:grid-cols-[1.1fr_1fr] gap-12 lg:gap-12 items-center">
+      <div className="max-w-[1280px] mx-auto px-6">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* LEFT — copy + CTAs */}
           <div className="flex flex-col items-start text-left">
             <motion.div
@@ -66,12 +27,8 @@ export function Hero({
               transition={{ duration: 0.5 }}
               className="mb-7"
             >
-              <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white/80 backdrop-blur-sm px-3 py-1 text-[12px] font-medium text-gray-700 shadow-sm">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 motion-safe:animate-ping" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                </span>
-                Disponible en Colombia · Powered by Wompi
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#e1e0ff] px-4 py-1.5 text-[11px] font-bold text-[#07006c] uppercase tracking-wider">
+                Revolución en Pagos
               </span>
             </motion.div>
 
@@ -79,14 +36,13 @@ export function Hero({
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.05 }}
-              className="text-[44px] sm:text-[56px] md:text-[72px] lg:text-[80px] font-[900] tracking-[-0.04em] leading-[0.95] text-gray-900 mb-6"
+              className="font-[var(--font-manrope)] text-[44px] sm:text-[56px] md:text-[72px] lg:text-[80px] font-extrabold tracking-[-0.03em] leading-[1.05] text-[#141b2b] mb-6"
             >
-              Cobra en la mesa,
+              Cobros más rápidos,
               <br />
-              sin terminal,
-              <br />
-              <span className="bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
-                en 30 segundos.
+              operación{" "}
+              <span className="bg-gradient-to-r from-[#4648d4] to-[#6b38d4] bg-clip-text text-transparent">
+                más simple
               </span>
             </motion.h1>
 
@@ -94,10 +50,11 @@ export function Hero({
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.15 }}
-              className="text-[17px] md:text-[19px] text-gray-600 max-w-[540px] leading-relaxed mb-9"
+              className="text-[17px] md:text-[19px] text-[#464554] max-w-[540px] leading-relaxed mb-9"
             >
-              Clientes escanean, ven la cuenta, pagan, se van. Sin hardware
-              nuevo, sin entrenar meseros. Ves cada pago en tiempo real.
+              Smart Checkout transforma tu punto de venta en una experiencia
+              digital sin fricciones. Elimina hardware costoso y acelera tus
+              transacciones.
             </motion.p>
 
             <motion.div
@@ -108,16 +65,16 @@ export function Hero({
             >
               <Link
                 href="/register"
-                className="group inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl text-[15px] font-semibold text-white bg-gray-900 hover:bg-gray-800 transition-all shadow-[0_8px_24px_-12px_rgba(0,0,0,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
+                className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-[15px] font-bold text-white bg-gradient-to-br from-[#4648d4] to-[#6063ee] hover:opacity-90 transition-all active:scale-[0.98] shadow-[0_8px_24px_-12px_rgba(70,72,212,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4648d4] focus-visible:ring-offset-2"
               >
-                Empezar gratis
+                Prueba Gratis 14 Días
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <a
                 href="#historia"
-                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl text-[15px] font-semibold text-gray-900 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-[15px] font-bold text-[#4648d4] bg-[#e1e8fd] hover:bg-[#dce2f7] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4648d4] focus-visible:ring-offset-2"
               >
-                Ver cómo funciona
+                Ver Demostración
               </a>
             </motion.div>
 
@@ -125,9 +82,9 @@ export function Hero({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.35 }}
-              className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-gray-600"
+              className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-[#464554]"
             >
-              {["Setup en 5 minutos", "Sin cargo mensual inicial", "Integra tu POS"].map(
+              {["Setup en 5 minutos", "Sin hardware adicional", "Integra tu POS"].map(
                 (item) => (
                   <li key={item} className="flex items-center gap-2">
                     <Check className="w-3.5 h-3.5 text-emerald-500" />
@@ -138,64 +95,40 @@ export function Hero({
             </motion.ul>
           </div>
 
-          {/* RIGHT — phone mockup with floating notifications */}
-          <div className="relative flex items-center justify-center lg:justify-end tilt-stage">
-            {/* Orbiting decorative dots */}
-            <div aria-hidden="true" className="absolute inset-0 pointer-events-none">
-              <span className="absolute top-[15%] left-[8%] w-2.5 h-2.5 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 blur-[1px] float-a opacity-80" />
-              <span className="absolute top-[30%] right-[5%] w-3.5 h-3.5 rounded-full bg-gradient-to-br from-fuchsia-400 to-pink-500 blur-[1px] float-b opacity-70" />
-              <span className="absolute bottom-[20%] left-[10%] w-2 h-2 rounded-full bg-gradient-to-br from-violet-400 to-fuchsia-400 blur-[1px] float-c opacity-70" />
-              <span className="absolute bottom-[10%] right-[12%] w-4 h-4 rounded-full bg-gradient-to-br from-pink-400 to-rose-400 blur-sm float-a opacity-60" style={{ animationDelay: "1.5s" }} />
-              <span className="absolute top-[8%] right-[22%] w-1.5 h-1.5 rounded-full bg-indigo-500 float-c opacity-80" style={{ animationDelay: "2.5s" }} />
-            </div>
-
+          {/* RIGHT — phone mockup */}
+          <div className="relative flex items-center justify-center lg:justify-end">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.25 }}
-              style={{ y: phoneY }}
-              className="relative w-full max-w-[360px] tilt-phone-right"
+              className="relative w-full max-w-[360px]"
             >
-              {/* Floating notification — top (safely above phone) */}
+              {/* Floating notification — payment received */}
               <motion.div
-                initial={{ opacity: 0, x: 20, y: -10 }}
-                animate={{ opacity: 1, x: 0, y: 0 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.9 }}
-                className="absolute -top-12 -left-14 z-20 rounded-xl border border-white/70 bg-white/95 backdrop-blur-xl p-3 shadow-[0_20px_50px_-15px_rgba(79,70,229,0.4)] hidden sm:flex items-center gap-3 w-[240px]"
+                className="absolute -top-10 -left-12 z-20 rounded-2xl bg-white p-3 shadow-[0_20px_40px_rgba(20,27,43,0.05)] hidden sm:flex items-center gap-3 w-[230px]"
               >
-                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shrink-0 shadow-sm">
+                <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 shrink-0">
                   <Check className="w-4 h-4" strokeWidth={3} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-bold text-gray-900 truncate">
+                  <p className="text-[12px] font-bold text-[#141b2b]">
                     Pago recibido
                   </p>
-                  <p className="text-[10.5px] text-gray-500 tabular-nums">
+                  <p className="text-[10.5px] text-[#767586] tabular-nums">
                     Mesa 05 · Nequi · $107.800
                   </p>
                 </div>
-                <span className="text-[9px] text-gray-400 shrink-0 tabular-nums">2s</span>
               </motion.div>
 
-              {/* Floating notification — bottom right */}
-              <motion.div
-                initial={{ opacity: 0, x: -20, y: 10 }}
-                animate={{ opacity: 1, x: 0, y: 0 }}
-                transition={{ duration: 0.6, delay: 1.1 }}
-                className="absolute -bottom-4 -right-10 z-20 rounded-xl border border-white/70 bg-white/95 backdrop-blur-xl px-3.5 py-2.5 shadow-[0_20px_50px_-15px_rgba(192,38,211,0.35)] hidden sm:flex items-center gap-2"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-fuchsia-500" />
-                <p className="text-[12px] font-medium text-gray-900">
-                  Mesa cerrada
-                </p>
-              </motion.div>
-
-              {/* Phone frame — layered shadows for depth */}
+              {/* Phone frame */}
               <div
                 className="relative mx-auto w-[310px] h-[640px] rounded-[48px] bg-gradient-to-br from-gray-800 via-gray-900 to-black p-[10px]"
                 style={{
                   boxShadow:
-                    "0 60px 120px -30px rgba(79,70,229,0.45), 0 30px 60px -20px rgba(0,0,0,0.25), inset 0 0 0 2px rgba(255,255,255,0.05)",
+                    "0 60px 120px -30px rgba(70,72,212,0.3), 0 30px 60px -20px rgba(0,0,0,0.2)",
                 }}
               >
                 {/* Screen */}
@@ -207,20 +140,17 @@ export function Hero({
                   <div className="flex items-center justify-between px-6 pt-3.5 pb-2 text-[11px] font-semibold text-gray-900 z-20 relative">
                     <span>9:41</span>
                     <span className="flex items-center gap-[3px]">
-                      {/* Signal */}
                       <span className="flex items-end gap-[1.5px] h-2.5">
                         <span className="w-[2.5px] h-[4px] rounded-[1px] bg-gray-900" />
                         <span className="w-[2.5px] h-[6px] rounded-[1px] bg-gray-900" />
                         <span className="w-[2.5px] h-[8px] rounded-[1px] bg-gray-900" />
                         <span className="w-[2.5px] h-[10px] rounded-[1px] bg-gray-900" />
                       </span>
-                      {/* Wifi */}
                       <svg width="12" height="9" viewBox="0 0 12 9" fill="none" className="ml-0.5">
                         <path d="M6 8a1 1 0 100-2 1 1 0 000 2z" fill="#111827" />
                         <path d="M2.5 4.5a5 5 0 017 0" stroke="#111827" strokeWidth="1.2" strokeLinecap="round" fill="none" />
                         <path d="M0.5 2.5a8 8 0 0111 0" stroke="#111827" strokeWidth="1.2" strokeLinecap="round" fill="none" />
                       </svg>
-                      {/* Battery */}
                       <span className="flex items-center ml-1">
                         <span className="relative w-6 h-2.5 rounded-[3px] border border-gray-900/80 flex items-center">
                           <span className="absolute inset-[1.5px] rounded-[1.5px] bg-gray-900" style={{ width: "75%" }} />
@@ -248,12 +178,12 @@ export function Hero({
                       className="absolute inset-0 opacity-60"
                       style={{
                         background:
-                          "radial-gradient(ellipse 80% 80% at 85% 0%, rgba(139,92,246,0.35) 0%, transparent 60%), radial-gradient(ellipse 70% 80% at 10% 100%, rgba(236,72,153,0.28) 0%, transparent 60%)",
+                          "radial-gradient(ellipse 80% 80% at 85% 0%, rgba(70,72,212,0.35) 0%, transparent 60%), radial-gradient(ellipse 70% 80% at 10% 100%, rgba(107,56,212,0.28) 0%, transparent 60%)",
                       }}
                     />
                     <div className="relative px-4 py-3 flex items-center gap-3">
                       <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-lg">
-                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 via-violet-400 to-fuchsia-400" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#4648d4] to-[#6b38d4]" />
                         <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[13px] tracking-tighter">
                           LB
                         </div>
@@ -263,7 +193,7 @@ export function Hero({
                           La Barra
                         </p>
                         <p className="text-[10.5px] text-white/60 flex items-center gap-1 mt-0.5">
-                          <span className="inline-block w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="inline-block w-1 h-1 rounded-full bg-emerald-400 motion-safe:animate-pulse" />
                           Mesa 05 · 3 personas
                         </p>
                       </div>
@@ -273,7 +203,7 @@ export function Hero({
                     </div>
                   </div>
 
-                  {/* Bill items (compact) */}
+                  {/* Bill items */}
                   <div className="px-4 pb-3 space-y-2">
                     <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">
                       Tu cuenta
@@ -319,7 +249,7 @@ export function Hero({
                           key={m.label}
                           className={`flex-1 rounded-lg border py-1.5 flex items-center justify-center gap-1 text-[10px] font-bold ${
                             m.active
-                              ? "border-violet-500 bg-violet-50 text-violet-700"
+                              ? "border-[#4648d4] bg-[#e1e0ff] text-[#4648d4]"
                               : "border-gray-200 text-gray-500"
                           }`}
                         >
@@ -330,31 +260,30 @@ export function Hero({
                     </div>
                   </div>
 
-                  {/* Total row with big gradient number */}
+                  {/* Total */}
                   <div className="px-4 pb-3 flex items-baseline justify-between pt-2 border-t border-gray-100">
                     <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">
                       Total
                     </span>
-                    <span className="text-[26px] font-[900] tabular-nums tracking-tight bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+                    <span className="text-[26px] font-[900] tabular-nums tracking-tight bg-gradient-to-r from-[#4648d4] to-[#6b38d4] bg-clip-text text-transparent">
                       $107.800
                     </span>
                   </div>
 
-                  {/* Pay CTA with shine */}
+                  {/* Pay CTA */}
                   <div className="px-4 pb-3">
-                    <button
-                      className="group relative w-full py-3 rounded-2xl overflow-hidden shine-sweep"
+                    <div
+                      className="relative w-full py-3 rounded-2xl overflow-hidden"
                       style={{
-                        boxShadow:
-                          "0 10px 30px -8px rgba(139,92,246,0.5), inset 0 1px 0 rgba(255,255,255,0.2)",
+                        boxShadow: "0 10px 30px -8px rgba(70,72,212,0.4)",
                       }}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#4648d4] to-[#6063ee]" />
                       <span className="relative flex items-center justify-center gap-1.5 text-white text-[13px] font-bold">
                         Pagar $107.800
                         <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
                       </span>
-                    </button>
+                    </div>
                   </div>
 
                   {/* Trust row */}
@@ -370,17 +299,17 @@ export function Hero({
                 </div>
               </div>
 
-              {/* Decorative soft ring behind phone */}
+              {/* Soft glow behind phone */}
               <div
                 aria-hidden="true"
                 className="absolute inset-0 -z-10 flex items-center justify-center"
               >
-                <div className="w-[420px] h-[420px] rounded-full bg-gradient-to-br from-indigo-200/60 via-violet-200/40 to-fuchsia-200/50 blur-2xl" />
+                <div className="w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#4648d4]/15 via-[#6b38d4]/10 to-[#9e00b5]/15 blur-3xl" />
               </div>
             </motion.div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }

@@ -13,7 +13,7 @@ const partners = [
 
 export function SocialProof() {
   return (
-    <section className="relative bg-white border-t border-gray-100 py-14 md:py-16">
+    <section className="relative py-14 md:py-16 bg-[#f9f9ff]">
       <div className="max-w-[1280px] mx-auto px-6">
         <motion.p
           initial={{ opacity: 0, y: 8 }}
