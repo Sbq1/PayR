@@ -7,21 +7,24 @@ import { ArrowRight, MessageSquare } from "lucide-react";
 export function CTA() {
   return (
     <section className="relative overflow-hidden border-t border-gray-100">
-      <div className="relative bg-gray-900 py-24 md:py-36">
+      <div className="relative bg-gray-900 py-24 md:py-36 overflow-hidden grain">
+        {/* Aurora mesh */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 aurora-dark" />
+
         {/* Gradient orbs */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 overflow-hidden"
         >
           <div
-            className="absolute top-[-40%] left-[-10%] h-[600px] w-[600px] rounded-full opacity-40 blur-3xl motion-safe:animate-[spin_40s_linear_infinite]"
+            className="absolute top-[-40%] left-[-10%] h-[600px] w-[600px] rounded-full opacity-50 blur-3xl motion-safe:animate-[spin_40s_linear_infinite]"
             style={{
               background:
                 "conic-gradient(from 180deg at 50% 50%, #6366f1 0deg, #8b5cf6 120deg, #d946ef 240deg, #6366f1 360deg)",
             }}
           />
           <div
-            className="absolute bottom-[-40%] right-[-10%] h-[600px] w-[600px] rounded-full opacity-30 blur-3xl"
+            className="absolute bottom-[-40%] right-[-10%] h-[600px] w-[600px] rounded-full opacity-40 blur-3xl"
             style={{
               background:
                 "radial-gradient(circle, #ec4899 0%, #8b5cf6 50%, transparent 70%)",
@@ -29,15 +32,21 @@ export function CTA() {
           />
           {/* Grid pattern */}
           <div
-            className="absolute inset-0 opacity-[0.08]"
+            className="absolute inset-0 opacity-[0.1]"
             style={{
               backgroundImage:
-                "radial-gradient(circle, rgb(255 255 255 / 0.4) 1px, transparent 1px)",
+                "radial-gradient(circle, rgb(255 255 255 / 0.5) 1px, transparent 1px)",
               backgroundSize: "32px 32px",
               maskImage:
                 "radial-gradient(ellipse 70% 60% at 50% 50%, black 30%, transparent 80%)",
             }}
           />
+          {/* Floating dots */}
+          <span className="absolute top-[20%] left-[15%] w-2 h-2 rounded-full bg-indigo-400 blur-[1px] float-a" />
+          <span className="absolute top-[30%] right-[20%] w-3 h-3 rounded-full bg-fuchsia-400 blur-[2px] float-b" />
+          <span className="absolute bottom-[25%] left-[25%] w-2.5 h-2.5 rounded-full bg-violet-400 blur-[1.5px] float-c" />
+          <span className="absolute bottom-[20%] right-[15%] w-2 h-2 rounded-full bg-pink-400 blur-[1px] float-a" style={{ animationDelay: "2s" }} />
+          <span className="absolute top-[50%] left-[45%] w-1.5 h-1.5 rounded-full bg-white float-b opacity-70" style={{ animationDelay: "3s" }} />
         </div>
 
         <motion.div

@@ -269,13 +269,20 @@ function Visual1() {
 
 function Visual2() {
   return (
-    <div className="relative w-full max-w-[620px] h-[500px]">
-      {/* Client phone — left */}
+    <div className="relative w-full max-w-[620px] h-[500px] tilt-stage">
+      {/* Floating accent dots */}
+      <div aria-hidden="true" className="absolute inset-0 pointer-events-none">
+        <span className="absolute top-[10%] left-[45%] w-2 h-2 rounded-full bg-gradient-to-br from-violet-400 to-fuchsia-500 blur-[1px] float-a opacity-70" />
+        <span className="absolute bottom-[15%] right-[40%] w-2.5 h-2.5 rounded-full bg-gradient-to-br from-fuchsia-400 to-pink-500 blur-[1px] float-b opacity-60" />
+        <span className="absolute top-[50%] left-[5%] w-1.5 h-1.5 rounded-full bg-violet-500 float-c opacity-70" style={{ animationDelay: "1s" }} />
+      </div>
+
+      {/* Client phone — left, tilted towards center */}
       <div
-        className="absolute top-[20px] left-0 w-[250px] rounded-[36px] bg-gradient-to-br from-gray-800 via-gray-900 to-black p-[8px]"
+        className="absolute top-[20px] left-0 w-[250px] rounded-[36px] bg-gradient-to-br from-gray-800 via-gray-900 to-black p-[8px] tilt-phone-left"
         style={{
           boxShadow:
-            "0 40px 80px -20px rgba(217,70,239,0.35), 0 20px 40px -16px rgba(0,0,0,0.25), inset 0 0 0 1.5px rgba(255,255,255,0.05)",
+            "0 50px 100px -20px rgba(217,70,239,0.4), 0 30px 60px -20px rgba(99,102,241,0.25), inset 0 0 0 1.5px rgba(255,255,255,0.06)",
         }}
       >
         <div className="relative rounded-[28px] bg-white overflow-hidden">
@@ -377,7 +384,7 @@ function Visual2() {
         </div>
       </div>
 
-      {/* Signal arrow — phone → dashboard */}
+      {/* Signal arrow — phone → dashboard with traveling particle */}
       <svg
         className="absolute top-[220px] left-[240px] z-20"
         width="140"
@@ -390,6 +397,11 @@ function Visual2() {
             <stop offset="0%" stopColor="#a855f7" />
             <stop offset="100%" stopColor="#ec4899" />
           </linearGradient>
+          <radialGradient id="j2-dot-glow">
+            <stop offset="0%" stopColor="#fff" />
+            <stop offset="40%" stopColor="#ec4899" />
+            <stop offset="100%" stopColor="#ec4899" stopOpacity="0" />
+          </radialGradient>
         </defs>
         <path
           d="M 4 30 Q 70 0 136 30"
@@ -400,14 +412,30 @@ function Visual2() {
         />
         <circle cx="4" cy="30" r="3" fill="#a855f7" />
         <circle cx="136" cy="30" r="3" fill="#ec4899" />
+        {/* Traveling particle */}
+        <circle r="4" fill="url(#j2-dot-glow)">
+          <animateMotion
+            dur="2.2s"
+            repeatCount="indefinite"
+            path="M 4 30 Q 70 0 136 30"
+            rotate="auto"
+          />
+        </circle>
+        <circle r="6" fill="#ec4899" opacity="0.25">
+          <animateMotion
+            dur="2.2s"
+            repeatCount="indefinite"
+            path="M 4 30 Q 70 0 136 30"
+          />
+        </circle>
       </svg>
 
-      {/* Merchant dashboard — right */}
+      {/* Merchant dashboard — right, tilted towards phone */}
       <div
-        className="absolute top-[60px] right-0 w-[310px] rounded-2xl bg-white border border-gray-200 overflow-hidden"
+        className="absolute top-[60px] right-0 w-[310px] rounded-2xl bg-white border border-gray-200 overflow-hidden tilt-phone-right"
         style={{
           boxShadow:
-            "0 40px 80px -20px rgba(236,72,153,0.25), 0 20px 40px -16px rgba(0,0,0,0.1)",
+            "0 50px 100px -20px rgba(236,72,153,0.3), 0 30px 60px -20px rgba(99,102,241,0.15), 0 20px 40px -16px rgba(0,0,0,0.08)",
         }}
       >
         {/* Window chrome */}

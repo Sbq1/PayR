@@ -11,7 +11,7 @@ import {
 
 export function ProductShowcase() {
   return (
-    <section className="relative bg-gray-50 py-24 md:py-32 border-t border-gray-100 overflow-hidden">
+    <section className="relative bg-gray-50 py-24 md:py-32 border-t border-gray-100 overflow-hidden grain">
       {/* Backdrop gradient */}
       <div
         aria-hidden="true"

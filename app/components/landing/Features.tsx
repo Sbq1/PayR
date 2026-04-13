@@ -80,7 +80,7 @@ export function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.45, delay: (i % 3) * 0.06 }}
-              className="group relative rounded-2xl border border-gray-200 bg-white p-7 hover:border-gray-300 transition-colors"
+              className="group relative rounded-2xl border border-gray-200 bg-white p-7 glow-hover"
             >
               <div
                 className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gray-50 ${f.accent} mb-5 group-hover:scale-110 transition-transform`}

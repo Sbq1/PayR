@@ -329,3 +329,213 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* ============================================
+   LANDING — ADVANCED CSS EFFECTS
+   ============================================ */
+
+/* Animated conic gradient border (use with rounded wrapper) */
+@property --conic-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.conic-border {
+  position: relative;
+  isolation: isolate;
+}
+.conic-border::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--conic-angle),
+    #6366f1,
+    #8b5cf6,
+    #d946ef,
+    #ec4899,
+    #6366f1
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: conicSpin 6s linear infinite;
+  z-index: -1;
+}
+@keyframes conicSpin {
+  to { --conic-angle: 360deg; }
+}
+
+/* Fallback for browsers without @property */
+@supports not (background: conic-gradient(from 0deg, red)) {
+  .conic-border::before { display: none; }
+}
+
+/* Grain texture overlay */
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E");
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  z-index: 1;
+}
+
+/* Aurora mesh — layered gradient that slowly pans */
+@keyframes auroraPan {
+  0%, 100% {
+    background-position: 0% 50%, 100% 50%, 50% 100%;
+  }
+  50% {
+    background-position: 100% 50%, 0% 50%, 50% 0%;
+  }
+}
+.aurora {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 30%, rgba(99, 102, 241, 0.35) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 80% 20%, rgba(217, 70, 239, 0.3) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 60% at 50% 80%, rgba(139, 92, 246, 0.28) 0%, transparent 60%);
+  background-size: 200% 200%, 200% 200%, 200% 200%;
+  animation: auroraPan 18s ease-in-out infinite;
+}
+
+.aurora-dark {
+  background:
+    radial-gradient(ellipse 60% 40% at 30% 20%, rgba(99, 102, 241, 0.4) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 70% 80%, rgba(217, 70, 239, 0.35) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 50%, rgba(236, 72, 153, 0.25) 0%, transparent 65%);
+  background-size: 200% 200%, 200% 200%, 200% 200%;
+  animation: auroraPan 22s ease-in-out infinite;
+}
+
+/* 3D tilt — perspective wrapper */
+.tilt-stage {
+  perspective: 1600px;
+  perspective-origin: center;
+}
+.tilt-phone-left {
+  transform: rotateY(-8deg) rotateX(2deg);
+  transform-style: preserve-3d;
+  transition: transform 0.6s var(--ease-out);
+}
+.tilt-phone-right {
+  transform: rotateY(8deg) rotateX(2deg);
+  transform-style: preserve-3d;
+  transition: transform 0.6s var(--ease-out);
+}
+.tilt-stage:hover .tilt-phone-left {
+  transform: rotateY(-4deg) rotateX(1deg);
+}
+.tilt-stage:hover .tilt-phone-right {
+  transform: rotateY(4deg) rotateX(1deg);
+}
+
+/* Floating orbiting dots */
+@keyframes floatA {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(8px, -12px); }
+  50% { transform: translate(-6px, -18px); }
+  75% { transform: translate(-10px, 6px); }
+}
+@keyframes floatB {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(-14px, 10px); }
+  66% { transform: translate(8px, -16px); }
+}
+@keyframes floatC {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(14px, 14px); }
+}
+
+.float-a { animation: floatA 7s ease-in-out infinite; }
+.float-b { animation: floatB 9s ease-in-out infinite; }
+.float-c { animation: floatC 11s ease-in-out infinite; }
+
+/* Shine sweep — for CTA buttons & cards */
+@keyframes shineSweep {
+  0% { transform: translateX(-100%) skewX(-12deg); }
+  100% { transform: translateX(200%) skewX(-12deg); }
+}
+.shine-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.shine-sweep::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.25) 50%,
+    transparent 80%
+  );
+  transform: translateX(-100%) skewX(-12deg);
+  animation: shineSweep 3s ease-in-out infinite;
+  animation-delay: 1s;
+  pointer-events: none;
+}
+
+/* Travelling dot along SVG path (use with motion-path) */
+@keyframes travelPath {
+  from { offset-distance: 0%; }
+  to { offset-distance: 100%; }
+}
+
+/* Text gradient — animated */
+@keyframes gradShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.text-grad-animated {
+  background: linear-gradient(
+    90deg,
+    #6366f1,
+    #8b5cf6,
+    #d946ef,
+    #ec4899,
+    #8b5cf6,
+    #6366f1
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradShift 6s ease-in-out infinite;
+}
+
+/* Glow on hover for cards */
+.glow-hover {
+  position: relative;
+  transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out);
+}
+.glow-hover:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 20px 40px -10px rgba(99, 102, 241, 0.2),
+    0 10px 20px -8px rgba(217, 70, 239, 0.15);
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .aurora,
+  .aurora-dark,
+  .conic-border::before,
+  .float-a,
+  .float-b,
+  .float-c,
+  .shine-sweep::before,
+  .text-grad-animated {
+    animation: none;
+  }
+}

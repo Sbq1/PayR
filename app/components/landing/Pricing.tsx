@@ -90,23 +90,17 @@ export function Pricing() {
               className="relative"
             >
               {plan.highlighted && (
-                <>
-                  {/* Gradient border wrapper */}
-                  <div
-                    aria-hidden="true"
-                    className="absolute -inset-[1.5px] rounded-[26px] bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 opacity-80"
-                  />
-                  {/* Glow */}
-                  <div
-                    aria-hidden="true"
-                    className="absolute -inset-6 -z-10 rounded-[32px] bg-gradient-to-br from-indigo-500/20 via-violet-500/20 to-fuchsia-500/20 blur-2xl opacity-60"
-                  />
-                </>
+                <div
+                  aria-hidden="true"
+                  className="absolute -inset-8 -z-10 rounded-[32px] bg-gradient-to-br from-indigo-500/25 via-violet-500/20 to-fuchsia-500/25 blur-3xl opacity-70"
+                />
               )}
 
               <div
                 className={`relative rounded-[24px] bg-white p-8 md:p-10 flex flex-col h-full ${
-                  plan.highlighted ? "" : "border border-gray-200"
+                  plan.highlighted
+                    ? "conic-border"
+                    : "border border-gray-200"
                 }`}
               >
                 {plan.highlighted && (

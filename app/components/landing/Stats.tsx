@@ -36,7 +36,7 @@ const stats = [
 
 export function Stats() {
   return (
-    <section className="relative bg-white py-24 md:py-32 border-t border-gray-100 overflow-hidden">
+    <section className="relative bg-white py-24 md:py-32 border-t border-gray-100 overflow-hidden grain">
       {/* Subtle gradient backdrop */}
       <div
         aria-hidden="true"
@@ -75,7 +75,7 @@ export function Stats() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.5, delay: i * 0.08 }}
-              className="group relative rounded-2xl border border-gray-200 bg-white p-6 overflow-hidden hover:border-gray-300 transition-colors"
+              className="group relative rounded-2xl border border-gray-200 bg-white p-6 overflow-hidden glow-hover"
             >
               {/* Gradient corner accent */}
               <div

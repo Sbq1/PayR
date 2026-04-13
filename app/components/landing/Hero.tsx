@@ -12,40 +12,33 @@ export function Hero({
   heroOpacity: MotionValue<number>;
 }) {
   return (
-    <section className="relative pt-36 pb-24 md:pt-44 md:pb-32 overflow-hidden bg-white">
-      {/* Gradient mesh background */}
+    <section className="relative pt-36 pb-24 md:pt-44 md:pb-32 overflow-hidden bg-white grain">
+      {/* Animated aurora mesh background */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
-      >
-        {/* Top-right conic blob */}
-        <div
-          className="absolute -top-40 right-[-15%] h-[720px] w-[720px] rounded-full opacity-60 blur-3xl motion-safe:animate-[spin_28s_linear_infinite]"
-          style={{
-            background:
-              "conic-gradient(from 180deg at 50% 50%, #a5b4fc 0deg, #c4b5fd 120deg, #f0abfc 240deg, #a5b4fc 360deg)",
-          }}
-        />
-        {/* Bottom-left soft blob */}
-        <div
-          className="absolute bottom-[-20%] left-[-10%] h-[560px] w-[560px] rounded-full opacity-40 blur-3xl"
-          style={{
-            background:
-              "radial-gradient(circle at 30% 30%, #c7d2fe 0%, #e9d5ff 40%, transparent 70%)",
-          }}
-        />
-        {/* Dot grid overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.25]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, rgb(17 24 39 / 0.08) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-            maskImage:
-              "radial-gradient(ellipse 60% 60% at 50% 40%, black 40%, transparent 80%)",
-          }}
-        />
-      </div>
+        className="pointer-events-none absolute inset-0 -z-10 aurora"
+      />
+      {/* Spinning conic accent */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-40 right-[-15%] h-[720px] w-[720px] rounded-full opacity-50 blur-3xl motion-safe:animate-[spin_32s_linear_infinite] -z-10"
+        style={{
+          background:
+            "conic-gradient(from 180deg at 50% 50%, #a5b4fc 0deg, #c4b5fd 120deg, #f0abfc 240deg, #a5b4fc 360deg)",
+        }}
+      />
+      {/* Dot grid overlay */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 opacity-[0.3]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, rgb(17 24 39 / 0.12) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+          maskImage:
+            "radial-gradient(ellipse 60% 60% at 50% 40%, black 40%, transparent 80%)",
+        }}
+      />
 
       <motion.div
         style={{ y: heroY, opacity: heroOpacity }}
@@ -133,12 +126,21 @@ export function Hero({
           </div>
 
           {/* RIGHT — phone mockup with floating notifications */}
-          <div className="relative flex items-center justify-center lg:justify-end">
+          <div className="relative flex items-center justify-center lg:justify-end tilt-stage">
+            {/* Orbiting decorative dots */}
+            <div aria-hidden="true" className="absolute inset-0 pointer-events-none">
+              <span className="absolute top-[15%] left-[8%] w-2.5 h-2.5 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 blur-[1px] float-a opacity-80" />
+              <span className="absolute top-[30%] right-[5%] w-3.5 h-3.5 rounded-full bg-gradient-to-br from-fuchsia-400 to-pink-500 blur-[1px] float-b opacity-70" />
+              <span className="absolute bottom-[20%] left-[10%] w-2 h-2 rounded-full bg-gradient-to-br from-violet-400 to-fuchsia-400 blur-[1px] float-c opacity-70" />
+              <span className="absolute bottom-[10%] right-[12%] w-4 h-4 rounded-full bg-gradient-to-br from-pink-400 to-rose-400 blur-sm float-a opacity-60" style={{ animationDelay: "1.5s" }} />
+              <span className="absolute top-[8%] right-[22%] w-1.5 h-1.5 rounded-full bg-indigo-500 float-c opacity-80" style={{ animationDelay: "2.5s" }} />
+            </div>
+
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.25 }}
-              className="relative w-full max-w-[360px]"
+              className="relative w-full max-w-[360px] tilt-phone-right"
             >
               {/* Floating notification — top */}
               <motion.div
