@@ -48,14 +48,14 @@ export function ProductShowcase() {
         </motion.div>
 
         {/* Bento grid */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-5 [perspective:1600px]">
           {/* Card 1 — Dashboard (span 4) */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5 }}
-            className="md:col-span-4 relative rounded-3xl border border-gray-200 bg-white overflow-hidden group"
+            className="md:col-span-4 relative rounded-3xl border border-gray-200 bg-white overflow-hidden group tilt-card"
           >
             <div className="p-8 md:p-10">
               <div className="flex items-center gap-2 mb-4">
@@ -142,7 +142,7 @@ export function ProductShowcase() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="md:col-span-2 relative rounded-3xl border border-gray-200 bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 p-8 overflow-hidden min-h-[400px]"
+            className="md:col-span-2 relative rounded-3xl border border-gray-200 bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 p-8 overflow-hidden min-h-[400px] tilt-card tilt-card-invert"
           >
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-4">
@@ -207,7 +207,7 @@ export function ProductShowcase() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="md:col-span-3 relative rounded-3xl border border-gray-200 bg-white p-8 md:p-10 overflow-hidden min-h-[360px]"
+            className="md:col-span-3 relative rounded-3xl border border-gray-200 bg-white p-8 md:p-10 overflow-hidden min-h-[360px] tilt-card"
           >
             <div className="flex items-center gap-2 mb-4">
               <BellRing className="w-4 h-4 text-fuchsia-500" />
@@ -283,7 +283,7 @@ export function ProductShowcase() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="md:col-span-3 relative rounded-3xl border border-gray-200 bg-gray-900 p-8 md:p-10 overflow-hidden min-h-[360px]"
+            className="md:col-span-3 relative rounded-3xl border border-gray-200 bg-gray-900 p-8 md:p-10 overflow-hidden min-h-[360px] tilt-card tilt-card-invert"
           >
             <div className="flex items-center gap-2 mb-4">
               <Users className="w-4 h-4 text-emerald-400" />

@@ -526,6 +526,30 @@
     0 10px 20px -8px rgba(217, 70, 239, 0.15);
 }
 
+/* Card tilt on hover — 3D perspective */
+.tilt-card {
+  transition: transform 0.5s var(--ease-out), box-shadow 0.5s var(--ease-out);
+  transform-style: preserve-3d;
+}
+.tilt-card:hover {
+  transform: translateY(-4px) rotateX(2deg) rotateY(-2deg);
+  box-shadow:
+    0 30px 60px -20px rgba(99, 102, 241, 0.25),
+    0 20px 40px -16px rgba(217, 70, 239, 0.2);
+}
+.tilt-card-invert:hover {
+  transform: translateY(-4px) rotateX(2deg) rotateY(2deg);
+}
+
+/* Section parallax utility — applied via inline style --parallax-y */
+.parallax-slow {
+  transform: translateY(calc(var(--parallax-y, 0) * 0.3px));
+  transition: transform 0.05s linear;
+}
+.parallax-med {
+  transform: translateY(calc(var(--parallax-y, 0) * 0.15px));
+}
+
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .aurora,
@@ -535,7 +559,10 @@
   .float-b,
   .float-c,
   .shine-sweep::before,
-  .text-grad-animated {
+  .text-grad-animated,
+  .tilt-card,
+  .tilt-card-invert {
     animation: none;
+    transform: none;
   }
 }

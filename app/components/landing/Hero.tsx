@@ -3,19 +3,25 @@
 import Link from "next/link";
 import { motion, MotionValue } from "framer-motion";
 import { ArrowRight, Sparkles, Check, Lock, ChevronRight } from "lucide-react";
+import { ParticleField } from "./ParticleField";
 
 export function Hero({
   heroY,
   heroOpacity,
+  phoneY,
+  meshY,
 }: {
   heroY: MotionValue<number>;
   heroOpacity: MotionValue<number>;
+  phoneY: MotionValue<number>;
+  meshY: MotionValue<number>;
 }) {
   return (
     <section className="relative pt-36 pb-24 md:pt-44 md:pb-32 overflow-hidden bg-white grain">
-      {/* Animated aurora mesh background */}
-      <div
+      {/* Animated aurora mesh background — parallax */}
+      <motion.div
         aria-hidden="true"
+        style={{ y: meshY }}
         className="pointer-events-none absolute inset-0 -z-10 aurora"
       />
       {/* Spinning conic accent */}
@@ -39,6 +45,13 @@ export function Hero({
             "radial-gradient(ellipse 60% 60% at 50% 40%, black 40%, transparent 80%)",
         }}
       />
+      {/* Canvas particle network */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 opacity-50"
+      >
+        <ParticleField count={50} connectDistance={130} className="w-full h-full" />
+      </div>
 
       <motion.div
         style={{ y: heroY, opacity: heroOpacity }}
@@ -140,26 +153,28 @@ export function Hero({
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.25 }}
+              style={{ y: phoneY }}
               className="relative w-full max-w-[360px] tilt-phone-right"
             >
-              {/* Floating notification — top */}
+              {/* Floating notification — top (safely above phone) */}
               <motion.div
                 initial={{ opacity: 0, x: 20, y: -10 }}
                 animate={{ opacity: 1, x: 0, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.9 }}
-                className="absolute -top-4 -left-8 z-20 rounded-xl border border-white/60 bg-white/90 backdrop-blur-md p-3 shadow-[0_12px_40px_-12px_rgba(79,70,229,0.35)] hidden sm:flex items-center gap-3 w-[230px]"
+                className="absolute -top-12 -left-14 z-20 rounded-xl border border-white/70 bg-white/95 backdrop-blur-xl p-3 shadow-[0_20px_50px_-15px_rgba(79,70,229,0.4)] hidden sm:flex items-center gap-3 w-[240px]"
               >
-                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shrink-0">
+                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shrink-0 shadow-sm">
                   <Check className="w-4 h-4" strokeWidth={3} />
                 </div>
-                <div className="min-w-0">
-                  <p className="text-[12px] font-semibold text-gray-900 truncate">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12px] font-bold text-gray-900 truncate">
                     Pago recibido
                   </p>
-                  <p className="text-[11px] text-gray-500">
-                    Mesa 05 · $84.500
+                  <p className="text-[10.5px] text-gray-500 tabular-nums">
+                    Mesa 05 · Nequi · $107.800
                   </p>
                 </div>
+                <span className="text-[9px] text-gray-400 shrink-0 tabular-nums">2s</span>
               </motion.div>
 
               {/* Floating notification — bottom right */}
@@ -167,11 +182,11 @@ export function Hero({
                 initial={{ opacity: 0, x: -20, y: 10 }}
                 animate={{ opacity: 1, x: 0, y: 0 }}
                 transition={{ duration: 0.6, delay: 1.1 }}
-                className="absolute -bottom-6 -right-4 z-20 rounded-xl border border-white/60 bg-white/90 backdrop-blur-md px-3.5 py-2.5 shadow-[0_12px_40px_-12px_rgba(192,38,211,0.3)] hidden sm:flex items-center gap-2"
+                className="absolute -bottom-4 -right-10 z-20 rounded-xl border border-white/70 bg-white/95 backdrop-blur-xl px-3.5 py-2.5 shadow-[0_20px_50px_-15px_rgba(192,38,211,0.35)] hidden sm:flex items-center gap-2"
               >
                 <Sparkles className="w-3.5 h-3.5 text-fuchsia-500" />
                 <p className="text-[12px] font-medium text-gray-900">
-                  Mesa cerrada automáticamente
+                  Mesa cerrada
                 </p>
               </motion.div>
 
@@ -216,7 +231,7 @@ export function Hero({
                   </div>
 
                   {/* Safari-style URL bar */}
-                  <div className="px-4 pt-5 pb-3">
+                  <div className="px-4 pt-5 pb-2.5">
                     <div className="flex items-center gap-1.5 rounded-[10px] bg-gray-100 px-3 py-1.5">
                       <Lock className="w-3 h-3 text-gray-500 shrink-0" strokeWidth={2.5} />
                       <span className="text-[10.5px] text-gray-600 font-medium truncate">
@@ -225,85 +240,128 @@ export function Hero({
                     </div>
                   </div>
 
-                  {/* Restaurant header */}
-                  <div className="px-5 pb-4 flex items-center gap-3">
-                    <div className="relative w-11 h-11 rounded-xl overflow-hidden shadow-sm">
-                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500" />
-                      <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[15px] tracking-tighter">
-                        LB
+                  {/* Dark brand header */}
+                  <div className="mx-3 mb-3 relative rounded-2xl overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900" />
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 opacity-60"
+                      style={{
+                        background:
+                          "radial-gradient(ellipse 80% 80% at 85% 0%, rgba(139,92,246,0.35) 0%, transparent 60%), radial-gradient(ellipse 70% 80% at 10% 100%, rgba(236,72,153,0.28) 0%, transparent 60%)",
+                      }}
+                    />
+                    <div className="relative px-4 py-3 flex items-center gap-3">
+                      <div className="relative w-10 h-10 rounded-xl overflow-hidden shadow-lg">
+                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 via-violet-400 to-fuchsia-400" />
+                        <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[13px] tracking-tighter">
+                          LB
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <p className="text-[14px] font-bold text-gray-900 leading-tight">
-                        La Barra
-                      </p>
-                      <p className="text-[11px] text-gray-500 flex items-center gap-1">
-                        <span className="inline-block w-1 h-1 rounded-full bg-emerald-500" />
-                        Mesa 05 · 3 personas
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-bold text-white leading-tight">
+                          La Barra
+                        </p>
+                        <p className="text-[10.5px] text-white/60 flex items-center gap-1 mt-0.5">
+                          <span className="inline-block w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                          Mesa 05 · 3 personas
+                        </p>
+                      </div>
+                      <span className="text-[9px] text-white/40 uppercase tracking-wider font-semibold">
+                        #2847
+                      </span>
                     </div>
                   </div>
 
-                  {/* Bill card */}
-                  <div className="flex-1 mx-4 mb-3 rounded-2xl border border-gray-100 bg-gray-50/50 overflow-hidden">
-                    <div className="px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
-                      <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                        Tu cuenta
-                      </span>
-                      <span className="text-[10px] text-gray-400">#INV-2847</span>
+                  {/* Bill items (compact) */}
+                  <div className="px-4 pb-3 space-y-2">
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                      Tu cuenta
+                    </p>
+                    {[
+                      { name: "Hamburguesa artesanal", qty: 2, total: "$56.000" },
+                      { name: "Cerveza Club", qty: 3, total: "$27.000" },
+                      { name: "Postre de la casa", qty: 1, total: "$15.000" },
+                    ].map((item) => (
+                      <div
+                        key={item.name}
+                        className="flex items-center justify-between text-[11px]"
+                      >
+                        <span className="text-gray-800 flex items-center gap-1.5">
+                          <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-md bg-gray-100 text-gray-600 text-[10px] font-bold tabular-nums">
+                            {item.qty}
+                          </span>
+                          {item.name}
+                        </span>
+                        <span className="text-gray-900 tabular-nums font-semibold">
+                          {item.total}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-between text-[10.5px] pt-2 border-t border-dashed border-gray-200">
+                      <span className="text-gray-500">Propina (10%)</span>
+                      <span className="text-gray-700 tabular-nums font-medium">$9.800</span>
                     </div>
-                    <div className="px-4 py-3 space-y-2">
+                  </div>
+
+                  {/* Payment chips */}
+                  <div className="px-4 pb-3">
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                      Método
+                    </p>
+                    <div className="flex gap-1.5">
                       {[
-                        { name: "Hamburguesa artesanal", qty: 2, total: "$56.000" },
-                        { name: "Cerveza Club", qty: 3, total: "$27.000" },
-                        { name: "Postre de la casa", qty: 1, total: "$15.000" },
-                      ].map((item) => (
+                        { label: "Nequi", active: true, color: "bg-fuchsia-500" },
+                        { label: "Daviplata", active: false, color: "bg-red-500" },
+                        { label: "Tarjeta", active: false, color: "bg-gray-900" },
+                      ].map((m) => (
                         <div
-                          key={item.name}
-                          className="flex items-center justify-between text-[11.5px]"
+                          key={m.label}
+                          className={`flex-1 rounded-lg border py-1.5 flex items-center justify-center gap-1 text-[10px] font-bold ${
+                            m.active
+                              ? "border-violet-500 bg-violet-50 text-violet-700"
+                              : "border-gray-200 text-gray-500"
+                          }`}
                         >
-                          <span className="text-gray-800">
-                            <span className="text-gray-400 mr-1.5 tabular-nums">{item.qty}×</span>
-                            {item.name}
-                          </span>
-                          <span className="text-gray-700 tabular-nums font-medium">
-                            {item.total}
-                          </span>
+                          <span className={`w-1.5 h-1.5 rounded-full ${m.color}`} />
+                          {m.label}
                         </div>
                       ))}
                     </div>
-                    <div className="px-4 py-2.5 border-t border-gray-100 bg-white flex items-center justify-between">
-                      <span className="text-[11px] text-gray-500">Propina (10%)</span>
-                      <span className="text-[11px] tabular-nums text-gray-700">$9.800</span>
-                    </div>
                   </div>
 
-                  {/* Total + CTA */}
-                  <div className="px-5 pb-5 space-y-3">
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-[11px] text-gray-500 uppercase tracking-wider font-medium">
-                        Total
-                      </span>
-                      <span className="text-[28px] font-[900] text-gray-900 tabular-nums tracking-tight">
-                        $107.800
-                      </span>
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.01 }}
-                      className="relative w-full py-3.5 rounded-2xl overflow-hidden"
+                  {/* Total row with big gradient number */}
+                  <div className="px-4 pb-3 flex items-baseline justify-between pt-2 border-t border-gray-100">
+                    <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">
+                      Total
+                    </span>
+                    <span className="text-[26px] font-[900] tabular-nums tracking-tight bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+                      $107.800
+                    </span>
+                  </div>
+
+                  {/* Pay CTA with shine */}
+                  <div className="px-4 pb-3">
+                    <button
+                      className="group relative w-full py-3 rounded-2xl overflow-hidden shine-sweep"
+                      style={{
+                        boxShadow:
+                          "0 10px 30px -8px rgba(139,92,246,0.5), inset 0 1px 0 rgba(255,255,255,0.2)",
+                      }}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500" />
-                      <div
-                        aria-hidden="true"
-                        className="absolute inset-0 bg-gradient-to-r from-indigo-400 via-violet-400 to-fuchsia-400 opacity-0 motion-safe:animate-pulse"
-                      />
                       <span className="relative flex items-center justify-center gap-1.5 text-white text-[13px] font-bold">
                         Pagar $107.800
                         <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
                       </span>
-                    </motion.button>
-                    <p className="text-center text-[10px] text-gray-400">
-                      Procesado de forma segura por Wompi
+                    </button>
+                  </div>
+
+                  {/* Trust row */}
+                  <div className="px-4 pb-4 flex items-center justify-center gap-1.5">
+                    <Lock className="w-2.5 h-2.5 text-gray-400" strokeWidth={2.5} />
+                    <p className="text-center text-[9px] text-gray-400 font-medium tracking-wide">
+                      Seguro · Powered by Wompi
                     </p>
                   </div>
 
