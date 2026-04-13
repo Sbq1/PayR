@@ -1,64 +1,127 @@
+"use client";
+
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MessageSquare } from "lucide-react";
 
 export function CTA() {
-  const fadeUp = {
-    hidden: { opacity: 0, y: 24 },
-    show: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const },
-    },
-  };
-
   return (
-    <section className="py-24 md:py-32 bg-gray-50 border-t border-gray-200">
-      <div className="max-w-[1200px] mx-auto px-6 text-center">
+    <section className="relative overflow-hidden border-t border-gray-100">
+      <div className="relative bg-gray-900 py-24 md:py-36">
+        {/* Gradient orbs */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          <div
+            className="absolute top-[-40%] left-[-10%] h-[600px] w-[600px] rounded-full opacity-40 blur-3xl motion-safe:animate-[spin_40s_linear_infinite]"
+            style={{
+              background:
+                "conic-gradient(from 180deg at 50% 50%, #6366f1 0deg, #8b5cf6 120deg, #d946ef 240deg, #6366f1 360deg)",
+            }}
+          />
+          <div
+            className="absolute bottom-[-40%] right-[-10%] h-[600px] w-[600px] rounded-full opacity-30 blur-3xl"
+            style={{
+              background:
+                "radial-gradient(circle, #ec4899 0%, #8b5cf6 50%, transparent 70%)",
+            }}
+          />
+          {/* Grid pattern */}
+          <div
+            className="absolute inset-0 opacity-[0.08]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle, rgb(255 255 255 / 0.4) 1px, transparent 1px)",
+              backgroundSize: "32px 32px",
+              maskImage:
+                "radial-gradient(ellipse 70% 60% at 50% 50%, black 30%, transparent 80%)",
+            }}
+          />
+        </div>
+
         <motion.div
           initial="hidden"
           whileInView="show"
-          viewport={{ once: true, margin: "-80px" }}
+          viewport={{ once: true, margin: "-100px" }}
           variants={{
-            hidden: { opacity: 0 },
-            show: {
-              opacity: 1,
-              transition: { staggerChildren: 0.1, delayChildren: 0.1 },
-            },
+            hidden: {},
+            show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
           }}
+          className="relative max-w-[1100px] mx-auto px-6 text-center"
         >
+          <motion.span
+            variants={{
+              hidden: { opacity: 0, y: 12 },
+              show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+            }}
+            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 backdrop-blur-sm px-3 py-1 text-[12px] font-medium text-white/90 mb-8"
+          >
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 motion-safe:animate-ping" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            </span>
+            Aceptando restaurantes en Colombia
+          </motion.span>
+
           <motion.h2
-            variants={fadeUp}
-            className="text-[28px] md:text-[40px] font-bold tracking-tight text-gray-900 max-w-3xl mx-auto leading-tight"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              show: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+            }}
+            className="text-[42px] sm:text-[56px] md:text-[76px] font-[900] tracking-[-0.04em] leading-[0.98] text-white max-w-[900px] mx-auto mb-6"
           >
-            Comienza a agilizar tus cobros
+            Tu próxima mesa
+            <br />
+            paga en{" "}
+            <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
+              30 segundos.
+            </span>
           </motion.h2>
+
           <motion.p
-            variants={fadeUp}
-            className="mt-5 text-[16px] text-gray-500 max-w-xl mx-auto"
+            variants={{
+              hidden: { opacity: 0, y: 16 },
+              show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+            }}
+            className="text-[17px] md:text-[19px] text-white/70 max-w-[560px] mx-auto mb-10 leading-relaxed"
           >
-            Implementa nuestra solución en tu restaurante de manera rápida.
+            Crea tu cuenta, configura tus mesas, genera QR. Empiezas a cobrar
+            hoy sin datáfono nuevo.
           </motion.p>
-          <motion.div variants={fadeUp} className="mt-10">
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="inline-block"
+
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, y: 16 },
+              show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+            }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3"
+          >
+            <Link
+              href="/register"
+              className="group inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl text-[15px] font-semibold text-gray-900 bg-white hover:bg-gray-100 transition-colors shadow-[0_8px_32px_-8px_rgba(255,255,255,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
             >
-              <Link
-                href="/register"
-                className="inline-flex items-center justify-center gap-2 text-[15px] font-medium text-white bg-gray-900 px-8 py-4 rounded-lg hover:bg-gray-800 transition-colors shadow-sm"
-              >
-                Crear cuenta gratis
-                <motion.span
-                  animate={{ x: [0, 3, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <ArrowRight className="w-4 h-4" />
-                </motion.span>
-              </Link>
-            </motion.div>
+              Crear cuenta gratis
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <a
+              href="mailto:hola@smart-checkout.co"
+              className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-xl text-[15px] font-semibold text-white bg-white/10 backdrop-blur-sm border border-white/15 hover:bg-white/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Hablar con ventas
+            </a>
           </motion.div>
+
+          <motion.p
+            variants={{
+              hidden: { opacity: 0 },
+              show: { opacity: 1, transition: { duration: 0.5 } },
+            }}
+            className="text-[12px] text-white/50 mt-8"
+          >
+            Setup en 5 minutos · Sin tarjeta de crédito · 14 días de prueba
+          </motion.p>
         </motion.div>
       </div>
     </section>
