@@ -86,7 +86,7 @@ export default function PaymentSettingsPage() {
   async function handleSave() {
     if (!restaurantId || !form.wompiPublicKey) return;
     if (testStatus !== "valid") {
-      toast.error("Probá la conexión antes de guardar");
+      toast.error("Prueba la conexión antes de guardar");
       return;
     }
     if (hasCredentials) {
@@ -164,22 +164,22 @@ export default function PaymentSettingsPage() {
               <BookOpen className="w-5 h-5 text-blue-700" />
             </div>
             <div>
-              <h3 className="text-[15px] font-bold text-gray-900">Configurá Wompi en 4 pasos</h3>
-              <p className="text-[13px] text-gray-500">Si nunca conectaste Wompi, seguí esta guía.</p>
+              <h3 className="text-[15px] font-bold text-gray-900">Configura Wompi en 4 pasos</h3>
+              <p className="text-[13px] text-gray-500">Si nunca conectaste Wompi, sigue esta guía.</p>
             </div>
           </div>
 
           <div className="space-y-4">
             <TutorialStep
               n={1}
-              title="Creá tu cuenta de comercio"
+              title="Crea tu cuenta de comercio"
               description={
                 <>
-                  Andá a{" "}
+                  Ve a{" "}
                   <a href="https://wompi.co" target="_blank" rel="noreferrer" className="text-blue-700 underline font-medium">
                     wompi.co
                   </a>{" "}
-                  y registrá tu negocio. Vas a necesitar:
+                  y registra tu negocio. Vas a necesitar:
                   <ul className="list-disc pl-5 mt-1.5 space-y-0.5">
                     <li>RUT del establecimiento</li>
                     <li>Cédula del representante legal</li>
@@ -205,10 +205,10 @@ export default function PaymentSettingsPage() {
             />
             <TutorialStep
               n={3}
-              title="Pegá las llaves y probá"
+              title="Pega las llaves y probá"
               description={
                 <>
-                  Pegalas en los campos abajo. Después dale a{" "}
+                  Pégalas en los campos abajo. Después dale a{" "}
                   <strong>&ldquo;Probar conexión Wompi&rdquo;</strong> en la sección 3. Si está todo OK
                   vas a ver un check verde con el nombre de tu comercio.
                 </>
@@ -216,11 +216,11 @@ export default function PaymentSettingsPage() {
             />
             <TutorialStep
               n={4}
-              title="Configurá el webhook"
+              title="Configura el webhook"
               description={
                 <>
-                  Después de guardar las llaves, copiá la URL del webhook (bloque azul más abajo).
-                  Andá a <strong>Dashboard → Webhooks → Crear webhook</strong>, pegá la URL y guardá.
+                  Después de guardar las llaves, copia la URL del webhook (bloque azul más abajo).
+                  Ve a <strong>Dashboard → Webhooks → Crear webhook</strong>, pega la URL y guarda.
                   Para confirmar que funciona, dale al botón{" "}
                   <strong>&ldquo;Send test event&rdquo;</strong> en el panel de Wompi.
                 </>
@@ -446,12 +446,12 @@ export default function PaymentSettingsPage() {
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-6 lg:p-8">
          <h3 className="text-[15px] font-bold text-blue-900">Webhook de notificaciones</h3>
          <p className="text-[13px] text-blue-800/80 mt-1 mb-4 max-w-2xl">
-           Wompi te avisa cuando un pago se confirma vía webhook. Configurá la URL en su panel:
+           Wompi te avisa cuando un pago se confirma vía webhook. Configura la URL en su panel:
          </p>
          <ol className="text-[13px] text-blue-900/85 space-y-1.5 mb-6 list-decimal pl-5 max-w-2xl">
-           <li>Copiá la URL del webhook (abajo).</li>
-           <li>Andá al panel de Wompi: <strong>Dashboard → Webhooks → Crear webhook</strong>.</li>
-           <li>Pegá la URL y guardá.</li>
+           <li>Copia la URL del webhook (abajo).</li>
+           <li>Ve al panel de Wompi: <strong>Dashboard → Webhooks → Crear webhook</strong>.</li>
+           <li>Pega la URL y guarda.</li>
            <li>Para verificar que funciona, dale al botón <strong>&ldquo;Send test event&rdquo;</strong> en el panel de Wompi. Si nuestra app responde 200, queda configurado.</li>
          </ol>
          

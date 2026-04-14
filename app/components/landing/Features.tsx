@@ -15,12 +15,12 @@ const featuresData = [
   },
   {
     title: "Tu marca en cada QR",
-    description: "Subí tu logo y ajustá colores. Cada QR de mesa y cada plantilla imprimible queda con tu identidad, sin marca de PayR (en plan Enterprise).",
+    description: "Sube tu logo y ajusta colores. Cada QR de mesa y cada plantilla imprimible queda con tu identidad, sin marca de PayR (en plan Enterprise).",
     icon: TerminalSquare
   },
   {
-    title: "Más propinas, sin que el mesero las pida",
-    description: "El checkout muestra sugerencias claras (10%, 15%, 20%). Sin presión, sin la incomodidad de que el mesero esté esperando.",
+    title: "Más propinas, sin presión",
+    description: "El cliente ve opciones claras de propina (10%, 15% o 20%) en su pantalla y elige solo, en su tiempo. Sin que el mesero tenga que estar pendiente.",
     icon: Zap
   }
 ];

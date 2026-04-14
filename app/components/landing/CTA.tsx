@@ -14,7 +14,7 @@ export function CTA() {
           Escala el cheque promedio de tus comensales hoy mismo.
         </h2>
         <p className="text-[18px] md:text-[22px] text-[#a8a29e] mb-12 max-w-2xl mx-auto leading-relaxed">
-          Cobrá sin datáfono, sin colas. Tus clientes pagan desde el celular y vos recibís directo en tu cuenta.
+          Cobra sin datáfono, sin colas. Tus clientes pagan desde el celular y tú recibes directo en tu cuenta.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
