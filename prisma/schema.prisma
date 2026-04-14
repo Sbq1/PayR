@@ -8,18 +8,50 @@ datasource db {
 }
 
 model User {
-  id                String       @id @default(dbgenerated("(gen_random_uuid())::text"))
-  name              String?
-  email             String       @unique
-  email_verified    DateTime?    @db.Timestamptz(6)
-  password_hash     String?
-  image             String?
-  created_at        DateTime     @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime     @default(now()) @db.Timestamptz(6)
-  restaurants       Restaurant[]
-  cancelled_orders  Order[]      @relation("OrderCancelledBy")
+  id                    String               @id @default(dbgenerated("(gen_random_uuid())::text"))
+  name                  String?
+  email                 String               @unique
+  email_verified        DateTime?            @db.Timestamptz(6)
+  password_hash         String?
+  image                 String?
+  session_version       Int                  @default(0)
+  created_at            DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime             @default(now()) @db.Timestamptz(6)
+  restaurants           Restaurant[]
+  cancelled_orders      Order[]              @relation("OrderCancelledBy")
+  password_reset_tokens PasswordResetToken[]
+  auth_events           AuthEvent[]
 
   @@map("users")
+}
+
+model PasswordResetToken {
+  token      String    @id
+  user_id    String
+  expires_at DateTime  @db.Timestamptz(6)
+  used_at    DateTime? @db.Timestamptz(6)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "idx_password_reset_tokens_user")
+  @@map("password_reset_tokens")
+}
+
+model AuthEvent {
+  id         String           @id @default(dbgenerated("(gen_random_uuid())::text"))
+  user_id    String?
+  email      String?
+  event_type auth_event_type
+  ip         String?
+  user_agent String?
+  metadata   Json?
+  created_at DateTime         @default(now()) @db.Timestamptz(6)
+  user       User?            @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id, created_at], map: "idx_auth_events_user")
+  @@index([email, created_at], map: "idx_auth_events_email")
+  @@index([event_type, created_at], map: "idx_auth_events_event_type")
+  @@map("auth_events")
 }
 
 
@@ -212,4 +244,14 @@ enum table_status {
   AVAILABLE
   OCCUPIED
   PAYING
+}
+
+enum auth_event_type {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+  PASSWORD_CHANGED
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+  SESSION_REFRESHED
 }
