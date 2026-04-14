@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Database, CreditCard, Crown, QrCode } from "lucide-react";
+import { Loader2, Database, CreditCard, Crown, QrCode, ChevronRight, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useSession } from "@/hooks/use-session";
@@ -36,12 +36,15 @@ const settingsSections = [
 export default function SettingsPage() {
   const { restaurantId } = useSession();
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
   const [form, setForm] = useState({
     name: "",
     slug: "",
-    primaryColor: "#6366f1",
-    secondaryColor: "#f59e0b",
-    backgroundColor: "#ffffff",
+  });
+  const [initialForm, setInitialForm] = useState({
+    name: "",
+    slug: "",
   });
 
   useEffect(() => {
@@ -49,13 +52,13 @@ export default function SettingsPage() {
     fetch(`/api/restaurant/${restaurantId}`)
       .then((r) => r.json())
       .then((r) => {
-        setForm({
+        const payload = {
           name: r.name || "",
           slug: r.slug || "",
-          primaryColor: r.primaryColor || "#6366f1",
-          secondaryColor: r.secondaryColor || "#f59e0b",
-          backgroundColor: r.backgroundColor || "#ffffff",
-        });
+        };
+        setForm(payload);
+        setInitialForm(payload);
+        setLoading(false);
       });
   }, [restaurantId]);
 
@@ -72,118 +75,142 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (res.ok) toast.success("Configuración guardada");
-      else {
+      if (res.ok) {
+        toast.success("Configuración actualizada con éxito");
+        setInitialForm({ ...form }); 
+      } else {
         const data = await res.json();
-        toast.error(data.error || "Error guardando");
+        toast.error(data.error || "Error guardando los datos");
       }
     } catch {
-      toast.error("Error de red");
+      toast.error("Error de conexión");
     }
     setSaving(false);
   }
 
   const inputClass =
-    "w-full px-3.5 py-2.5 text-[14px] text-gray-900 bg-white border border-gray-300 rounded-lg outline-none transition-all duration-150 placeholder:text-gray-400 focus:border-gray-900 focus:ring-1 focus:ring-gray-900";
+    "w-full px-4 py-2.5 text-[14px] text-gray-900 bg-white border border-gray-300 rounded-xl outline-none transition-shadow duration-200 placeholder:text-gray-400 focus:border-gray-900 focus:ring-1 focus:ring-gray-900";
+
+  const hasChanges = JSON.stringify(form) !== JSON.stringify(initialForm);
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-[15px] font-semibold text-gray-900">Configuración</h1>
-        <p className="text-[14px] text-gray-500 mt-1">
-          Administra tu restaurante y conexiones
-        </p>
+    <div className="space-y-10 max-w-7xl mx-auto pb-12">
+      {/* Header Jerárquico Premium */}
+      <div className="flex items-center gap-4">
+        {loading ? (
+          <div className="w-12 h-12 rounded-2xl bg-gray-100 animate-pulse border border-gray-200" />
+        ) : (
+          <div className="w-12 h-12 rounded-2xl bg-gray-900 text-white flex items-center justify-center font-bold text-xl shadow-sm tracking-widest">
+            {form.name.slice(0, 2).toUpperCase() || "RE"}
+          </div>
+        )}
+        
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            Configuración
+          </h1>
+          <p className="text-[14px] text-gray-500 mt-0.5">
+            Administra los ajustes de tú restaurante y pasarelas de pago.
+          </p>
+        </div>
       </div>
 
-      {/* Quick links */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Action Navigation Tiles */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {settingsSections.map((s) => (
           <Link
             key={s.href}
             href={s.href}
-            className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-150"
+            className="group flex flex-col gap-4 p-5 rounded-[24px] bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200"
           >
-            <div className="p-2 rounded-lg bg-gray-100">
-              <s.icon className="w-4 h-4 text-gray-600" />
+            <div className="flex items-start justify-between">
+              <div className="w-11 h-11 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center group-hover:bg-gray-900 group-hover:border-gray-900 transition-colors">
+                <s.icon className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" />
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-900 transition-colors mt-2 mr-1" />
             </div>
             <div>
-              <p className="text-[14px] font-medium text-gray-900">{s.title}</p>
-              <p className="text-[12px] text-gray-500">{s.description}</p>
+              <p className="text-[15px] font-bold text-gray-900 mb-1">{s.title}</p>
+              <p className="text-[13px] text-gray-500 leading-normal">{s.description}</p>
             </div>
           </Link>
         ))}
       </div>
 
-      {/* General form */}
-      <div className="border-t border-gray-200 pt-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">General</h2>
-        <div className="space-y-4 max-w-lg">
-          <div>
-            <label className="text-[13px] font-medium text-gray-700 mb-1.5 block">
-              Nombre del restaurante
-            </label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) => update("name", e.target.value)}
-              className={inputClass}
-            />
-          </div>
+      {/* General Settings - 2 Column Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[380px_1fr] gap-8 lg:gap-14 pt-10 border-t border-gray-100">
+        <div className="space-y-3">
+          <h2 className="text-lg font-bold text-gray-900 tracking-tight">
+            Ajustes Generales
+          </h2>
+          <p className="text-[14px] text-gray-500 leading-relaxed max-w-sm">
+            Tus datos principales en la plataforma. Tu nombre y slug definen cómo son creados los códigos QR que imprimes para las mesas. 
+            Modificar el identificador de la URL afecta de forma vitalitia el enrutamiento.
+          </p>
+        </div>
 
-          <div>
-            <label className="text-[13px] font-medium text-gray-700 mb-1.5 block">
-              Slug (URL)
-            </label>
-            <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:border-gray-900 focus-within:ring-1 focus-within:ring-gray-900">
-              <span className="text-[13px] text-gray-400 bg-gray-50 px-3 py-2.5 border-r border-gray-300 whitespace-nowrap">
-                smartcheckout.co/
-              </span>
-              <input
-                type="text"
-                value={form.slug}
-                onChange={(e) => update("slug", e.target.value)}
-                className="flex-1 px-3 py-2.5 text-[14px] text-gray-900 bg-white outline-none placeholder:text-gray-400"
-              />
-            </div>
-          </div>
-
-          {/* Colors */}
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: "Primario", field: "primaryColor" },
-              { label: "Secundario", field: "secondaryColor" },
-              { label: "Fondo", field: "backgroundColor" },
-            ].map((c) => (
-              <div key={c.field}>
-                <label className="text-[13px] font-medium text-gray-700 mb-1.5 block">
-                  {c.label}
+        <div className="bg-white rounded-[24px] border border-gray-200 p-6 sm:p-8 shadow-sm space-y-6">
+          {loading ? (
+             <div className="space-y-6 animate-pulse">
+               <div className="h-20 bg-gray-50 rounded-xl" />
+               <div className="h-20 bg-gray-50 rounded-xl" />
+             </div>
+          ) : (
+            <>
+              <div className="space-y-2.5">
+                <label className="text-[14px] font-semibold text-gray-900 block">
+                  Nombre de tu restaurante
                 </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={form[c.field as keyof typeof form]}
-                    onChange={(e) => update(c.field, e.target.value)}
-                    className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
-                  />
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => update("name", e.target.value)}
+                  className={inputClass}
+                  placeholder="Ej: Smart Checkout Bistro"
+                />
+              </div>
+
+              <div className="space-y-2.5">
+                <label className="text-[14px] font-semibold text-gray-900 block">
+                  Identificador (Slug)
+                </label>
+                <div className="flex items-center rounded-xl overflow-hidden border border-gray-300 focus-within:border-gray-900 focus-within:ring-1 focus-within:ring-gray-900 transition-shadow">
+                  <span className="text-[14px] text-gray-500 bg-gray-50 px-4 py-2.5 border-r border-gray-300 select-none">
+                    smartcheckout.co/
+                  </span>
                   <input
                     type="text"
-                    value={form[c.field as keyof typeof form]}
-                    onChange={(e) => update(c.field, e.target.value)}
-                    className="flex-1 px-2 py-1.5 text-[13px] text-gray-700 bg-white border border-gray-300 rounded-lg outline-none focus:border-gray-900"
+                    value={form.slug}
+                    onChange={(e) => update("slug", e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                    className="flex-1 px-4 py-2.5 text-[14px] text-gray-900 bg-white outline-none placeholder:text-gray-400 min-w-0"
+                    placeholder="mi-restaurante"
                   />
                 </div>
-              </div>
-            ))}
-          </div>
 
-          <button
-            onClick={handleSave}
-            disabled={saving || !form.name}
-            className="px-4 py-2.5 mt-2 text-[14px] font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-            Guardar cambios
-          </button>
+                <div className="mt-4 bg-amber-50 rounded-xl border border-amber-200/60 p-4 flex gap-3 text-amber-800 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 left-0 bottom-0 w-1 bg-amber-400" />
+                  <AlertTriangle className="w-5 h-5 flex-shrink-0 text-amber-600 mt-0.5 ml-2" />
+                  <div className="space-y-1">
+                    <p className="text-[13px] font-bold tracking-tight">Cuidado al cambiar el slug</p>
+                    <p className="text-[13px] text-amber-700/85 leading-snug">
+                      Si ya imprimiste y colocaste códigos QR físicos que apuntan a tu slug actual (<strong className="font-semibold">{initialForm.slug || '...'}</strong>), al cambiar este dato los QRs físicos dejarán de funcionar y tendrás que imprimir nuevas plantillas.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-gray-100 flex justify-end">
+                <button
+                  onClick={handleSave}
+                  disabled={saving || !form.name || !hasChanges}
+                  className="px-6 py-2.5 text-[14px] font-semibold text-white bg-gray-900 rounded-xl hover:bg-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
+                >
+                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {hasChanges ? "Guardar cambios" : "Actualizado"}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
