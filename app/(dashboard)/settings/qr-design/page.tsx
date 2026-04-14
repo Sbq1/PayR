@@ -12,6 +12,7 @@ import {
   QrCode as QrIcon,
 } from "lucide-react";
 import { useSession } from "@/hooks/use-session";
+import { QrFrameSelector, type QrFrameStyle } from "./_components/QrFrameSelector";
 
 type PlanTier = "STARTER" | "PRO" | "ENTERPRISE";
 type EcLevel = "L" | "M" | "Q" | "H";
@@ -20,6 +21,7 @@ interface QrConfig {
   dark: string;
   light: string;
   errorCorrection: EcLevel;
+  frameStyle: QrFrameStyle;
 }
 
 interface ConfigResponse {
@@ -54,7 +56,8 @@ export default function QrDesignPage() {
 
   const canColors = !!allowed.qrColorsCustom;
   const canEc = !!allowed.qrErrorCorrectionCustom;
-  const isLocked = !canColors && !canEc;
+  const canFrame = !!allowed.qrFrameCustom;
+  const isLocked = !canColors && !canEc && !canFrame;
 
   const loadConfig = useCallback(async (rid: string) => {
     setLoading(true);
@@ -286,6 +289,32 @@ export default function QrDesignPage() {
                   );
                 })}
               </div>
+            </section>
+
+            {/* Frame style */}
+            <section className="rounded-xl border border-gray-200 bg-white p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-[14px] font-semibold text-gray-900">
+                    Frame decorativo
+                  </h2>
+                  <p className="text-[12px] text-gray-500 mt-0.5">
+                    Se aplica a la plantilla imprimible por mesa.
+                  </p>
+                </div>
+                {!canFrame && (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-[10px] font-semibold text-gray-500 uppercase">
+                    <Lock className="w-2.5 h-2.5" />
+                    Enterprise
+                  </span>
+                )}
+              </div>
+
+              <QrFrameSelector
+                value={config.frameStyle}
+                onChange={(v) => updateField("frameStyle", v)}
+                disabled={!canFrame}
+              />
             </section>
 
             {/* Actions */}

@@ -13,6 +13,7 @@ const updateSchema = z.object({
   dark: z.string().trim().min(4).max(7).optional(),
   light: z.string().trim().min(4).max(7).optional(),
   errorCorrection: z.enum(["L", "M", "Q", "H"]).optional(),
+  frameStyle: z.enum(["none", "simple", "branded"]).optional(),
 });
 
 export async function GET(

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { QrCode, Download, Loader2, RefreshCw, Copy, Check } from "lucide-react";
+import { QrCode, Download, Loader2, RefreshCw, Copy, Check, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/hooks/use-session";
 
@@ -19,6 +19,7 @@ export default function QrCodesPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [canPrintable, setCanPrintable] = useState(false);
 
   const loadQrCodes = useCallback(async (rid: string) => {
     const res = await fetch(`/api/restaurant/${rid}/qr`);
@@ -26,12 +27,20 @@ export default function QrCodesPage() {
     setLoading(false);
   }, []);
 
+  const loadAllowedFeatures = useCallback(async (rid: string) => {
+    const res = await fetch(`/api/restaurant/${rid}/qr/config`);
+    if (!res.ok) return;
+    const data = await res.json();
+    setCanPrintable(!!data?.allowedFeatures?.qrPrintableTemplate);
+  }, []);
+
   useEffect(() => {
     if (!restaurantId) return;
     // loadQrCodes is async — setState inside runs after await
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadQrCodes(restaurantId);
-  }, [restaurantId, loadQrCodes]);
+    loadAllowedFeatures(restaurantId);
+  }, [restaurantId, loadQrCodes, loadAllowedFeatures]);
 
   async function handleGenerate() {
     if (!restaurantId) return;
@@ -130,7 +139,7 @@ export default function QrCodesPage() {
                     <p className="text-[11px] text-gray-400 break-all px-2 leading-relaxed">
                       {item.qr.url}
                     </p>
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
                       <button
                         onClick={() => copyUrl(item.qr!.url, item.tableId)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
@@ -152,8 +161,17 @@ export default function QrCodesPage() {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                       >
                         <Download className="w-3 h-3" />
-                        Descargar
+                        PNG
                       </button>
+                      {canPrintable && restaurantId && (
+                        <a
+                          href={`/api/restaurant/${restaurantId}/qr/table/${item.tableId}/printable`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <FileText className="w-3 h-3" />
+                          Plantilla
+                        </a>
+                      )}
                     </div>
                   </>
                 ) : (
