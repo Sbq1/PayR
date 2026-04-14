@@ -24,8 +24,9 @@ const DEFAULTS: Required<QrRenderOptions> = {
   margin: 2,
 };
 
-const LOGO_RATIO = 0.2;
-const LOGO_PAD_RATIO = 0.08;
+const LOGO_RATIO = 0.23;
+const LOGO_PAD_RATIO = 0.18;
+const LOGO_CORNER_RADIUS_RATIO = 0.18;
 
 /**
  * Genera la URL del QR para una mesa.
@@ -77,22 +78,42 @@ export async function generateQrWithLogo(
   const logoSize = Math.round(merged.width * LOGO_RATIO);
   const pad = Math.round(logoSize * LOGO_PAD_RATIO);
   const innerSize = Math.max(1, logoSize - pad * 2);
+  const cornerRadius = Math.round(logoSize * LOGO_CORNER_RADIUS_RATIO);
   const padColor = hexToRgb(merged.light);
+  const safeLight = /^#[0-9a-fA-F]{6}$/.test(merged.light) ? merged.light : "#ffffff";
 
-  const logoResized = await sharp(logo.buffer)
-    .resize(innerSize, innerSize, { fit: "inside", withoutEnlargement: false })
-    .extend({
-      top: pad,
-      bottom: pad,
-      left: pad,
-      right: pad,
-      background: padColor,
+  // Logo: flatten alpha + resize sin amplificar (evita pixelar logos chicos)
+  const logoContent = await sharp(logo.buffer)
+    .flatten({ background: padColor })
+    .resize(innerSize, innerSize, {
+      fit: "inside",
+      withoutEnlargement: true,
     })
     .png()
     .toBuffer();
 
+  // Card: fondo con esquinas redondeadas (SVG mask) sobre canvas transparente
+  const roundedBg = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${logoSize}" height="${logoSize}"><rect width="${logoSize}" height="${logoSize}" rx="${cornerRadius}" ry="${cornerRadius}" fill="${safeLight}"/></svg>`,
+  );
+
+  const logoCard = await sharp({
+    create: {
+      width: logoSize,
+      height: logoSize,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    },
+  })
+    .composite([
+      { input: roundedBg, top: 0, left: 0 },
+      { input: logoContent, gravity: "center" },
+    ])
+    .png()
+    .toBuffer();
+
   const finalBuffer = await sharp(qrBuffer)
-    .composite([{ input: logoResized, gravity: "center" }])
+    .composite([{ input: logoCard, gravity: "center" }])
     .png()
     .toBuffer();
 
