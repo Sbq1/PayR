@@ -154,6 +154,7 @@ export default function QrDesignPage() {
           dark: config.dark,
           light: config.light,
           errorCorrection: config.errorCorrection,
+          frameStyle: config.frameStyle,
         }),
       });
       if (res.ok) {

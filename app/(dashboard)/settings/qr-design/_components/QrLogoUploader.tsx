@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { Upload, Trash2, Loader2, ImageIcon } from "lucide-react";
 
 const CLIENT_ALLOWED_MIMES = ["image/png", "image/jpeg", "image/webp"];
-const CLIENT_MAX_BYTES = 512_000;
+const CLIENT_MAX_BYTES = 4_000_000;
 
 interface Props {
   restaurantId: string;
@@ -68,7 +68,7 @@ export function QrLogoUploader({ restaurantId, onChange }: Props) {
       return "Formato no permitido. Usa PNG, JPEG o WebP.";
     }
     if (file.size > CLIENT_MAX_BYTES) {
-      return `El archivo supera el límite de ${Math.round(CLIENT_MAX_BYTES / 1024)} KB.`;
+      return `El archivo supera el límite de ${Math.round(CLIENT_MAX_BYTES / 1_000_000)} MB.`;
     }
     if (file.size === 0) {
       return "El archivo está vacío.";
@@ -191,7 +191,7 @@ export function QrLogoUploader({ restaurantId, onChange }: Props) {
   const helperText = useMemo(() => {
     if (pending) return "Archivo listo para guardar";
     if (hasSaved) return "Logo actual — arrastra uno nuevo para reemplazar";
-    return "Arrastra un PNG, JPEG o WebP (≤ 500 KB, ≤ 1000×1000 px)";
+    return "Arrastra un PNG, JPEG o WebP (≤ 4 MB). Se optimiza automáticamente.";
   }, [pending, hasSaved]);
 
   return (

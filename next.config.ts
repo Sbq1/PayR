@@ -2,6 +2,14 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    "/api/restaurant/*/qr/table/*/printable": [
+      "./node_modules/pdfkit/js/data/**/*",
+    ],
+    "/api/restaurant/[restaurantId]/qr/table/[tableId]/printable/route": [
+      "./node_modules/pdfkit/js/data/**/*",
+    ],
+  },
   images: {
     remotePatterns: [
       {

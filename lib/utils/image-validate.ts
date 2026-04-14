@@ -1,7 +1,8 @@
 import sharp from "sharp";
 
-export const LOGO_MAX_BYTES = 512_000; // 500 KB
-export const LOGO_MAX_DIMENSION = 1000; // px
+export const LOGO_MAX_BYTES = 4_000_000; // 4 MB — input tolerance; sharp auto-resize lleva a LOGO_OUTPUT_DIMENSION
+export const LOGO_MAX_DIMENSION = 4000; // px — input tolerance
+export const LOGO_OUTPUT_DIMENSION = 512; // px — tamaño final tras auto-resize (óptimo para QR)
 export const LOGO_ALLOWED_MIMES = ["image/png", "image/jpeg", "image/webp"] as const;
 
 export type LogoMime = (typeof LOGO_ALLOWED_MIMES)[number];
@@ -85,30 +86,38 @@ export async function validateImageUpload(file: File): Promise<ValidationResult>
   try {
     const pipeline = sharp(rawBuffer, { failOn: "error" }).rotate();
     meta = await pipeline.metadata();
-    cleanBuffer = await pipeline.toBuffer();
+
+    const w = meta.width ?? 0;
+    const h = meta.height ?? 0;
+    if (w === 0 || h === 0) {
+      return { ok: false, error: { code: "invalid_image" } };
+    }
+    if (w > LOGO_MAX_DIMENSION || h > LOGO_MAX_DIMENSION) {
+      return {
+        ok: false,
+        error: { code: "dimensions_too_large", max: LOGO_MAX_DIMENSION },
+      };
+    }
+
+    cleanBuffer = await pipeline
+      .resize(LOGO_OUTPUT_DIMENSION, LOGO_OUTPUT_DIMENSION, {
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .toBuffer();
   } catch {
     return { ok: false, error: { code: "invalid_image" } };
   }
 
-  const width = meta.width ?? 0;
-  const height = meta.height ?? 0;
-  if (width === 0 || height === 0) {
-    return { ok: false, error: { code: "invalid_image" } };
-  }
-  if (width > LOGO_MAX_DIMENSION || height > LOGO_MAX_DIMENSION) {
-    return {
-      ok: false,
-      error: { code: "dimensions_too_large", max: LOGO_MAX_DIMENSION },
-    };
-  }
+  const outMeta = await sharp(cleanBuffer).metadata();
 
   return {
     ok: true,
     data: {
       buffer: cleanBuffer,
       mime: file.type,
-      width,
-      height,
+      width: outMeta.width ?? meta.width ?? 0,
+      height: outMeta.height ?? meta.height ?? 0,
     },
   };
 }
@@ -120,7 +129,7 @@ export function imageValidationMessage(err: ImageValidationError): string {
     case "invalid_image":
       return "El archivo no es una imagen válida.";
     case "file_too_large":
-      return `El archivo supera el límite de ${Math.round(err.max / 1024)} KB.`;
+      return `El archivo supera el límite de ${Math.round(err.max / 1_000_000)} MB.`;
     case "dimensions_too_large":
       return `La imagen supera ${err.max}×${err.max} px.`;
     case "empty_file":
