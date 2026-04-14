@@ -12,7 +12,8 @@ export interface PrintableOpts {
   slug: string;
   primaryColor: string;
   secondaryColor: string;
-  logoUrl: string | null;
+  logoBuffer: Buffer | null;
+  logoMime: string | null;
   qrDark: string;
   qrLight: string;
   qrEc: QrErrorCorrection;
@@ -22,40 +23,6 @@ const PAGE_WIDTH = 595;
 const PAGE_HEIGHT = 842;
 const FALLBACK_PRIMARY = "#4648d4";
 const FALLBACK_SECONDARY = "#6b38d4";
-const LOGO_FETCH_TIMEOUT_MS = 5_000;
-const LOGO_MAX_BYTES = 2 * 1024 * 1024;
-const LOGO_ALLOWED_HOSTS = /\.(supabase\.co|supabase\.in)$/i;
-
-async function fetchLogoBuffer(url: string): Promise<Buffer | null> {
-  // SSRF guard: https-only + hostname whitelist + no redirect following.
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return null;
-  }
-  if (parsed.protocol !== "https:") return null;
-  if (!LOGO_ALLOWED_HOSTS.test(parsed.hostname)) return null;
-
-  try {
-    const res = await fetch(url, {
-      signal: AbortSignal.timeout(LOGO_FETCH_TIMEOUT_MS),
-      redirect: "error",
-    });
-    if (!res.ok) return null;
-    const type = res.headers.get("content-type") || "";
-    if (!type.startsWith("image/")) return null;
-
-    const declared = Number(res.headers.get("content-length") || 0);
-    if (declared > LOGO_MAX_BYTES) return null;
-
-    const arr = await res.arrayBuffer();
-    if (arr.byteLength > LOGO_MAX_BYTES) return null;
-    return Buffer.from(arr);
-  } catch {
-    return null;
-  }
-}
 
 function sanitizeHex(hex: string | null | undefined, fallback: string): string {
   if (hex && /^#[0-9a-f]{6}$/i.test(hex)) return hex;
@@ -70,16 +37,10 @@ export async function generatePrintablePdf(opts: PrintableOpts): Promise<Buffer>
     errorCorrectionLevel: opts.qrEc,
   });
 
-  // Branded requires a logo; fallback to simple if missing or fetch fails.
+  // Branded requires a logo; fallback to simple if missing.
   let effectiveStyle: QrFrameStyle = opts.frameStyle;
-  let logoBuffer: Buffer | null = null;
-  if (effectiveStyle === "branded") {
-    if (opts.logoUrl) {
-      logoBuffer = await fetchLogoBuffer(opts.logoUrl);
-      if (!logoBuffer) effectiveStyle = "simple";
-    } else {
-      effectiveStyle = "simple";
-    }
+  if (effectiveStyle === "branded" && !opts.logoBuffer) {
+    effectiveStyle = "simple";
   }
 
   const doc = new PDFDocument({ size: "A4", margin: 0 });
@@ -90,7 +51,7 @@ export async function generatePrintablePdf(opts: PrintableOpts): Promise<Buffer>
     doc.on("error", reject);
   });
 
-  drawContent(doc, opts, effectiveStyle, qrBuffer, logoBuffer);
+  drawContent(doc, opts, effectiveStyle, qrBuffer, opts.logoBuffer);
 
   doc.end();
   return done;

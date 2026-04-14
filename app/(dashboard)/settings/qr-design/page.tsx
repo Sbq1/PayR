@@ -9,12 +9,12 @@ import {
   Save,
   RotateCcw,
   Lock,
-  QrCode as QrIcon,
   Info,
 } from "lucide-react";
 import { useSession } from "@/hooks/use-session";
 import { QrLogoUploader } from "./_components/QrLogoUploader";
 import { QrFrameSelector, type QrFrameStyle } from "./_components/QrFrameSelector";
+import { FramePreviewCard } from "./_components/FramePreviewCard";
 
 type PlanTier = "STARTER" | "PRO" | "ENTERPRISE";
 type EcLevel = "L" | "M" | "Q" | "H";
@@ -32,6 +32,10 @@ interface ConfigResponse {
   defaults: QrConfig;
   planTier: PlanTier;
   allowedFeatures: Record<string, boolean>;
+  restaurantName: string;
+  primaryColor: string;
+  secondaryColor: string;
+  logoDataUrl: string | null;
 }
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
@@ -52,6 +56,10 @@ export default function QrDesignPage() {
   const [defaults, setDefaults] = useState<QrConfig | null>(null);
   const [planTier, setPlanTier] = useState<PlanTier>("STARTER");
   const [allowed, setAllowed] = useState<Record<string, boolean>>({});
+  const [restaurantName, setRestaurantName] = useState("");
+  const [primaryColor, setPrimaryColor] = useState("#4648d4");
+  const [secondaryColor, setSecondaryColor] = useState("#6b38d4");
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
 
   const [preview, setPreview] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState(false);
@@ -76,6 +84,10 @@ export default function QrDesignPage() {
       setDefaults(data.defaults);
       setPlanTier(data.planTier);
       setAllowed(data.allowedFeatures);
+      setRestaurantName(data.restaurantName);
+      setPrimaryColor(data.primaryColor);
+      setSecondaryColor(data.secondaryColor);
+      setLogoDataUrl(data.logoDataUrl);
     } finally {
       setLoading(false);
     }
@@ -134,8 +146,18 @@ export default function QrDesignPage() {
     toast.success("Valores restablecidos");
   }
 
-  function handleLogoChange(hasLogo: boolean) {
+  async function handleLogoChange(hasLogo: boolean) {
     setConfig((c) => (c ? { ...c, hasLogo } : c));
+    if (!restaurantId) return;
+    if (!hasLogo) {
+      setLogoDataUrl(null);
+      return;
+    }
+    const res = await fetch(`/api/restaurant/${restaurantId}/qr/logo`);
+    if (res.ok) {
+      const d: { hasLogo: boolean; dataUrl?: string } = await res.json();
+      setLogoDataUrl(d.dataUrl ?? null);
+    }
   }
 
   async function handleSave() {
@@ -412,20 +434,19 @@ export default function QrDesignPage() {
               </h3>
               {previewing && <Loader2 className="w-3 h-3 animate-spin text-gray-400" />}
             </div>
-            <div className="relative aspect-square rounded-lg bg-white p-4 flex items-center justify-center border border-gray-200">
-              {preview ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={preview}
-                  alt="Vista previa del QR"
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <QrIcon className="w-12 h-12 text-gray-200" />
-              )}
-            </div>
+            <FramePreviewCard
+              qrDataUrl={preview}
+              frameStyle={config.frameStyle}
+              restaurantName={restaurantName}
+              tableLabel="Mesa 1"
+              primaryColor={primaryColor}
+              secondaryColor={secondaryColor}
+              logoDataUrl={config.hasLogo ? logoDataUrl : null}
+            />
             <p className="text-[11px] text-gray-500 mt-3 text-center leading-relaxed">
-              Los cambios se aplican a todos los QR de mesa al guardar.
+              {config.frameStyle === "none"
+                ? "Los cambios se aplican a todos los QR de mesa al guardar."
+                : "Así se verá la plantilla imprimible por mesa."}
             </p>
           </aside>
         </div>

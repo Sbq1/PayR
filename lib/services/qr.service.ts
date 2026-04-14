@@ -33,6 +33,10 @@ export interface QrConfigResponse {
   defaults: QrConfig;
   planTier: PlanTier;
   allowedFeatures: Record<Feature, boolean>;
+  restaurantName: string;
+  primaryColor: string;
+  secondaryColor: string;
+  logoDataUrl: string | null;
 }
 
 const DEFAULT_CONFIG: QrConfig = {
@@ -67,6 +71,12 @@ export async function getQrConfig(restaurantId: string): Promise<QrConfigRespons
   const rest = await loadRestaurant(restaurantId);
   const tier = rest.subscription_plans.tier as PlanTier;
 
+  let logoDataUrl: string | null = null;
+  if (rest.qr_logo_data && rest.qr_logo_mime && canUseFeature(tier, "qrLogoEmbedded")) {
+    const base64 = Buffer.from(rest.qr_logo_data).toString("base64");
+    logoDataUrl = `data:${rest.qr_logo_mime};base64,${base64}`;
+  }
+
   return {
     config: {
       dark: rest.qr_dark_color,
@@ -78,6 +88,10 @@ export async function getQrConfig(restaurantId: string): Promise<QrConfigRespons
     defaults: DEFAULT_CONFIG,
     planTier: tier,
     allowedFeatures: allowedFeatures(tier),
+    restaurantName: rest.name,
+    primaryColor: rest.primary_color,
+    secondaryColor: rest.secondary_color,
+    logoDataUrl,
   };
 }
 
