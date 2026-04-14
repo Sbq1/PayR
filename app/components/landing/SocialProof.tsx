@@ -1,55 +1,35 @@
 "use client";
 
-import { motion } from "framer-motion";
-
-const partners = [
-  { name: "Wompi", label: "Pagos" },
-  { name: "Siigo", label: "POS & Contabilidad" },
-  { name: "Supabase", label: "Base de datos" },
-  { name: "Vercel", label: "Infraestructura" },
-  { name: "Sentry", label: "Observabilidad" },
-  { name: "Upstash", label: "Rate limiting" },
-];
-
 export function SocialProof() {
   return (
-    <section className="relative py-14 md:py-16 bg-[#f9f9ff]">
-      <div className="max-w-[1280px] mx-auto px-6">
-        <motion.p
-          initial={{ opacity: 0, y: 8 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.5 }}
-          className="text-center text-[11px] font-semibold text-gray-400 uppercase tracking-[0.2em] mb-9"
-        >
-          Infraestructura construida sobre
-        </motion.p>
+    <section className="py-12 border-y border-[#e7e5e4] bg-[#f5f5f4]/50">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <p className="text-center text-[13px] font-bold uppercase tracking-widest text-[#78716c] mb-8">
+          Tecnología y rieles verificables potenciados por
+        </p>
+        <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-8 sm:gap-x-20 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+          
+          <div className="flex items-center gap-2 font-bold text-[22px] text-[#1c1410]">
+             {/* Wompi mock logo */}
+             <div className="w-6 h-6 rounded bg-[#1c1410]" /> Wompi
+          </div>
+          
+          <div className="flex items-center gap-2 font-bold text-[22px] text-[#1c1410]">
+             {/* Bancolombia mock logo */}
+             <div className="flex px-1 gap-0.5"><div className="w-1.5 h-6 bg-[#1c1410]" /><div className="w-1.5 h-6 bg-[#1c1410]" /><div className="w-1.5 h-6 bg-[#1c1410]" /></div> Bancolombia
+          </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-8 items-center justify-items-center"
-        >
-          {partners.map((p, i) => (
-            <motion.div
-              key={p.name}
-              initial={{ opacity: 0, y: 8 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: 0.1 + i * 0.05 }}
-              className="flex flex-col items-center gap-1 group"
-            >
-              <span className="text-[20px] md:text-[22px] font-[800] tracking-tight text-gray-400 group-hover:text-gray-700 transition-colors">
-                {p.name}
-              </span>
-              <span className="text-[10px] text-gray-300 group-hover:text-gray-400 transition-colors uppercase tracking-wide">
-                {p.label}
-              </span>
-            </motion.div>
-          ))}
-        </motion.div>
+          <div className="flex items-center gap-2 font-bold text-[22px] text-[#1c1410]">
+             {/* Siigo mock logo */}
+             <span className="text-[#1c1410] italic">Siigo.</span>
+          </div>
+
+          <div className="flex items-center gap-2 font-bold text-[20px] text-[#1c1410]">
+             {/* DIAN mock text */}
+             <span className="border-2 border-[#1c1410] px-2 rounded-sm tracking-widest">DIAN</span>
+          </div>
+          
+        </div>
       </div>
     </section>
   );

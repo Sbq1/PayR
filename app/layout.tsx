@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Manrope } from "next/font/google";
+import { Inter, Fraunces } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
@@ -9,30 +9,30 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const manrope = Manrope({
-  variable: "--font-manrope",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "Smart Checkout — Paga tu cuenta con QR",
+  title: "PayR — Smart Checkout para Restaurantes",
   description:
-    "Sistema de pago QR para restaurantes. Escanea, ve tu cuenta y paga sin esperas.",
+    "El cobro deja de ser el cuello de botella. Recaudo QR conectado directo a tu pasarela y POS.",
   metadataBase: new URL("https://smart-checkout-omega.vercel.app"),
   openGraph: {
-    title: "Smart Checkout — Paga tu cuenta con QR",
+    title: "PayR — Smart Checkout para Restaurantes",
     description:
-      "Sistema de pago QR para restaurantes. Escanea, ve tu cuenta y paga sin esperas.",
+      "El cobro deja de ser el cuello de botella. Recaudo QR conectado directo a tu pasarela y POS.",
     url: "https://smart-checkout-omega.vercel.app",
-    siteName: "Smart Checkout",
+    siteName: "PayR",
     locale: "es_CO",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Smart Checkout — Paga tu cuenta con QR",
+    title: "PayR — Smart Checkout para Restaurantes",
     description:
-      "Sistema de pago QR para restaurantes. Escanea, ve tu cuenta y paga sin esperas.",
+      "El cobro deja de ser el cuello de botella. Recaudo QR conectado directo a tu pasarela y POS.",
   },
   robots: {
     index: true,
@@ -46,8 +46,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${inter.variable} ${manrope.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">
+    <html lang="es" className={`${inter.variable} ${fraunces.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col font-sans bg-[#fdfaf6] text-[#1c1410]">
         <TooltipProvider>
           {children}
         </TooltipProvider>

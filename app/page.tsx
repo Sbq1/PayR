@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 
 import { Navbar } from "./components/landing/Navbar";
 import { Hero } from "./components/landing/Hero";
-import { SocialProof } from "./components/landing/SocialProof";
-import { Stats } from "./components/landing/Stats";
+import { SocialProof } from "./components/landing/SocialProof"; /* Let's rename inside but keep import path for now or rename path? Let's just keep path for now to avoid breaking imports elsewhere if any */
 import { ProductShowcase } from "./components/landing/ProductShowcase";
 import { Features } from "./components/landing/Features";
 import { Journey } from "./components/landing/Journey";
@@ -23,15 +22,14 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#f9f9ff] text-[#141b2b] antialiased">
+    <div className="min-h-screen bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
       <Navbar scrolled={scrolled} />
       <main>
         <Hero />
         <SocialProof />
-        <Stats />
         <ProductShowcase />
-        <Journey />
         <Features />
+        <Journey />
         <Pricing />
         <CTA />
       </main>

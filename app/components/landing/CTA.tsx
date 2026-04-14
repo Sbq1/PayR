@@ -5,46 +5,28 @@ import { ArrowRight } from "lucide-react";
 
 export function CTA() {
   return (
-    <section className="py-24 px-6">
-      <div className="max-w-[1000px] mx-auto">
-        <div className="relative rounded-[48px] overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#312e81] via-[#3730a3] to-[#1e1b4b]" />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 opacity-[0.07]"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 25% 25%, rgba(255,255,255,0.2) 1px, transparent 1px)",
-              backgroundSize: "32px 32px",
-            }}
-          />
-          <div className="relative z-10 px-8 py-14 md:px-16 md:py-20 text-center">
-            <h2 className="font-[var(--font-manrope)] text-[28px] md:text-[44px] font-extrabold text-white mb-4 leading-tight">
-              ¿Listo para transformar tu forma de cobrar?
-            </h2>
-            <p className="text-[16px] text-indigo-200 max-w-xl mx-auto mb-10 leading-relaxed">
-              Crea tu cuenta, configura tus mesas, genera QR. Empiezas a cobrar
-              hoy sin datáfono nuevo.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/register"
-                className="group inline-flex items-center justify-center gap-2 px-10 py-5 bg-white text-[#312e81] rounded-2xl font-bold text-[15px] hover:scale-[1.02] transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#312e81]"
-              >
-                Comenzar Gratis
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-              <a
-                href="mailto:hola@smart-checkout.co"
-                className="inline-flex items-center justify-center px-10 py-5 bg-white/10 text-white border border-indigo-400/30 backdrop-blur-sm rounded-2xl font-bold text-[15px] hover:bg-white/20 transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#312e81]"
-              >
-                Agendar Demo
-              </a>
-            </div>
-            <p className="text-[12px] text-indigo-300/60 mt-8">
-              Setup en 5 minutos · Sin tarjeta de crédito · 14 días de prueba
-            </p>
-          </div>
+    <section className="bg-[#1c1410] py-20 lg:py-32 relative overflow-hidden">
+      {/* Decorative Warm Blob */}
+      <div className="absolute -top-[100px] -right-[100px] w-96 h-96 bg-[#c2410c] rounded-full blur-[150px] opacity-40 mix-blend-screen" />
+      
+      <div className="mx-auto max-w-5xl px-6 lg:px-8 relative z-10 text-center fade-in-up">
+        <h2 className="font-serif text-[40px] md:text-[64px] font-black text-white tracking-tight leading-[1.05] mb-6">
+          Escala el cheque promedio de tus comensales hoy mismo.
+        </h2>
+        <p className="text-[18px] md:text-[22px] text-[#a8a29e] mb-12 max-w-2xl mx-auto leading-relaxed">
+          Cobrá sin datáfono, sin colas. Tus clientes pagan desde el celular y vos recibís directo en tu cuenta.
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+           <Link
+             href="/register"
+             className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-10 py-5 bg-[#c2410c] text-white text-[18px] font-bold rounded-2xl shadow-[0_8px_32px_rgba(194,65,12,0.4)] hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(194,65,12,0.5)] transition-all duration-300"
+           >
+             Empezá gratis <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+           </Link>
+           <span className="text-[14px] text-[#78716c] font-medium hidden sm:block mx-4">
+              Setup en 5 minutos
+           </span>
         </div>
       </div>
     </section>

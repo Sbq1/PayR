@@ -1,76 +1,59 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { QrCode, Smartphone, CreditCard } from "lucide-react";
-
-const steps = [
-  {
-    icon: QrCode,
-    step: "01",
-    title: "Genera tu QR",
-    desc: "Crea mesas en el dashboard, cada una genera un código QR único. Imprímelo o muéstralo en un soporte.",
-    bg: "bg-[#e1e0ff]",
-    color: "text-[#4648d4]",
-  },
-  {
-    icon: Smartphone,
-    step: "02",
-    title: "El cliente escanea",
-    desc: "Sin app, sin descarga. El comensal abre la cámara, ve su cuenta en vivo y elige cómo pagar.",
-    bg: "bg-[#e9ddff]",
-    color: "text-[#6b38d4]",
-  },
-  {
-    icon: CreditCard,
-    step: "03",
-    title: "Pago confirmado",
-    desc: "Nequi, Daviplata, tarjeta o PSE. El pago se confirma al instante y tu dashboard se actualiza.",
-    bg: "bg-[#ffd6fd]",
-    color: "text-[#9e00b5]",
-  },
-];
+import { KeyRound, Printer, HandPlatter } from "lucide-react";
 
 export function Journey() {
   return (
-    <section className="py-24 md:py-32 px-6">
-      <div className="max-w-[1100px] mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="font-[var(--font-manrope)] text-[28px] md:text-[44px] font-bold text-[#141b2b] mb-4">
-            De la configuración al éxito en minutos
-          </h2>
-          <p className="text-[16px] text-[#464554] max-w-xl mx-auto">
-            Tres pasos. Sin hardware. Sin capacitación compleja.
-          </p>
+    <section id="como-funciona" className="py-24 bg-white border-y border-[#e7e5e4]">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        
+        <div className="text-center max-w-3xl mx-auto mb-20 fade-in-up">
+           <h2 className="font-serif text-[36px] md:text-[44px] font-bold text-[#1c1410] tracking-tight mb-4">
+             Del alta operativa a cobrar, en 3 pasos.
+           </h2>
+           <p className="text-[17px] text-[#78716c] leading-relaxed">
+             Nada de ingenieros. El proceso de Onboarding ha sido optimizado para gestores administrativos. 
+             Si tienes tus credenciales a la mano, arrancas en 5 minutos.
+           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {steps.map((s, i) => (
-            <motion.div
-              key={s.step}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.5, delay: i * 0.12 }}
-              className="relative rounded-3xl bg-white p-8 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(20,27,43,0.05)] transition-shadow duration-300"
-            >
-              <div className="flex items-center gap-4 mb-6">
-                <div
-                  className={`w-14 h-14 rounded-2xl ${s.bg} flex items-center justify-center`}
-                >
-                  <s.icon className={`w-6 h-6 ${s.color}`} strokeWidth={2} />
-                </div>
-                <span className="text-[36px] font-extrabold text-[#e1e8fd] font-[var(--font-manrope)]">
-                  {s.step}
-                </span>
+        <div className="relative max-w-4xl mx-auto">
+           {/* Background guiding line */}
+           <div className="hidden md:block absolute top-[48px] left-8 right-8 h-px bg-[#e7e5e4]" />
+
+           <div className="grid md:grid-cols-3 gap-12 text-center relative z-10">
+              
+              <div className="fade-in-up">
+                 <div className="w-24 h-24 bg-[#fdfaf6] border border-[#e7e5e4] rounded-full mx-auto flex items-center justify-center mb-6 shadow-sm">
+                    <KeyRound className="w-8 h-8 text-[#1c1410]" />
+                 </div>
+                 <h3 className="font-serif text-[20px] font-bold text-[#1c1410] mb-2">1. Vincula tus Pasarelas</h3>
+                 <p className="text-[14px] text-[#78716c] leading-relaxed px-4">
+                    Inyecta de forma segura tus llaves API de Siigo Facturación y Wompi Bancolombia dentro del Dashboard PayR.
+                 </p>
               </div>
-              <h3 className="font-[var(--font-manrope)] text-[18px] font-bold text-[#141b2b] mb-3">
-                {s.title}
-              </h3>
-              <p className="text-[14px] text-[#464554] leading-relaxed">
-                {s.desc}
-              </p>
-            </motion.div>
-          ))}
+
+              <div className="fade-in-up" style={{ animationDelay: "0.1s" }}>
+                 <div className="w-24 h-24 bg-[#fdfaf6] border border-[#e7e5e4] rounded-full mx-auto flex items-center justify-center mb-6 shadow-sm">
+                    <Printer className="w-8 h-8 text-[#1c1410]" />
+                 </div>
+                 <h3 className="font-serif text-[20px] font-bold text-[#1c1410] mb-2">2. Despliega las Mesas</h3>
+                 <p className="text-[14px] text-[#78716c] leading-relaxed px-4">
+                    Asigna tu menú, añade tu logotipo y el software autogenerará laminas maestras PDF en Formato A4 listas para llevar a la imprenta.
+                 </p>
+              </div>
+
+              <div className="fade-in-up" style={{ animationDelay: "0.2s" }}>
+                 <div className="w-24 h-24 bg-[#c2410c] shadow-[0_4px_16px_rgba(194,65,12,0.4)] border border-[#c2410c] rounded-full mx-auto flex items-center justify-center mb-6">
+                    <HandPlatter className="w-8 h-8 text-white" />
+                 </div>
+                 <h3 className="font-serif text-[20px] font-bold text-[#1c1410] mb-2">3. Opera Inmediatamente</h3>
+                 <p className="text-[14px] text-[#78716c] leading-relaxed px-4">
+                    Colócalos en las mesas. Tus clientes comienzan a transaccionar directo. Tu recaudo ya está en línea.
+                 </p>
+              </div>
+
+           </div>
         </div>
       </div>
     </section>
