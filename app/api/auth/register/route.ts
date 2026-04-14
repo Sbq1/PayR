@@ -97,6 +97,8 @@ export async function POST(request: NextRequest) {
       subject: welcomeContent.subject,
       html: welcomeContent.html,
       text: welcomeContent.text,
+      // Email único: registro de este email = 1 welcome
+      idempotencyKey: `welcome/${email}`,
     });
 
     return Response.json({ success: true }, { status: 201 });

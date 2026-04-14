@@ -24,6 +24,8 @@ export interface EmailParams {
   subject: string;
   html: string;
   text?: string;
+  /** Pattern: <event-type>/<entity-id>. Expira en 24h. Max 256 chars. */
+  idempotencyKey?: string;
 }
 
 export interface EmailResult {
@@ -59,6 +61,7 @@ export async function sendEmail(params: EmailParams): Promise<EmailResult> {
       subject: params.subject,
       html: params.html,
       text: params.text,
+      ...(params.idempotencyKey ? { idempotencyKey: params.idempotencyKey } : {}),
     });
 
     if (error) {

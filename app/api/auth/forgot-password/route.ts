@@ -71,6 +71,8 @@ export async function POST(request: NextRequest) {
         subject: content.subject,
         html: content.html,
         text: content.text,
+        // Token único por reset → idempotency key estable si Resend retry
+        idempotencyKey: `password-reset/${token.substring(0, 32)}`,
       });
 
       await logAuthEvent({
