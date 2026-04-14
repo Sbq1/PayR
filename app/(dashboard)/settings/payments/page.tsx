@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, CheckCircle, Copy, AlertTriangle, EyeOff, Eye, ExternalLink, ShieldAlert, Zap, Play, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle, Copy, AlertTriangle, EyeOff, Eye, ExternalLink, ShieldAlert, Zap, Play, AlertCircle, BookOpen } from "lucide-react";
+import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { useSession } from "@/hooks/use-session";
 
@@ -152,6 +153,80 @@ export default function PaymentSettingsPage() {
         <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-[13px] font-medium text-emerald-800">
           <CheckCircle className="w-5 h-5" />
           Gateway configurado. Listo para procesar cobros automáticos.
+        </div>
+      )}
+
+      {/* Tutorial — Guía paso a paso */}
+      {!hasCredentials && (
+        <div className="bg-blue-50/40 border border-blue-200/60 rounded-2xl p-6 sm:p-8 space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+              <BookOpen className="w-5 h-5 text-blue-700" />
+            </div>
+            <div>
+              <h3 className="text-[15px] font-bold text-gray-900">Configurá Wompi en 4 pasos</h3>
+              <p className="text-[13px] text-gray-500">Si nunca conectaste Wompi, seguí esta guía.</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <TutorialStep
+              n={1}
+              title="Creá tu cuenta de comercio"
+              description={
+                <>
+                  Andá a{" "}
+                  <a href="https://wompi.co" target="_blank" rel="noreferrer" className="text-blue-700 underline font-medium">
+                    wompi.co
+                  </a>{" "}
+                  y registrá tu negocio. Vas a necesitar:
+                  <ul className="list-disc pl-5 mt-1.5 space-y-0.5">
+                    <li>RUT del establecimiento</li>
+                    <li>Cédula del representante legal</li>
+                    <li>Cuenta bancaria donde recibir los pagos</li>
+                  </ul>
+                </>
+              }
+            />
+            <TutorialStep
+              n={2}
+              title="Obtené tus 4 llaves"
+              description={
+                <>
+                  En el panel: <strong>Dashboard → Desarrolladores → API Keys</strong>. Vas a copiar:
+                  <ul className="list-disc pl-5 mt-1.5 space-y-0.5">
+                    <li><strong>Public Key</strong> — empieza con <code className="text-[12px] bg-blue-100 px-1 rounded">pub_test_</code> (sandbox) o <code className="text-[12px] bg-blue-100 px-1 rounded">pub_prod_</code> (real)</li>
+                    <li><strong>Private Key</strong> — empieza con <code className="text-[12px] bg-blue-100 px-1 rounded">prv_test_</code> o <code className="text-[12px] bg-blue-100 px-1 rounded">prv_prod_</code></li>
+                    <li><strong>Events Secret</strong> — token largo random para descifrar webhooks</li>
+                    <li><strong>Integrity Secret</strong> — empieza con <code className="text-[12px] bg-blue-100 px-1 rounded">test_integrity_</code> o <code className="text-[12px] bg-blue-100 px-1 rounded">prod_integrity_</code></li>
+                  </ul>
+                </>
+              }
+            />
+            <TutorialStep
+              n={3}
+              title="Pegá las llaves y probá"
+              description={
+                <>
+                  Pegalas en los campos abajo. Después dale a{" "}
+                  <strong>&ldquo;Probar conexión Wompi&rdquo;</strong> en la sección 3. Si está todo OK
+                  vas a ver un check verde con el nombre de tu comercio.
+                </>
+              }
+            />
+            <TutorialStep
+              n={4}
+              title="Configurá el webhook"
+              description={
+                <>
+                  Después de guardar las llaves, copiá la URL del webhook (bloque azul más abajo).
+                  Andá a <strong>Dashboard → Webhooks → Crear webhook</strong>, pegá la URL y guardá.
+                  Para confirmar que funciona, dale al botón{" "}
+                  <strong>&ldquo;Send test event&rdquo;</strong> en el panel de Wompi.
+                </>
+              }
+            />
+          </div>
         </div>
       )}
 
@@ -369,10 +444,16 @@ export default function PaymentSettingsPage() {
 
       {/* Webhook Configuration Guide */}
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-6 lg:p-8">
-         <h3 className="text-[15px] font-bold text-blue-900">Configuración Final: Notificaciones Webhook</h3>
-         <p className="text-[13px] text-blue-800/80 mt-1 mb-6 max-w-2xl">
-           Bancolombia Wompi requiere que le indiques a qué URL enviar la confirmación del pago cuando el cajero u operador verifique que fue cobrado. Ve al apartado de Webhooks en tu portal de Wompi de comercio y pega este enlace de retrollamada:
+         <h3 className="text-[15px] font-bold text-blue-900">Webhook de notificaciones</h3>
+         <p className="text-[13px] text-blue-800/80 mt-1 mb-4 max-w-2xl">
+           Wompi te avisa cuando un pago se confirma vía webhook. Configurá la URL en su panel:
          </p>
+         <ol className="text-[13px] text-blue-900/85 space-y-1.5 mb-6 list-decimal pl-5 max-w-2xl">
+           <li>Copiá la URL del webhook (abajo).</li>
+           <li>Andá al panel de Wompi: <strong>Dashboard → Webhooks → Crear webhook</strong>.</li>
+           <li>Pegá la URL y guardá.</li>
+           <li>Para verificar que funciona, dale al botón <strong>&ldquo;Send test event&rdquo;</strong> en el panel de Wompi. Si nuestra app responde 200, queda configurado.</li>
+         </ol>
          
          <div className="flex items-center bg-white border border-blue-200 rounded-xl overflow-hidden shadow-sm">
           <span className="flex-1 px-4 py-3 text-[14px] font-mono text-blue-900 truncate bg-transparent selection:bg-blue-100">
@@ -387,6 +468,28 @@ export default function PaymentSettingsPage() {
         </div>
       </div>
 
+    </div>
+  );
+}
+
+function TutorialStep({
+  n,
+  title,
+  description,
+}: {
+  n: number;
+  title: string;
+  description: ReactNode;
+}) {
+  return (
+    <div className="flex gap-4">
+      <div className="w-7 h-7 rounded-full bg-white border border-blue-300 text-blue-700 font-bold text-[12px] flex items-center justify-center shrink-0 shadow-sm">
+        {n}
+      </div>
+      <div className="flex-1">
+        <p className="text-[14px] font-bold text-gray-900 mb-1">{title}</p>
+        <div className="text-[13px] text-gray-700 leading-relaxed">{description}</div>
+      </div>
     </div>
   );
 }

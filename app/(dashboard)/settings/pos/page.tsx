@@ -117,15 +117,20 @@ export default function PosSettingsPage() {
         <div className="relative flex items-start gap-6 md:justify-center">
            <div className="hidden md:flex w-1/2 justify-end text-right pr-8">
               <div className="space-y-1 mt-1">
-                 <h3 className="text-[15px] font-bold text-gray-900">1. Extraer llaves</h3>
-                 <p className="text-[13px] text-gray-500 leading-snug break-words">Genera un token de uso en tu panel de Siigo Nube.</p>
+                 <h3 className="text-[15px] font-bold text-gray-900">1. Activá los Webservices</h3>
+                 <p className="text-[13px] text-gray-500 leading-snug break-words">Generá tus credenciales de API desde tu cuenta Siigo Nube.</p>
               </div>
            </div>
            <div className="w-10 h-10 rounded-full font-bold text-white bg-gray-900 flex items-center justify-center shrink-0 z-10 shadow-md">1</div>
            <div className="flex-1 md:w-1/2 md:flex-none md:pl-8">
               <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-3 mt-1">
-                 <h3 className="md:hidden text-[14px] font-bold text-gray-900 mb-2">Paso 1: Generar Token</h3>
-                 <p className="text-[13px] text-gray-600">Ingresa a tu cuenta de API de Siigo y solicita credenciales de producción para software externo.</p>
+                 <h3 className="md:hidden text-[14px] font-bold text-gray-900 mb-2">Paso 1: Activá los Webservices</h3>
+                 <p className="text-[13px] text-gray-600">Entrá a tu cuenta Siigo Nube. En el menú andá a:</p>
+                 <ol className="text-[13px] text-gray-600 space-y-1.5 list-decimal pl-5">
+                   <li><strong>Mi Cuenta</strong> → <strong>Configuración</strong> → <strong>API Webservices</strong></li>
+                   <li>Si no ves esa opción, pedile a tu contador o admin que active los Webservices en tu plan Siigo.</li>
+                   <li>Ahí vas a ver tu <strong>Username</strong> (el email con el que entrás) y un <strong>Access Key</strong> (un token largo alfanumérico, NO tu password).</li>
+                 </ol>
                  <a href="https://siigonube.siigo.com/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-blue-600 hover:text-blue-800 transition-colors">
                     Ir al panel de Siigo <ChevronRight className="w-3.5 h-3.5" />
                  </a>
@@ -155,6 +160,7 @@ export default function PosSettingsPage() {
                       <label className="text-[13px] font-bold text-gray-900 mb-1.5 block">
                         Siigo Usuario API
                       </label>
+                      <p className="text-[12px] text-gray-500 mb-2">El email con el que entrás a Siigo Nube.</p>
                       <input
                         type="text"
                         value={username}
@@ -168,6 +174,7 @@ export default function PosSettingsPage() {
                       <label className="text-[13px] font-bold text-gray-900 mb-1.5 block">
                         Siigo Access Key
                       </label>
+                      <p className="text-[12px] text-gray-500 mb-2">Token largo alfanumérico que aparece en API Webservices. <strong>No es tu password.</strong></p>
                       <div className="relative">
                         <input
                           type={showKey ? "text" : "password"}
@@ -203,16 +210,16 @@ export default function PosSettingsPage() {
         <div className="relative flex items-start gap-6 md:justify-center">
            <div className="hidden md:flex w-1/2 justify-end text-right pr-8">
               <div className="space-y-1 mt-1">
-                 <h3 className="text-[15px] font-bold text-gray-900">3. Validar</h3>
-                 <p className="text-[13px] text-gray-500 leading-snug">Testea el Handshake.</p>
+                 <h3 className="text-[15px] font-bold text-gray-900">3. Probá la conexión</h3>
+                 <p className="text-[13px] text-gray-500 leading-snug">Antes de guardar, verificá que las llaves funcionan.</p>
               </div>
            </div>
            <div className="w-10 h-10 rounded-full font-bold text-gray-500 bg-gray-100 border border-gray-300 flex items-center justify-center shrink-0 z-10 shadow-sm">3</div>
            <div className="flex-1 md:w-1/2 md:flex-none md:pl-8">
               <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mt-1">
-                 
+                 <p className="text-[13px] text-gray-600 mb-4">Click en <strong>&ldquo;Ejecutar Ping a Siigo&rdquo;</strong>. Si las llaves son válidas vas a ver un check verde. Si falla, revisá: el Access Key copiado completo (sin espacios) y que API Webservices esté activo.</p>
                  <div className="flex items-center justify-between mb-4">
-                    <label className="text-[14px] font-bold text-gray-900">Modo de Prueba Local</label>
+                    <label className="text-[14px] font-bold text-gray-900">Modo Demo (sin Siigo real)</label>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" checked={demoMode} onChange={() => setDemoMode(!demoMode)} className="sr-only peer" />
                       <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
