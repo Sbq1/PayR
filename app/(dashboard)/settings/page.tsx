@@ -33,6 +33,8 @@ const settingsSections = [
   },
 ];
 
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
 export default function SettingsPage() {
   const { restaurantId } = useSession();
   const [saving, setSaving] = useState(false);
@@ -41,10 +43,14 @@ export default function SettingsPage() {
   const [form, setForm] = useState({
     name: "",
     slug: "",
+    primaryColor: "#6366f1",
+    secondaryColor: "#f59e0b",
   });
   const [initialForm, setInitialForm] = useState({
     name: "",
     slug: "",
+    primaryColor: "#6366f1",
+    secondaryColor: "#f59e0b",
   });
 
   useEffect(() => {
@@ -55,6 +61,8 @@ export default function SettingsPage() {
         const payload = {
           name: r.name || "",
           slug: r.slug || "",
+          primaryColor: r.primaryColor || "#6366f1",
+          secondaryColor: r.secondaryColor || "#f59e0b",
         };
         setForm(payload);
         setInitialForm(payload);
@@ -92,6 +100,7 @@ export default function SettingsPage() {
     "w-full px-4 py-2.5 text-[14px] text-gray-900 bg-white border border-gray-300 rounded-xl outline-none transition-shadow duration-200 placeholder:text-gray-400 focus:border-gray-900 focus:ring-1 focus:ring-gray-900";
 
   const hasChanges = JSON.stringify(form) !== JSON.stringify(initialForm);
+  const hexValid = HEX_RE.test(form.primaryColor) && HEX_RE.test(form.secondaryColor);
 
   return (
     <div className="space-y-10 max-w-7xl mx-auto pb-12">
@@ -199,20 +208,143 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-gray-100 flex justify-end">
-                <button
-                  onClick={handleSave}
-                  disabled={saving || !form.name || !hasChanges}
-                  className="px-6 py-2.5 text-[14px] font-semibold text-white bg-gray-900 rounded-xl hover:bg-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
-                >
-                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {hasChanges ? "Guardar cambios" : "Actualizado"}
-                </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Branding - 2 Column Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[380px_1fr] gap-8 lg:gap-14 pt-10 border-t border-gray-100">
+        <div className="space-y-3">
+          <h2 className="text-lg font-bold text-gray-900 tracking-tight">
+            Branding
+          </h2>
+          <p className="text-[14px] text-gray-500 leading-relaxed max-w-sm">
+            Colores aplicados al checkout que ven tus clientes y al frame
+            branded del QR. Si no los cambias usamos los defaults del sistema.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-[24px] border border-gray-200 p-6 sm:p-8 shadow-sm space-y-6">
+          {loading ? (
+            <div className="space-y-6 animate-pulse">
+              <div className="h-16 bg-gray-50 rounded-xl" />
+              <div className="h-16 bg-gray-50 rounded-xl" />
+            </div>
+          ) : (
+            <>
+              <div className="grid sm:grid-cols-2 gap-5">
+                <ColorField
+                  label="Primario"
+                  description="Botones, títulos, acentos"
+                  value={form.primaryColor}
+                  onChange={(v) => update("primaryColor", v)}
+                />
+                <ColorField
+                  label="Secundario"
+                  description="CTAs, links, highlights"
+                  value={form.secondaryColor}
+                  onChange={(v) => update("secondaryColor", v)}
+                />
+              </div>
+
+              <div className="pt-5 border-t border-gray-100">
+                <div className="text-[12px] font-semibold text-gray-700 mb-3">
+                  Vista previa
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    disabled
+                    className="px-4 py-2 text-[13px] font-semibold text-white rounded-lg shadow-sm disabled:opacity-100"
+                    style={{
+                      backgroundColor: HEX_RE.test(form.primaryColor)
+                        ? form.primaryColor
+                        : "#6366f1",
+                    }}
+                  >
+                    Pagar ahora
+                  </button>
+                  <span
+                    className="text-[13px] font-semibold underline underline-offset-2"
+                    style={{
+                      color: HEX_RE.test(form.secondaryColor)
+                        ? form.secondaryColor
+                        : "#f59e0b",
+                    }}
+                  >
+                    Ver detalle
+                  </span>
+                </div>
               </div>
             </>
           )}
         </div>
       </div>
+
+      {/* Global Save */}
+      {!loading && (
+        <div className="flex justify-end pt-4">
+          <button
+            onClick={handleSave}
+            disabled={saving || !form.name || !hexValid || !hasChanges}
+            className="px-6 py-2.5 text-[14px] font-semibold text-white bg-gray-900 rounded-xl hover:bg-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
+          >
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            {hasChanges ? "Guardar cambios" : "Actualizado"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ColorField({
+  label,
+  description,
+  value,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const valid = HEX_RE.test(value);
+  const pickerValue = valid ? value : "#000000";
+  return (
+    <div>
+      <label className="text-[14px] font-semibold text-gray-900 block mb-1">
+        {label}
+      </label>
+      <p className="text-[12px] text-gray-500 mb-2">{description}</p>
+      <div
+        className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors ${
+          valid
+            ? "border-gray-300 bg-white focus-within:border-gray-900"
+            : "border-red-300 bg-red-50/30"
+        }`}
+      >
+        <input
+          type="color"
+          value={pickerValue}
+          onChange={(e) => onChange(e.target.value)}
+          aria-label={`${label} — selector`}
+          className="w-8 h-8 rounded border border-gray-300 cursor-pointer shrink-0"
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          spellCheck={false}
+          aria-label={`${label} — código hex`}
+          placeholder="#000000"
+          maxLength={7}
+          className="flex-1 bg-transparent text-[14px] text-gray-900 font-mono tabular-nums outline-none"
+        />
+      </div>
+      {!valid && (
+        <p className="text-[11px] text-red-600 mt-1">Formato hex inválido (#RRGGBB)</p>
+      )}
     </div>
   );
 }

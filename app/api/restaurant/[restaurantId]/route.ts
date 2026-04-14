@@ -53,9 +53,9 @@ export async function GET(
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
   slug: z.string().regex(/^[a-z0-9-]+$/).optional(),
-  primaryColor: z.string().optional(),
-  secondaryColor: z.string().optional(),
-  backgroundColor: z.string().optional(),
+  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  backgroundColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   // POS credentials
   siigoUsername: z.string().optional(),
   siigoAccessKey: z.string().optional(),
