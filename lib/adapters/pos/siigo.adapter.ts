@@ -91,9 +91,27 @@ export class SiigoAdapter implements IPosAdapter {
       });
 
       if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          throw new PosError(
+            "Credenciales inválidas. Verificá tu username y access key en aplicativo.siigonube.siigo.com",
+            "siigo"
+          );
+        }
+        if (res.status === 429) {
+          throw new PosError(
+            "Siigo está rate-limiteando las requests. Esperá un momento e intentá de nuevo.",
+            "siigo"
+          );
+        }
+        if (res.status >= 500) {
+          throw new PosError(
+            "Siigo está temporalmente inaccesible. Intentá de nuevo en unos minutos.",
+            "siigo"
+          );
+        }
         const errorBody = await res.text().catch(() => "");
         throw new PosError(
-          `Autenticacion fallida (${res.status}): ${errorBody}`,
+          `Error inesperado de Siigo (${res.status}): ${errorBody}`,
           "siigo"
         );
       }
