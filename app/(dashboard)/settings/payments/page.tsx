@@ -374,23 +374,17 @@ export default function PaymentSettingsPage() {
            Bancolombia Wompi requiere que le indiques a qué URL enviar la confirmación del pago cuando el cajero u operador verifique que fue cobrado. Ve al apartado de Webhooks en tu portal de Wompi de comercio y pega este enlace de retrollamada:
          </p>
          
-         <div className="flex flex-col sm:flex-row gap-3">
-           <div className="flex items-center bg-white border border-blue-200 rounded-xl overflow-hidden flex-1 shadow-sm">
-             <span className="flex-1 px-4 py-3 text-[14px] font-mono text-blue-900 truncate bg-transparent selection:bg-blue-100">
-               {webhookUrl || "Cargando..."}
-             </span>
-             <button
-               onClick={() => copyText(webhookUrl)}
-               className="px-4 py-3 border-l border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors font-bold text-[13px]"
-             >
-               Copiar
-             </button>
-           </div>
-           
-           <button disabled className="px-5 py-3 rounded-xl bg-white border border-blue-200 text-[13px] font-bold text-gray-400 cursor-not-allowed shadow-sm shrink-0">
-              Prueba Wompi pronto
-           </button>
-         </div>
+         <div className="flex items-center bg-white border border-blue-200 rounded-xl overflow-hidden shadow-sm">
+          <span className="flex-1 px-4 py-3 text-[14px] font-mono text-blue-900 truncate bg-transparent selection:bg-blue-100">
+            {webhookUrl || "Cargando..."}
+          </span>
+          <button
+            onClick={() => copyText(webhookUrl)}
+            className="px-4 py-3 border-l border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors font-bold text-[13px]"
+          >
+            Copiar
+          </button>
+        </div>
       </div>
 
     </div>

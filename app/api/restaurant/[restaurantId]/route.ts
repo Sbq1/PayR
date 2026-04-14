@@ -63,6 +63,7 @@ export async function GET(
 // Wompi v1 key formats (validar en server para evitar basura en DB encriptada)
 const WOMPI_PUB_RE = /^pub_(test|prod)_[A-Za-z0-9]+$/;
 const WOMPI_PRV_RE = /^prv_(test|prod)_[A-Za-z0-9]+$/;
+const WOMPI_EVENTS_RE = /^(test|prod)_events_[A-Za-z0-9]+$/;
 const WOMPI_INTEGRITY_RE = /^(test|prod)_integrity_[A-Za-z0-9]+$/;
 
 const updateSchema = z
@@ -78,7 +79,7 @@ const updateSchema = z
     // Payment credentials
     wompiPublicKey: z.string().regex(WOMPI_PUB_RE).optional(),
     wompiPrivateKey: z.string().regex(WOMPI_PRV_RE).optional(),
-    wompiEventsSecret: z.string().min(20).max(500).optional(),
+    wompiEventsSecret: z.string().regex(WOMPI_EVENTS_RE).optional(),
     wompiIntegritySecret: z.string().regex(WOMPI_INTEGRITY_RE).optional(),
   })
   .refine(
@@ -87,6 +88,7 @@ const updateSchema = z
       const presentKeys: string[] = [];
       if (data.wompiPublicKey) presentKeys.push(data.wompiPublicKey);
       if (data.wompiPrivateKey) presentKeys.push(data.wompiPrivateKey);
+      if (data.wompiEventsSecret) presentKeys.push(data.wompiEventsSecret);
       if (data.wompiIntegritySecret) presentKeys.push(data.wompiIntegritySecret);
 
       if (presentKeys.length < 2) return true;
