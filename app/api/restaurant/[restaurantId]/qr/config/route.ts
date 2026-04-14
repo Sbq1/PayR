@@ -3,7 +3,7 @@ import { z } from "zod/v4";
 import { auth } from "@/lib/auth";
 import { handleApiError } from "@/lib/utils/errors";
 import { verifyOwnership } from "@/lib/utils/verify-ownership";
-import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/utils/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/utils/rate-limit";
 import { getQrConfig, updateQrConfig } from "@/lib/services/qr.service";
 
 const listLimiter = rateLimit("qr-config-get", { interval: 60_000, limit: 60 });
@@ -26,7 +26,7 @@ export async function GET(
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const rl = await listLimiter.check(getClientIp(request));
+    const rl = await listLimiter.check(`user:${session.user.id}`);
     if (!rl.success) return rateLimitResponse(rl.resetAt);
 
     const { restaurantId } = await params;
@@ -49,7 +49,7 @@ export async function PATCH(
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const rl = await updateLimiter.check(getClientIp(request));
+    const rl = await updateLimiter.check(`user:${session.user.id}`);
     if (!rl.success) return rateLimitResponse(rl.resetAt);
 
     const { restaurantId } = await params;

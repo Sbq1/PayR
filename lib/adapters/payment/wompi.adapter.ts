@@ -2,6 +2,7 @@ import { PaymentError } from "@/lib/utils/errors";
 import {
   generateWompiChecksum,
   generateIntegritySignature,
+  safeEqualHex,
 } from "@/lib/utils/hmac";
 import type {
   IPaymentAdapter,
@@ -63,7 +64,7 @@ export class WompiAdapter implements IPaymentAdapter {
         this.credentials.eventsSecret
       );
 
-      return calculatedChecksum === checksum;
+      return safeEqualHex(calculatedChecksum, checksum);
     } catch (error) {
       console.error("Error verifying webhook signature:", error);
       return false;

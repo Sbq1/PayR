@@ -4,8 +4,13 @@ import { db } from "@/lib/db";
 import { handleApiError } from "@/lib/utils/errors";
 import { encrypt } from "@/lib/utils/crypto";
 import { rateLimit, rateLimitResponse } from "@/lib/utils/rate-limit";
+import { verifyOwnership } from "@/lib/utils/verify-ownership";
 import { z } from "zod/v4";
 
+const getLimiter = rateLimit("restaurant-get", {
+  interval: 60_000,
+  limit: 60,
+});
 const updateLimiter = rateLimit("restaurant-update", {
   interval: 60 * 60 * 1000, // 1 hora
   limit: 10,
@@ -21,7 +26,13 @@ export async function GET(
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
+    const rl = await getLimiter.check(`user:${session.user.id}`);
+    if (!rl.success) return rateLimitResponse(rl.resetAt);
+
     const { restaurantId } = await params;
+
+    // Ownership check — prevenir IDOR. verifyOwnership lanza 404/403 por sí mismo.
+    await verifyOwnership(restaurantId, session.user.id);
 
     const restaurant = await db.restaurant.findUnique({
       where: { id: restaurantId },

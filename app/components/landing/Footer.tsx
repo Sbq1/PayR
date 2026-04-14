@@ -92,9 +92,9 @@ export function Footer() {
               <div className="mt-10 md:mt-0">
                 <h3 className="text-[14px] font-semibold text-white uppercase tracking-wider">Legal</h3>
                 <ul role="list" className="mt-6 space-y-4">
-                  <li><a href="#" className="text-[14px] text-[#a8a29e] hover:text-white transition-colors">Privacidad</a></li>
-                  <li><a href="#" className="text-[14px] text-[#a8a29e] hover:text-white transition-colors">Términos</a></li>
-                  <li><a href="#" className="text-[14px] text-[#a8a29e] hover:text-white transition-colors">Seguridad de Datos</a></li>
+                  <li><Link href="/privacy" className="text-[14px] text-[#a8a29e] hover:text-white transition-colors">Privacidad</Link></li>
+                  <li><Link href="/terms" className="text-[14px] text-[#a8a29e] hover:text-white transition-colors">Términos</Link></li>
+                  <li><Link href="/cookies" className="text-[14px] text-[#a8a29e] hover:text-white transition-colors">Cookies</Link></li>
                 </ul>
               </div>
             </div>

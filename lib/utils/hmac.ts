@@ -1,4 +1,20 @@
-import { createHash } from "crypto";
+import { createHash, timingSafeEqual } from "crypto";
+
+/**
+ * Comparación constant-time de dos checksums hex.
+ * Evita timing sidechannels al comparar secrets.
+ * Retorna false si las longitudes difieren (antes de llegar a timingSafeEqual,
+ * que requiere buffers del mismo tamaño).
+ */
+export function safeEqualHex(a: string, b: string): boolean {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  if (a.length !== b.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex"));
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Genera el checksum SHA256 para validar webhooks de Wompi.

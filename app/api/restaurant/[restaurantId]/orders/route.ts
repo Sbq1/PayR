@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { handleApiError } from "@/lib/utils/errors";
 import { verifyOwnership } from "@/lib/utils/verify-ownership";
-import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/utils/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/utils/rate-limit";
 import { z } from "zod/v4";
 import { Prisma } from "@/lib/generated/prisma/client";
 
@@ -36,7 +36,7 @@ export async function GET(
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const rl = await ordersListLimiter.check(getClientIp(request));
+    const rl = await ordersListLimiter.check(`user:${session.user.id}`);
     if (!rl.success) return rateLimitResponse(rl.resetAt);
 
     const { restaurantId } = await params;
@@ -175,7 +175,7 @@ export async function PATCH(
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const rl = await ordersCancelLimiter.check(getClientIp(request));
+    const rl = await ordersCancelLimiter.check(`user:${session.user.id}`);
     if (!rl.success) return rateLimitResponse(rl.resetAt);
 
     const { restaurantId } = await params;
