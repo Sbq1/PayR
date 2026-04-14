@@ -18,7 +18,6 @@ export function SummaryCard({
 }: SummaryCardProps) {
   return (
     <motion.section
-      layout
       className="mx-5 mt-2 mb-5 p-5 bg-white rounded-3xl shadow-[0_4px_20px_rgba(45,24,16,0.06)]"
     >
       <h2

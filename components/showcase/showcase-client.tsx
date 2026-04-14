@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { useShowcaseStore } from "@/lib/stores/showcase.store";
 import type { ShowcaseSession } from "@/lib/services/showcase.service";
 import { ShowcaseHero } from "./showcase-hero";
@@ -14,7 +14,13 @@ interface ShowcaseClientProps {
   session: ShowcaseSession;
 }
 
+const EMPTY_SUBSCRIBE = () => () => {};
+const GET_TRUE = () => true;
+const GET_FALSE = () => false;
+
 export function ShowcaseClient({ session }: ShowcaseClientProps) {
+  const mounted = useSyncExternalStore(EMPTY_SUBSCRIBE, GET_TRUE, GET_FALSE);
+
   const {
     selectedUpsells,
     tipPercentage,
@@ -24,11 +30,16 @@ export function ShowcaseClient({ session }: ShowcaseClientProps) {
     setCustomTip,
   } = useShowcaseStore();
 
+  const selectedSet = useMemo(
+    () => new Set(selectedUpsells),
+    [selectedUpsells]
+  );
+
   const upsellTotal = useMemo(() => {
     return session.upsells
-      .filter((u) => selectedUpsells.has(u.id))
+      .filter((u) => selectedSet.has(u.id))
       .reduce((sum, u) => sum + u.price, 0);
-  }, [session.upsells, selectedUpsells]);
+  }, [session.upsells, selectedSet]);
 
   const tipOnSubtotal = useMemo(() => {
     if (customTipAmount !== null) return customTipAmount;
@@ -37,9 +48,29 @@ export function ShowcaseClient({ session }: ShowcaseClientProps) {
 
   const total = session.subtotal + upsellTotal + tipOnSubtotal;
 
-  // El backend suma (tip + upsells) como tipAmount único.
-  // El flow existente ya acepta este patrón (/[slug]/[tableId]/pay hace lo mismo).
   const tipAmountForBackend = tipOnSubtotal + upsellTotal;
+
+  if (!mounted) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "#fef3e2" }}
+      >
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="text-4xl"
+            style={{
+              fontFamily: "var(--font-showcase, 'Parisienne', cursive)",
+              color: "#c8102e",
+            }}
+          >
+            crepes & waffles
+          </div>
+          <div className="w-10 h-1 rounded-full bg-[#d4a574] animate-pulse" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen flex flex-col" style={{ background: "#fef3e2" }}>
@@ -52,7 +83,7 @@ export function ShowcaseClient({ session }: ShowcaseClientProps) {
         <BillFeed items={session.items} />
         <UpsellsFeed
           upsells={session.upsells}
-          selectedIds={selectedUpsells}
+          selectedIds={selectedSet}
           onToggle={toggleUpsell}
         />
         <TipSelector
