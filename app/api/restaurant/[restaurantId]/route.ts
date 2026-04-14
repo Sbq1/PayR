@@ -19,7 +19,10 @@ export async function GET(
 
     const restaurant = await db.restaurant.findUnique({
       where: { id: restaurantId },
-      include: { subscription_plans: true },
+      include: {
+        subscription_plans: true,
+        _count: { select: { tables: true } },
+      },
     });
 
     if (!restaurant) {
@@ -44,6 +47,7 @@ export async function GET(
         name: restaurant.subscription_plans.name,
         maxTables: restaurant.subscription_plans.max_tables,
       },
+      tableCount: restaurant._count.tables,
     });
   } catch (error) {
     return handleApiError(error);
