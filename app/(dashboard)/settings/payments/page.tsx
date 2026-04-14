@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, CheckCircle, Copy, AlertTriangle, EyeOff, Eye, ExternalLink, ShieldAlert, Zap } from "lucide-react";
+import { Loader2, CheckCircle, Copy, AlertTriangle, EyeOff, Eye, ExternalLink, ShieldAlert, Zap, Play, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/hooks/use-session";
 
@@ -20,6 +20,15 @@ export default function PaymentSettingsPage() {
   const [showEventsKey, setShowEventsKey] = useState(false);
   const [showIntegrityKey, setShowIntegrityKey] = useState(false);
 
+  const [testStatus, setTestStatus] = useState<"idle" | "testing" | "valid" | "invalid">("idle");
+  const [testError, setTestError] = useState<string | null>(null);
+  const [merchantInfo, setMerchantInfo] = useState<{
+    id: string;
+    name: string;
+    email: string;
+  } | null>(null);
+  const [environment, setEnvironment] = useState<"sandbox" | "production" | null>(null);
+
   const webhookUrl = typeof window !== "undefined"
     ? `${window.location.origin}/api/payment/webhook`
     : "";
@@ -33,10 +42,52 @@ export default function PaymentSettingsPage() {
 
   function update(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
+    // Si user cambia las claves, el test previo deja de ser válido
+    if (field === "wompiPublicKey" || field === "wompiPrivateKey") {
+      setTestStatus("idle");
+      setTestError(null);
+      setMerchantInfo(null);
+      setEnvironment(null);
+    }
+  }
+
+  async function handleTest() {
+    if (!restaurantId || !form.wompiPublicKey || !form.wompiPrivateKey) return;
+    setTestStatus("testing");
+    setTestError(null);
+    try {
+      const res = await fetch(`/api/restaurant/${restaurantId}/test-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          publicKey: form.wompiPublicKey,
+          privateKey: form.wompiPrivateKey,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        setTestStatus("valid");
+        setMerchantInfo(data.merchant ?? null);
+        setEnvironment(data.environment ?? null);
+        toast.success("Conexión Wompi verificada");
+      } else {
+        setTestStatus("invalid");
+        setTestError(data.error || "Validación falló");
+        toast.error(data.error || "Validación falló");
+      }
+    } catch {
+      setTestStatus("invalid");
+      setTestError("Error de red");
+      toast.error("Error de red");
+    }
   }
 
   async function handleSave() {
     if (!restaurantId || !form.wompiPublicKey) return;
+    if (testStatus !== "valid") {
+      toast.error("Probá la conexión antes de guardar");
+      return;
+    }
     if (hasCredentials) {
       if (
         !confirm(
@@ -56,6 +107,9 @@ export default function PaymentSettingsPage() {
         toast.success("Llaves de Wompi cifradas y guardadas");
         setHasCredentials(true);
         setForm({ wompiPublicKey: form.wompiPublicKey, wompiPrivateKey: "", wompiEventsSecret: "", wompiIntegritySecret: "" }); // keep public key visible, clear secrets on success
+        setTestStatus("idle");
+        setMerchantInfo(null);
+        setEnvironment(null);
       } else {
         const data = await res.json();
         toast.error(data.error || "Error guardando tokens");
@@ -184,18 +238,6 @@ export default function PaymentSettingsPage() {
                   <p className="text-[12px] text-amber-600 mt-2 font-medium">Debería empezar por &ldquo;pub_test_&rdquo; o &ldquo;pub_prod_&rdquo;</p>
                )}
             </div>
-            
-            {/* Action Save Button Below Public Key */}
-            <div className="pt-2">
-              <button
-                onClick={handleSave}
-                disabled={saving || !form.wompiPublicKey || !form.wompiPrivateKey}
-                className="w-full px-4 py-3.5 text-[14px] font-bold text-white bg-gray-900 rounded-xl hover:bg-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
-              >
-                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                Guardar Integración
-              </button>
-            </div>
          </div>
 
          <div className="space-y-6">
@@ -267,6 +309,62 @@ export default function PaymentSettingsPage() {
                </div>
             </div>
          </div>
+      </div>
+
+      {/* 3. Validar y Guardar */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-sm space-y-5">
+        <div>
+          <h3 className="text-lg font-bold text-gray-900 tracking-tight">3. Validar y Guardar</h3>
+          <p className="text-[13px] text-gray-500 mt-1 leading-relaxed">
+            Comprueba contra Wompi que las llaves son aceptadas antes de persistirlas en la base de datos.
+          </p>
+        </div>
+
+        {testStatus === "valid" && merchantInfo && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex gap-3">
+            <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-[13px] font-bold text-emerald-900">Credenciales validadas</p>
+              <p className="text-[12px] text-emerald-800/90 mt-0.5">
+                Merchant: <strong>{merchantInfo.name || merchantInfo.id}</strong>
+                {" · "}
+                {environment === "sandbox" ? "Sandbox" : "Producción"}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {testStatus === "invalid" && testError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <p className="text-[13px] text-red-800">{testError}</p>
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            type="button"
+            onClick={handleTest}
+            disabled={testStatus === "testing" || !form.wompiPublicKey || !form.wompiPrivateKey}
+            className="flex-1 px-4 py-3 text-[14px] font-bold text-gray-800 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm focus:ring-2 focus:ring-gray-900 focus:outline-none"
+          >
+            {testStatus === "testing" ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Play className="w-4 h-4 fill-gray-500 text-gray-500" />
+            )}
+            Probar conexión Wompi
+          </button>
+
+          <button
+            onClick={handleSave}
+            disabled={saving || !form.wompiPublicKey || !form.wompiPrivateKey || testStatus !== "valid"}
+            className="flex-1 px-4 py-3 text-[14px] font-bold text-white bg-gray-900 rounded-xl hover:bg-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+          >
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            Guardar Integración
+          </button>
+        </div>
       </div>
 
       {/* Webhook Configuration Guide */}
