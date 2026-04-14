@@ -3,7 +3,7 @@ import { z } from "zod/v4";
 import { auth } from "@/lib/auth";
 import { handleApiError } from "@/lib/utils/errors";
 import { verifyOwnership } from "@/lib/utils/verify-ownership";
-import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/utils/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/utils/rate-limit";
 import { generateConfigPreview } from "@/lib/services/qr.service";
 
 const previewLimiter = rateLimit("qr-preview", { interval: 60_000, limit: 30 });
@@ -24,7 +24,7 @@ export async function POST(
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const rl = await previewLimiter.check(getClientIp(request));
+    const rl = await previewLimiter.check(`user:${session.user.id}`);
     if (!rl.success) return rateLimitResponse(rl.resetAt);
 
     const { restaurantId } = await params;

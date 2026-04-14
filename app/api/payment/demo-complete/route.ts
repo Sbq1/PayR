@@ -3,7 +3,10 @@ import { db } from "@/lib/db";
 import { handleApiError, AppError } from "@/lib/utils/errors";
 import { corsHeaders } from "@/lib/utils/cors";
 import { getPosAdapter } from "@/lib/adapters/pos";
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/utils/rate-limit";
 import { z } from "zod/v4";
+
+const limiter = rateLimit("payment-demo-complete", { interval: 60_000, limit: 10 });
 
 const schema = z.object({
   reference: z.string(),
@@ -20,6 +23,9 @@ const schema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
+    const rl = await limiter.check(getClientIp(request));
+    if (!rl.success) return rateLimitResponse(rl.resetAt);
+
     const body = await request.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {

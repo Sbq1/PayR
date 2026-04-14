@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { handleApiError } from "@/lib/utils/errors";
 import { verifyOwnership } from "@/lib/utils/verify-ownership";
-import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/utils/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/utils/rate-limit";
 import {
   uploadQrLogo,
   deleteQrLogo,
@@ -85,7 +85,7 @@ export async function GET(
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const rl = await readLimiter.check(getClientIp(request));
+    const rl = await readLimiter.check(`user:${session.user.id}`);
     if (!rl.success) return rateLimitResponse(rl.resetAt);
 
     const { restaurantId } = await params;
@@ -111,7 +111,7 @@ export async function DELETE(
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const rl = await deleteLimiter.check(getClientIp(request));
+    const rl = await deleteLimiter.check(`user:${session.user.id}`);
     if (!rl.success) return rateLimitResponse(rl.resetAt);
 
     const { restaurantId } = await params;

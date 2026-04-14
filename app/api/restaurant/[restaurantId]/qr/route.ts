@@ -2,12 +2,13 @@ import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { handleApiError } from "@/lib/utils/errors";
-import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/utils/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/utils/rate-limit";
 import { verifyOwnership } from "@/lib/utils/verify-ownership";
 import { getTableQrUrl, generateQrDataUrl, generateQrWithLogo } from "@/lib/utils/qr";
 import { canUseFeature, type PlanTier } from "@/lib/utils/plan-gate";
 
 const qrLimiter = rateLimit("qr", { interval: 60_000, limit: 20 });
+const qrListLimiter = rateLimit("qr-list", { interval: 60_000, limit: 20 });
 
 /**
  * POST /api/restaurant/[restaurantId]/qr
@@ -23,7 +24,7 @@ export async function POST(
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const rl = await qrLimiter.check(getClientIp(request));
+    const rl = await qrLimiter.check(`user:${session.user.id}`);
     if (!rl.success) return rateLimitResponse(rl.resetAt);
 
     const { restaurantId } = await params;
@@ -74,6 +75,9 @@ export async function GET(
     if (!session?.user) {
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
+
+    const rl = await qrListLimiter.check(`user:${session.user.id}`);
+    if (!rl.success) return rateLimitResponse(rl.resetAt);
 
     const { restaurantId } = await params;
     const restaurant = await verifyOwnership(restaurantId, session.user.id);

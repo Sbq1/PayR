@@ -3,7 +3,10 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { handleApiError } from "@/lib/utils/errors";
 import { verifyOwnership } from "@/lib/utils/verify-ownership";
+import { rateLimit, rateLimitResponse } from "@/lib/utils/rate-limit";
 import { z } from "zod/v4";
+
+const upsellsWriteLimiter = rateLimit("upsells-write", { interval: 60_000, limit: 20 });
 
 export async function GET(
   _request: NextRequest,
@@ -46,6 +49,9 @@ export async function POST(
     if (!session?.user) {
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
+
+    const rl = await upsellsWriteLimiter.check(`user:${session.user.id}`);
+    if (!rl.success) return rateLimitResponse(rl.resetAt);
 
     const { restaurantId } = await params;
     await verifyOwnership(restaurantId, session.user.id);

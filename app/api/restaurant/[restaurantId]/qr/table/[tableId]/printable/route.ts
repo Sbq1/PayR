@@ -2,11 +2,7 @@ import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { AppError, handleApiError } from "@/lib/utils/errors";
-import {
-  rateLimit,
-  getClientIp,
-  rateLimitResponse,
-} from "@/lib/utils/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/utils/rate-limit";
 import { verifyOwnership } from "@/lib/utils/verify-ownership";
 import { canUseFeature, type PlanTier } from "@/lib/utils/plan-gate";
 import {
@@ -33,7 +29,7 @@ export async function GET(
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const rl = await limiter.check(getClientIp(request));
+    const rl = await limiter.check(`user:${session.user.id}`);
     if (!rl.success) return rateLimitResponse(rl.resetAt);
 
     const { restaurantId, tableId } = await params;
