@@ -18,11 +18,14 @@ import {
 } from "@/lib/utils/color-validate";
 import type { ValidatedImage } from "@/lib/utils/image-validate";
 
+export type QrFrameStyle = "none" | "simple" | "branded";
+
 export interface QrConfig {
   dark: string;
   light: string;
   errorCorrection: QrErrorCorrection;
   hasLogo: boolean;
+  frameStyle: QrFrameStyle;
 }
 
 export interface QrConfigResponse {
@@ -37,9 +40,15 @@ const DEFAULT_CONFIG: QrConfig = {
   light: "#ffffff",
   errorCorrection: "M",
   hasLogo: false,
+  frameStyle: "none",
 };
 
 const VALID_EC = new Set<QrErrorCorrection>(["L", "M", "Q", "H"]);
+const VALID_FRAME = new Set<QrFrameStyle>(["none", "simple", "branded"]);
+
+function isValidFrame(value: string): value is QrFrameStyle {
+  return VALID_FRAME.has(value as QrFrameStyle);
+}
 
 function isValidEc(value: string): value is QrErrorCorrection {
   return VALID_EC.has(value as QrErrorCorrection);
@@ -64,6 +73,7 @@ export async function getQrConfig(restaurantId: string): Promise<QrConfigRespons
       light: rest.qr_light_color,
       errorCorrection: rest.qr_error_correction as QrErrorCorrection,
       hasLogo: rest.qr_logo_data != null,
+      frameStyle: rest.qr_frame_style as QrFrameStyle,
     },
     defaults: DEFAULT_CONFIG,
     planTier: tier,
@@ -75,6 +85,7 @@ export interface UpdateQrConfigDto {
   dark?: string;
   light?: string;
   errorCorrection?: string;
+  frameStyle?: string;
 }
 
 export async function updateQrConfig(
@@ -88,6 +99,7 @@ export async function updateQrConfig(
     dark: rest.qr_dark_color,
     light: rest.qr_light_color,
     errorCorrection: rest.qr_error_correction as QrErrorCorrection,
+    frameStyle: rest.qr_frame_style as QrFrameStyle,
   };
 
   const wantsColorChange =
@@ -97,6 +109,9 @@ export async function updateQrConfig(
   const wantsEcChange =
     dto.errorCorrection !== undefined &&
     dto.errorCorrection !== current.errorCorrection;
+
+  const wantsFrameChange =
+    dto.frameStyle !== undefined && dto.frameStyle !== current.frameStyle;
 
   if (wantsColorChange && !canUseFeature(tier, "qrColorsCustom")) {
     throw new AppError(
@@ -114,9 +129,18 @@ export async function updateQrConfig(
     );
   }
 
+  if (wantsFrameChange && !canUseFeature(tier, "qrFrameCustom")) {
+    throw new AppError(
+      "El frame decorativo requiere plan ENTERPRISE",
+      403,
+      "feature_not_in_plan",
+    );
+  }
+
   const nextDark = dto.dark !== undefined ? normalizeHex(dto.dark) : current.dark;
   const nextLight = dto.light !== undefined ? normalizeHex(dto.light) : current.light;
   const nextEc = dto.errorCorrection ?? current.errorCorrection;
+  const nextFrame = dto.frameStyle ?? current.frameStyle;
 
   const colorError = validateQrColors(nextDark, nextLight);
   if (colorError) {
@@ -131,12 +155,17 @@ export async function updateQrConfig(
     throw new AppError("Nivel de corrección inválido", 400, "invalid_error_correction");
   }
 
+  if (!isValidFrame(nextFrame)) {
+    throw new AppError("Estilo de frame inválido", 400, "invalid_frame_style");
+  }
+
   await db.restaurant.update({
     where: { id: restaurantId },
     data: {
       qr_dark_color: nextDark,
       qr_light_color: nextLight,
       qr_error_correction: nextEc,
+      qr_frame_style: nextFrame,
     },
   });
 
@@ -145,6 +174,7 @@ export async function updateQrConfig(
     light: nextLight,
     errorCorrection: nextEc,
     hasLogo: rest.qr_logo_data != null,
+    frameStyle: nextFrame,
   };
 }
 
@@ -165,6 +195,7 @@ export async function generateConfigPreview(
     dark: rest.qr_dark_color,
     light: rest.qr_light_color,
     errorCorrection: rest.qr_error_correction as QrErrorCorrection,
+    frameStyle: rest.qr_frame_style as QrFrameStyle,
   };
 
   // Plan gate on preview too — evita generar previews de tiers no permitidos

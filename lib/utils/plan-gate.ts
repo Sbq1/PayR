@@ -6,6 +6,8 @@
  * tier real del restaurant leído del server.
  */
 
+import { AppError } from "@/lib/utils/errors";
+
 export type PlanTier = "STARTER" | "PRO" | "ENTERPRISE";
 
 export const PLAN_TIER_ORDER: Record<PlanTier, number> = {
@@ -53,12 +55,12 @@ export function allowedFeatures(tier: PlanTier): Record<Feature, boolean> {
   return out;
 }
 
-export class FeatureGateError extends Error {
-  readonly status = 403 as const;
-  readonly code = "feature_not_in_plan" as const;
+export class FeatureGateError extends AppError {
   constructor(public readonly feature: Feature, public readonly currentTier: PlanTier) {
     super(
       `La funcionalidad "${feature}" requiere plan ${FEATURE_MIN_TIER[feature]} o superior (actual: ${currentTier})`,
+      403,
+      "feature_not_in_plan",
     );
     this.name = "FeatureGateError";
   }

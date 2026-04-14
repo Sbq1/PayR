@@ -104,6 +104,8 @@ const comparisonFeatures: { category: string; features: FeatureRow[] }[] = [
       { name: "API + Webhooks", starter: false, pro: false, enterprise: true },
       { name: "Colores de QR custom", starter: false, pro: true, enterprise: true },
       { name: "Logo embebido en QR", starter: false, pro: false, enterprise: true },
+      { name: "Frame decorativo de QR", starter: false, pro: false, enterprise: true },
+      { name: "Plantilla imprimible por mesa", starter: false, pro: false, enterprise: true },
       { name: "Tema y branding custom", starter: false, pro: false, enterprise: true },
     ],
   },
