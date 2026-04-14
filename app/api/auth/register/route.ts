@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { handleApiError } from "@/lib/utils/errors";
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/utils/rate-limit";
+import { sendEmail } from "@/lib/services/email.service";
+import { welcomeEmail } from "@/lib/emails/templates/welcome";
 import bcrypt from "bcryptjs";
 import { z } from "zod/v4";
 
@@ -62,7 +64,7 @@ export async function POST(request: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 12);
 
     // Crear usuario + restaurante en transaccion
-    const user = await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
           name,
@@ -80,8 +82,21 @@ export async function POST(request: NextRequest) {
           pos_provider: "demo",
         },
       });
+    });
 
-      return newUser;
+    // Welcome email — non-blocking (sendEmail no throws, hace fallback console.log si falla)
+    const origin = request.headers.get("origin") ?? new URL(request.url).origin;
+    const welcomeContent = welcomeEmail({
+      userName: name,
+      userEmail: email,
+      restaurantName,
+      dashboardLink: `${origin}/dashboard`,
+    });
+    await sendEmail({
+      to: email,
+      subject: welcomeContent.subject,
+      html: welcomeContent.html,
+      text: welcomeContent.text,
     });
 
     return Response.json({ success: true }, { status: 201 });

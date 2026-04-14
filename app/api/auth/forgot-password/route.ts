@@ -7,6 +7,8 @@ import {
   AuthEventType,
   getAuthEventContext,
 } from "@/lib/utils/auth-events";
+import { sendEmail } from "@/lib/services/email.service";
+import { forgotPasswordEmail } from "@/lib/emails/templates/forgot-password";
 import { z } from "zod/v4";
 import crypto from "node:crypto";
 
@@ -63,8 +65,13 @@ export async function POST(request: NextRequest) {
         request.headers.get("origin") ?? new URL(request.url).origin;
       const link = `${origin}/reset-password/${token}`;
 
-      // TODO(email): integrar Resend / SendGrid. Por ahora log a consola.
-      console.log(`[forgot-password] Reset link para ${email}: ${link}`);
+      const content = forgotPasswordEmail({ resetLink: link, userEmail: user.email });
+      await sendEmail({
+        to: user.email,
+        subject: content.subject,
+        html: content.html,
+        text: content.text,
+      });
 
       await logAuthEvent({
         userId: user.id,
