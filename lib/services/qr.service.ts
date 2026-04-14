@@ -1,6 +1,11 @@
 import { db } from "@/lib/db";
 import { AppError } from "@/lib/utils/errors";
-import { generateQrDataUrl, type QrErrorCorrection, type QrRenderOptions } from "@/lib/utils/qr";
+import {
+  generateQrDataUrl,
+  generateQrWithLogo,
+  type QrErrorCorrection,
+  type QrRenderOptions,
+} from "@/lib/utils/qr";
 import {
   allowedFeatures,
   canUseFeature,
@@ -11,11 +16,13 @@ import {
   normalizeHex,
   validateQrColors,
 } from "@/lib/utils/color-validate";
+import type { ValidatedImage } from "@/lib/utils/image-validate";
 
 export interface QrConfig {
   dark: string;
   light: string;
   errorCorrection: QrErrorCorrection;
+  hasLogo: boolean;
 }
 
 export interface QrConfigResponse {
@@ -29,6 +36,7 @@ const DEFAULT_CONFIG: QrConfig = {
   dark: "#000000",
   light: "#ffffff",
   errorCorrection: "M",
+  hasLogo: false,
 };
 
 const VALID_EC = new Set<QrErrorCorrection>(["L", "M", "Q", "H"]);
@@ -55,6 +63,7 @@ export async function getQrConfig(restaurantId: string): Promise<QrConfigRespons
       dark: rest.qr_dark_color,
       light: rest.qr_light_color,
       errorCorrection: rest.qr_error_correction as QrErrorCorrection,
+      hasLogo: rest.qr_logo_data != null,
     },
     defaults: DEFAULT_CONFIG,
     planTier: tier,
@@ -75,7 +84,7 @@ export async function updateQrConfig(
   const rest = await loadRestaurant(restaurantId);
   const tier = rest.subscription_plans.tier as PlanTier;
 
-  const current: QrConfig = {
+  const current = {
     dark: rest.qr_dark_color,
     light: rest.qr_light_color,
     errorCorrection: rest.qr_error_correction as QrErrorCorrection,
@@ -131,7 +140,12 @@ export async function updateQrConfig(
     },
   });
 
-  return { dark: nextDark, light: nextLight, errorCorrection: nextEc };
+  return {
+    dark: nextDark,
+    light: nextLight,
+    errorCorrection: nextEc,
+    hasLogo: rest.qr_logo_data != null,
+  };
 }
 
 export interface PreviewDto {
@@ -147,7 +161,7 @@ export async function generateConfigPreview(
   const rest = await loadRestaurant(restaurantId);
   const tier = rest.subscription_plans.tier as PlanTier;
 
-  const current: QrConfig = {
+  const current = {
     dark: rest.qr_dark_color,
     light: rest.qr_light_color,
     errorCorrection: rest.qr_error_correction as QrErrorCorrection,
@@ -197,8 +211,79 @@ export async function generateConfigPreview(
     width: 400,
     margin: 2,
   };
+
+  if (rest.qr_logo_data && rest.qr_logo_mime && canUseFeature(tier, "qrLogoEmbedded")) {
+    const dataUrl = await generateQrWithLogo(sampleUrl, opts, {
+      buffer: Buffer.from(rest.qr_logo_data),
+      mime: rest.qr_logo_mime,
+    });
+    return { dataUrl };
+  }
+
   const dataUrl = await generateQrDataUrl(sampleUrl, opts);
   return { dataUrl };
+}
+
+export async function uploadQrLogo(
+  restaurantId: string,
+  image: ValidatedImage,
+): Promise<{ hasLogo: true }> {
+  const rest = await loadRestaurant(restaurantId);
+  const tier = rest.subscription_plans.tier as PlanTier;
+  if (!canUseFeature(tier, "qrLogoEmbedded")) {
+    throw new AppError(
+      "El logo embebido requiere plan ENTERPRISE",
+      403,
+      "feature_not_in_plan",
+    );
+  }
+
+  await db.restaurant.update({
+    where: { id: restaurantId },
+    data: {
+      qr_logo_data: new Uint8Array(image.buffer),
+      qr_logo_mime: image.mime,
+    },
+  });
+
+  return { hasLogo: true };
+}
+
+export async function deleteQrLogo(restaurantId: string): Promise<{ hasLogo: false }> {
+  const rest = await loadRestaurant(restaurantId);
+  const tier = rest.subscription_plans.tier as PlanTier;
+  if (!canUseFeature(tier, "qrLogoEmbedded")) {
+    throw new AppError(
+      "El logo embebido requiere plan ENTERPRISE",
+      403,
+      "feature_not_in_plan",
+    );
+  }
+
+  await db.restaurant.update({
+    where: { id: restaurantId },
+    data: {
+      qr_logo_data: null,
+      qr_logo_mime: null,
+    },
+  });
+
+  return { hasLogo: false };
+}
+
+export async function getQrLogoPreview(
+  restaurantId: string,
+): Promise<{ dataUrl: string; mime: string } | null> {
+  const rest = await loadRestaurant(restaurantId);
+  const tier = rest.subscription_plans.tier as PlanTier;
+  if (!canUseFeature(tier, "qrLogoEmbedded")) return null;
+  if (!rest.qr_logo_data || !rest.qr_logo_mime) return null;
+
+  const base64 = Buffer.from(rest.qr_logo_data).toString("base64");
+  return {
+    dataUrl: `data:${rest.qr_logo_mime};base64,${base64}`,
+    mime: rest.qr_logo_mime,
+  };
 }
 
 function colorMessage(err: NonNullable<ReturnType<typeof validateQrColors>>): string {

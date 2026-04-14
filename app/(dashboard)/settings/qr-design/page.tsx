@@ -10,8 +10,10 @@ import {
   RotateCcw,
   Lock,
   QrCode as QrIcon,
+  Info,
 } from "lucide-react";
 import { useSession } from "@/hooks/use-session";
+import { QrLogoUploader } from "./_components/QrLogoUploader";
 
 type PlanTier = "STARTER" | "PRO" | "ENTERPRISE";
 type EcLevel = "L" | "M" | "Q" | "H";
@@ -20,6 +22,7 @@ interface QrConfig {
   dark: string;
   light: string;
   errorCorrection: EcLevel;
+  hasLogo: boolean;
 }
 
 interface ConfigResponse {
@@ -54,7 +57,8 @@ export default function QrDesignPage() {
 
   const canColors = !!allowed.qrColorsCustom;
   const canEc = !!allowed.qrErrorCorrectionCustom;
-  const isLocked = !canColors && !canEc;
+  const canLogo = !!allowed.qrLogoEmbedded;
+  const isLocked = !canColors && !canEc && !canLogo;
 
   const loadConfig = useCallback(async (rid: string) => {
     setLoading(true);
@@ -89,7 +93,11 @@ export default function QrDesignPage() {
         const res = await fetch(`/api/restaurant/${restaurantId}/qr/preview`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(config),
+          body: JSON.stringify({
+            dark: config.dark,
+            light: config.light,
+            errorCorrection: config.errorCorrection,
+          }),
         });
         if (token !== previewToken.current) return; // stale
         if (res.ok) {
@@ -119,8 +127,12 @@ export default function QrDesignPage() {
 
   function handleReset() {
     if (!defaults) return;
-    setConfig({ ...defaults });
+    setConfig((c) => ({ ...defaults, hasLogo: c?.hasLogo ?? false }));
     toast.success("Valores restablecidos");
+  }
+
+  function handleLogoChange(hasLogo: boolean) {
+    setConfig((c) => (c ? { ...c, hasLogo } : c));
   }
 
   async function handleSave() {
@@ -135,7 +147,11 @@ export default function QrDesignPage() {
       const res = await fetch(`/api/restaurant/${restaurantId}/qr/config`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
+        body: JSON.stringify({
+          dark: config.dark,
+          light: config.light,
+          errorCorrection: config.errorCorrection,
+        }),
       });
       if (res.ok) {
         toast.success("Diseño guardado");
@@ -168,7 +184,7 @@ export default function QrDesignPage() {
         </Link>
         <h1 className="text-[18px] font-semibold text-gray-900">Diseño del QR</h1>
         <p className="text-[13px] text-gray-500 mt-1">
-          Personaliza los colores y nivel de corrección del QR que ven tus clientes.
+          Personaliza los colores, corrección y logo del QR que ven tus clientes.
         </p>
       </div>
 
@@ -286,6 +302,51 @@ export default function QrDesignPage() {
                   );
                 })}
               </div>
+
+              {config.hasLogo && canLogo && config.errorCorrection !== "H" && (
+                <div className="mt-3 flex items-start gap-2 text-[12px] text-gray-600 bg-gray-50 rounded-lg p-2.5">
+                  <Info className="w-3.5 h-3.5 text-gray-500 mt-0.5 shrink-0" />
+                  <span>
+                    Con logo activo, el QR se genera con nivel <strong>H</strong> para
+                    tolerar la zona cubierta.
+                  </span>
+                </div>
+              )}
+            </section>
+
+            {/* Logo embebido */}
+            <section className="rounded-xl border border-gray-200 bg-white p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-[14px] font-semibold text-gray-900">
+                    Logo embebido
+                  </h2>
+                  <p className="text-[12px] text-gray-500 mt-0.5">
+                    Coloca el logo de tu marca en el centro del QR (máx 20% del área).
+                  </p>
+                </div>
+                {!canLogo && (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-[10px] font-semibold text-gray-500 uppercase">
+                    <Lock className="w-2.5 h-2.5" />
+                    Enterprise
+                  </span>
+                )}
+              </div>
+
+              {canLogo ? (
+                <QrLogoUploader
+                  restaurantId={restaurantId!}
+                  onChange={handleLogoChange}
+                />
+              ) : (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-[13px] text-gray-600">
+                  Actualiza a <strong>Enterprise</strong> para agregar el logo de tu
+                  marca al QR.{" "}
+                  <Link href="/settings/subscription" className="underline font-semibold">
+                    Ver planes
+                  </Link>
+                </div>
+              )}
             </section>
 
             {/* Actions */}
