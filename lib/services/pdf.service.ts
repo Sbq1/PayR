@@ -67,38 +67,46 @@ function drawContent(
   const cx = PAGE_WIDTH / 2;
 
   if (style === "none") {
-    const qrSize = 260;
+    const qrSize = 400;
     doc.image(qr, cx - qrSize / 2, (PAGE_HEIGHT - qrSize) / 2, { width: qrSize });
     return;
   }
 
-  const blockW = 300;
-  const blockH = 380;
-  const blockX = cx - blockW / 2;
-  const blockY = (PAGE_HEIGHT - blockH) / 2;
-
   if (style === "simple") {
+    const blockW = 320;
+    const blockH = 460;
+    const blockX = cx - blockW / 2;
+    const blockY = (PAGE_HEIGHT - blockH) / 2;
+
     doc
-      .roundedRect(blockX, blockY, blockW, blockH, 14)
-      .lineWidth(1.5)
-      .stroke("#141b2b");
+      .roundedRect(blockX, blockY, blockW, blockH, 20)
+      .fill("#FFFFFF");
+    
+    doc
+      .roundedRect(blockX, blockY, blockW, blockH, 20)
+      .lineWidth(1)
+      .stroke("#E5E7EB");
+
+    let cursorY = blockY + 56;
 
     const qrSize = 220;
-    const qrY = blockY + 28;
-    doc.image(qr, cx - qrSize / 2, qrY, { width: qrSize });
+    doc.image(qr, cx - qrSize / 2, cursorY, { width: qrSize });
+    cursorY += qrSize + 56;
 
     const tableText = opts.tableLabel || `Mesa ${opts.tableNumber}`;
     doc
       .font("Helvetica-Bold")
-      .fontSize(16)
-      .fillColor("#141b2b")
-      .text(tableText, blockX, qrY + qrSize + 16, { width: blockW, align: "center" });
+      .fontSize(24)
+      .fillColor("#111827")
+      .text(tableText, blockX, cursorY, { width: blockW, align: "center" });
+
+    cursorY += 34;
 
     doc
       .font("Helvetica")
-      .fontSize(11)
-      .fillColor("#464554")
-      .text("Escanea para pagar", blockX, qrY + qrSize + 40, {
+      .fontSize(14)
+      .fillColor("#6B7280")
+      .text("Escanea para pagar", blockX, cursorY, {
         width: blockW,
         align: "center",
       });
@@ -106,49 +114,89 @@ function drawContent(
   }
 
   // branded
+  const blockW = 360;
+  const blockH = 540;
+  const blockX = cx - blockW / 2;
+  const blockY = (PAGE_HEIGHT - blockH) / 2;
+
   const primary = sanitizeHex(opts.primaryColor, FALLBACK_PRIMARY);
   const secondary = sanitizeHex(opts.secondaryColor, FALLBACK_SECONDARY);
 
+  // Background and border
   doc
-    .roundedRect(blockX, blockY, blockW, blockH, 16)
-    .lineWidth(2.5)
-    .stroke(primary);
+    .roundedRect(blockX, blockY, blockW, blockH, 24)
+    .fill("#FFFFFF");
 
-  let cursorY = blockY + 22;
+  doc
+    .roundedRect(blockX, blockY, blockW, blockH, 24)
+    .lineWidth(1)
+    .stroke("#E5E7EB");
+
+  // Top color line
+  doc.save();
+  doc.roundedRect(blockX, blockY, blockW, blockH, 24).clip();
+  doc.rect(blockX, blockY, blockW, 8).fill(primary);
+  doc.restore();
+
+  let cursorY = blockY + 44;
 
   if (logo) {
-    const logoMaxH = 40;
-    const logoMaxW = 120;
+    const logoMaxH = 52;
+    const logoMaxW = 160;
     try {
-      doc.image(logo, cx - logoMaxW / 2, cursorY, { fit: [logoMaxW, logoMaxH] });
-      cursorY += logoMaxH + 6;
+      doc.image(logo, cx - logoMaxW / 2, cursorY, { 
+        fit: [logoMaxW, logoMaxH],
+        align: "center",
+        valign: "center" 
+      });
+      cursorY += logoMaxH + 16;
     } catch {
-      // unsupported format — continue without logo
+      cursorY += 24;
     }
+  } else {
+    cursorY += 24;
   }
 
   doc
     .font("Helvetica-Bold")
-    .fontSize(10)
-    .fillColor("#464554")
+    .fontSize(14)
+    .fillColor("#111827")
     .text(opts.restaurantName, blockX, cursorY, { width: blockW, align: "center" });
-  cursorY += 18;
+  
+  cursorY += 28;
 
-  const qrSize = 200;
-  doc.image(qr, cx - qrSize / 2, cursorY, { width: qrSize });
-  cursorY += qrSize + 14;
+  // Frame around QR to make it feel premium (like a product image)
+  const qrFrameSize = 250;
+  const qrSize = 210;
+  const qrFrameX = cx - qrFrameSize / 2;
+  
+  doc
+    .roundedRect(qrFrameX, cursorY, qrFrameSize, qrFrameSize, 20)
+    .fill("#F9FAFB");
+  
+  doc
+    .roundedRect(qrFrameX, cursorY, qrFrameSize, qrFrameSize, 20)
+    .lineWidth(1)
+    .stroke("#F3F4F6");
+
+  const qrOffset = (qrFrameSize - qrSize) / 2;
+  doc.image(qr, qrFrameX + qrOffset, cursorY + qrOffset, { width: qrSize });
+  
+  cursorY += qrFrameSize + 36;
 
   const tableText = opts.tableLabel || `Mesa ${opts.tableNumber}`;
+  
   doc
     .font("Helvetica-Bold")
-    .fontSize(20)
+    .fontSize(28)
     .fillColor(primary)
     .text(tableText, blockX, cursorY, { width: blockW, align: "center" });
-  cursorY += 26;
+  
+  cursorY += 34;
 
   doc
     .font("Helvetica")
-    .fontSize(10)
+    .fontSize(14)
     .fillColor(secondary)
     .text("Escanea para pagar", blockX, cursorY, { width: blockW, align: "center" });
 }
