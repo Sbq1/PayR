@@ -60,21 +60,45 @@ export async function GET(
   }
 }
 
-const updateSchema = z.object({
-  name: z.string().min(2).optional(),
-  slug: z.string().regex(/^[a-z0-9-]+$/).optional(),
-  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
-  secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
-  backgroundColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
-  // POS credentials
-  siigoUsername: z.string().optional(),
-  siigoAccessKey: z.string().optional(),
-  // Payment credentials
-  wompiPublicKey: z.string().optional(),
-  wompiPrivateKey: z.string().optional(),
-  wompiEventsSecret: z.string().optional(),
-  wompiIntegritySecret: z.string().optional(),
-});
+// Wompi v1 key formats (validar en server para evitar basura en DB encriptada)
+const WOMPI_PUB_RE = /^pub_(test|prod)_[A-Za-z0-9]+$/;
+const WOMPI_PRV_RE = /^prv_(test|prod)_[A-Za-z0-9]+$/;
+const WOMPI_INTEGRITY_RE = /^(test|prod)_integrity_[A-Za-z0-9]+$/;
+
+const updateSchema = z
+  .object({
+    name: z.string().min(2).optional(),
+    slug: z.string().regex(/^[a-z0-9-]+$/).optional(),
+    primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+    secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+    backgroundColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+    // POS credentials
+    siigoUsername: z.string().email().optional(),
+    siigoAccessKey: z.string().min(20).max(200).optional(),
+    // Payment credentials
+    wompiPublicKey: z.string().regex(WOMPI_PUB_RE).optional(),
+    wompiPrivateKey: z.string().regex(WOMPI_PRV_RE).optional(),
+    wompiEventsSecret: z.string().min(20).max(500).optional(),
+    wompiIntegritySecret: z.string().regex(WOMPI_INTEGRITY_RE).optional(),
+  })
+  .refine(
+    (data) => {
+      // Mismo entorno (test/prod) en todas las wompi keys del request
+      const presentKeys: string[] = [];
+      if (data.wompiPublicKey) presentKeys.push(data.wompiPublicKey);
+      if (data.wompiPrivateKey) presentKeys.push(data.wompiPrivateKey);
+      if (data.wompiIntegritySecret) presentKeys.push(data.wompiIntegritySecret);
+
+      if (presentKeys.length < 2) return true;
+      const envs = presentKeys.map((k) => (k.includes("test") ? "test" : "prod"));
+      return envs.every((e) => e === envs[0]);
+    },
+    {
+      message:
+        "Las credenciales de Wompi mezclan sandbox (test_) y producción (prod_). Deben ser del mismo entorno.",
+      path: ["wompiPublicKey"],
+    },
+  );
 
 export async function PUT(
   request: NextRequest,
