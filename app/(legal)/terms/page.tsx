@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Términos y Condiciones — PayR",
@@ -26,7 +27,7 @@ export default function TermsPage() {
       <h2>1. Aceptación</h2>
       <p>
         El uso de PayR implica la aceptación expresa de estos Términos y de nuestra{" "}
-        <a href="/privacy">Política de Privacidad</a>. Si no está de acuerdo, no
+        <Link href="/privacy">Política de Privacidad</Link>. Si no está de acuerdo, no
         utilice el servicio.
       </p>
 
@@ -57,7 +58,7 @@ export default function TermsPage() {
 
       <h2>5. Pricing y facturación</h2>
       <ul>
-        <li>Las tarifas se publican en la página <a href="/pricing">/pricing</a>.</li>
+        <li>Las tarifas se publican en la página <Link href="/pricing">/pricing</Link>.</li>
         <li>La facturación se realiza mensualmente según el plan contratado.</li>
         <li>PayR puede modificar las tarifas con 30 días de aviso previo por correo.</li>
         <li>No hay devoluciones por períodos parciales salvo lo exigido por la ley.</li>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Política de Privacidad — PayR",
@@ -113,7 +114,7 @@ export default function PrivacyPage() {
       <p>
         Utilizamos cookies propias estrictamente necesarias para el funcionamiento del
         servicio (sesión, preferencias). Consulte nuestra{" "}
-        <a href="/cookies">Política de Cookies</a> para más detalle.
+        <Link href="/cookies">Política de Cookies</Link> para más detalle.
       </p>
 
       <h2>10. Cambios a esta política</h2>

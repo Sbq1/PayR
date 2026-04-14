@@ -1,34 +1,49 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 import Link from "next/link";
 
 const STORAGE_KEY = "payr.cookieConsent";
 const CONSENT_VERSION = "1";
 
+function subscribe(notify: () => void) {
+  window.addEventListener("storage", notify);
+  window.addEventListener("payr:consent-updated", notify);
+  return () => {
+    window.removeEventListener("storage", notify);
+    window.removeEventListener("payr:consent-updated", notify);
+  };
+}
+
+function getClientSnapshot(): "ack" | "pending" {
+  try {
+    return window.localStorage.getItem(STORAGE_KEY) === CONSENT_VERSION
+      ? "ack"
+      : "pending";
+  } catch {
+    // localStorage bloqueado — no mostrar banner para evitar loop.
+    return "ack";
+  }
+}
+
+function getServerSnapshot(): "ack" | "pending" {
+  // En SSR asumimos "ack" para evitar flash del banner pre-hydration.
+  return "ack";
+}
+
 export function CookieConsent() {
-  const [visible, setVisible] = useState(false);
+  const state = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
 
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored !== CONSENT_VERSION) setVisible(true);
-    } catch {
-      // localStorage bloqueado (modo privado/estricto) — no mostramos el banner
-      // para evitar loop de re-render.
-    }
-  }, []);
-
-  const accept = () => {
+  const accept = useCallback(() => {
     try {
       window.localStorage.setItem(STORAGE_KEY, CONSENT_VERSION);
     } catch {
       // ignorar
     }
-    setVisible(false);
-  };
+    window.dispatchEvent(new Event("payr:consent-updated"));
+  }, []);
 
-  if (!visible) return null;
+  if (state === "ack") return null;
 
   return (
     <div
