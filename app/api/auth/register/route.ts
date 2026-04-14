@@ -62,22 +62,26 @@ export async function POST(request: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 12);
 
     // Crear usuario + restaurante en transaccion
-    const user = await db.user.create({
-      data: {
-        name,
-        email,
-        password_hash: passwordHash,
-      },
-    });
+    const user = await db.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name,
+          email,
+          password_hash: passwordHash,
+        },
+      });
 
-    await db.restaurant.create({
-      data: {
-        name: restaurantName,
-        slug: restaurantSlug,
-        owner_id: user.id,
-        plan_id: starterPlan.id,
-        pos_provider: "demo",
-      },
+      await tx.restaurant.create({
+        data: {
+          name: restaurantName,
+          slug: restaurantSlug,
+          owner_id: newUser.id,
+          plan_id: starterPlan.id,
+          pos_provider: "demo",
+        },
+      });
+
+      return newUser;
     });
 
     return Response.json({ success: true }, { status: 201 });
