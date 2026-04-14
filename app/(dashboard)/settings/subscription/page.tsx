@@ -8,8 +8,6 @@ import {
   Zap,
   Sparkles,
   MoveRight,
-  Receipt,
-  CreditCard,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -137,29 +135,7 @@ export default function SubscriptionSettingsPage() {
         </div>
       </div>
 
-      {/* Metrics Row (Dummy UI to look complete) */}
-      <div className="grid sm:grid-cols-2 gap-4">
-         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex items-center gap-5">
-            <div className="w-12 h-12 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center">
-               <Receipt className="w-6 h-6 text-gray-400" />
-            </div>
-            <div>
-               <p className="text-[13px] font-semibold text-gray-500 mb-0.5">Comandas procesadas</p>
-               <p className="text-[20px] font-black text-gray-900">Ilimitadas</p>
-            </div>
-         </div>
-         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm flex items-center gap-5">
-            <div className="w-12 h-12 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center">
-               <CreditCard className="w-6 h-6 text-gray-400" />
-            </div>
-            <div>
-               <p className="text-[13px] font-semibold text-gray-500 mb-0.5">Tasa PayR por cobro</p>
-               <p className="text-[20px] font-black text-gray-900">1.5% <span className="text-[11px] font-medium text-gray-400 align-middle ml-1">FIJO</span></p>
-            </div>
-         </div>
-      </div>
-
-      {/* Features Matrix Gate */}
+{/* Features Matrix Gate */}
       <div className="space-y-6">
         <div>
            <h3 className="text-xl font-bold text-gray-900">Matriz de Acceso</h3>
