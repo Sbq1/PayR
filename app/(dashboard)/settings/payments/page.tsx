@@ -37,6 +37,14 @@ export default function PaymentSettingsPage() {
 
   async function handleSave() {
     if (!restaurantId || !form.wompiPublicKey) return;
+    if (hasCredentials) {
+      if (
+        !confirm(
+          "¿Reemplazar las credenciales de Wompi actuales? Afectará el procesamiento de pagos reales.",
+        )
+      )
+        return;
+    }
     setSaving(true);
     try {
       const res = await fetch(`/api/restaurant/${restaurantId}`, {

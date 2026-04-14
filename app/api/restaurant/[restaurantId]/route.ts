@@ -3,7 +3,13 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { handleApiError } from "@/lib/utils/errors";
 import { encrypt } from "@/lib/utils/crypto";
+import { rateLimit, rateLimitResponse } from "@/lib/utils/rate-limit";
 import { z } from "zod/v4";
+
+const updateLimiter = rateLimit("restaurant-update", {
+  interval: 60 * 60 * 1000, // 1 hora
+  limit: 10,
+});
 
 export async function GET(
   _request: NextRequest,
@@ -79,6 +85,9 @@ export async function PUT(
     if (!session?.user) {
       return Response.json({ error: "No autorizado" }, { status: 401 });
     }
+
+    const rl = await updateLimiter.check(`user:${session.user.id}`);
+    if (!rl.success) return rateLimitResponse(rl.resetAt);
 
     const { restaurantId } = await params;
 

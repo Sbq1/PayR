@@ -50,6 +50,14 @@ export default function PosSettingsPage() {
 
   async function handleSave() {
     if (!restaurantId || !username || !accessKey) return;
+    if (hasCredentials) {
+      if (
+        !confirm(
+          "¿Reemplazar las credenciales de Siigo actuales? Las anteriores dejarán de funcionar.",
+        )
+      )
+        return;
+    }
     setSaving(true);
 
     try {
@@ -118,7 +126,7 @@ export default function PosSettingsPage() {
               <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-3 mt-1">
                  <h3 className="md:hidden text-[14px] font-bold text-gray-900 mb-2">Paso 1: Generar Token</h3>
                  <p className="text-[13px] text-gray-600">Ingresa a tu cuenta de API de Siigo y solicita credenciales de producción para software externo.</p>
-                 <a href="https://aplicativo.siigo.com" target="_blank" className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+                 <a href="https://siigonube.siigo.com/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-blue-600 hover:text-blue-800 transition-colors">
                     Ir al panel de Siigo <ChevronRight className="w-3.5 h-3.5" />
                  </a>
               </div>
