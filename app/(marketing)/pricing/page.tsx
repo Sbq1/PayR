@@ -135,7 +135,7 @@ const matrixCategories = [
 const faqs = [
   {
     q: "¿Puedo cambiar de plan en cualquier momento?",
-    a: "Sí. Por ahora los cambios se gestionan por contacto directo (escribinos a hola@smartcheckout.co). El auto-billing nativo con prorrateo está en roadmap.",
+    a: "Sí. Por ahora los cambios se gestionan por contacto directo (escríbenos a hola@smartcheckout.co). El auto-billing nativo con prorrateo está en roadmap.",
   },
   {
     q: "¿Qué pasa si excedo el límite de mesas de mi plan?",
@@ -151,7 +151,7 @@ const faqs = [
   },
   {
     q: "¿Hay setup fee de onboarding?",
-    a: "No para Starter ni Pro: configurás Wompi y Siigo en pocos minutos y empezás a operar el mismo día. En Enterprise puede haber un setup negociado según las customizaciones (multi-sucursal, migración de APIs, branding).",
+    a: "No para Starter ni Pro: configuras Wompi y Siigo en pocos minutos y empiezas a operar el mismo día. En Enterprise puede haber un setup negociado según las customizaciones (multi-sucursal, migración de APIs, branding).",
   },
 ];
 
