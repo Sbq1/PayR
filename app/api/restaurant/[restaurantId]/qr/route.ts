@@ -4,7 +4,8 @@ import { db } from "@/lib/db";
 import { handleApiError } from "@/lib/utils/errors";
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/utils/rate-limit";
 import { verifyOwnership } from "@/lib/utils/verify-ownership";
-import { getTableQrUrl, generateQrDataUrl } from "@/lib/utils/qr";
+import { getTableQrUrl, generateQrDataUrl, generateQrWithLogo } from "@/lib/utils/qr";
+import { canUseFeature, type PlanTier } from "@/lib/utils/plan-gate";
 
 const qrLimiter = rateLimit("qr", { interval: 60_000, limit: 20 });
 
@@ -83,18 +84,33 @@ export async function GET(
       orderBy: { table_number: "asc" },
     });
 
+    const tier = restaurant.subscription_plans.tier as PlanTier;
+    const logoEnabled =
+      canUseFeature(tier, "qrLogoEmbedded") &&
+      restaurant.qr_logo_data != null &&
+      restaurant.qr_logo_mime != null;
+
     const qrOptions = {
       dark: restaurant.qr_dark_color,
       light: restaurant.qr_light_color,
       errorCorrection: restaurant.qr_error_correction as "L" | "M" | "Q" | "H",
     };
 
+    const logoInput = logoEnabled
+      ? {
+          buffer: Buffer.from(restaurant.qr_logo_data!),
+          mime: restaurant.qr_logo_mime!,
+        }
+      : null;
+
     const qrCodes = await Promise.all(
       tables.map(async (table) => {
         const qr = table.qr_codes;
         if (!qr) return { tableId: table.id, tableNumber: table.table_number, label: table.label, qr: null };
 
-        const dataUrl = await generateQrDataUrl(qr.url, qrOptions);
+        const dataUrl = logoInput
+          ? await generateQrWithLogo(qr.url, qrOptions, logoInput)
+          : await generateQrDataUrl(qr.url, qrOptions);
         return {
           tableId: table.id,
           tableNumber: table.table_number,
