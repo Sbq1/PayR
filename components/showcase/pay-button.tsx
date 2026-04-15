@@ -1,8 +1,10 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, ShieldCheck, AlertCircle, CreditCard } from "lucide-react";
+import { Loader2, ShieldCheck, AlertCircle, CreditCard, Lock } from "lucide-react";
 import { formatCOP } from "@/lib/utils/currency";
 
 declare global {
@@ -120,9 +122,9 @@ export function PayButton({
       className="sticky bottom-0 inset-x-0 z-20"
       style={{
         background:
-          "linear-gradient(to top, #fef3e2 60%, rgba(254,243,226,0) 100%)",
-        backdropFilter: "blur(1px)",
-        WebkitBackdropFilter: "blur(1px)",
+          "linear-gradient(to top, #fef3e2 65%, rgba(254,243,226,0) 100%)",
+        backdropFilter: "blur(2px)",
+        WebkitBackdropFilter: "blur(2px)",
       }}
     >
       <div className="px-5 pt-5 pb-7">
@@ -140,6 +142,7 @@ export function PayButton({
           )}
         </AnimatePresence>
 
+        {/* Pay CTA */}
         <motion.button
           whileTap={{ scale: 0.975 }}
           disabled={disabled}
@@ -154,15 +157,18 @@ export function PayButton({
               : "0 10px 32px rgba(200,16,46,0.35), 0 2px 8px rgba(200,16,46,0.15)",
           }}
         >
-          {/* Pulse ring sutil cuando está listo */}
+          {/* Animated shine sweep when ready */}
           {!disabled && !loading && (
             <motion.span
-              className="absolute inset-0 rounded-2xl"
-              animate={{ opacity: [0.15, 0, 0.15] }}
-              transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute inset-0 rounded-2xl pointer-events-none"
+              animate={{
+                backgroundPosition: ["200% 0%", "-200% 0%"],
+              }}
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
               style={{
                 background:
-                  "radial-gradient(ellipse at 30% 50%, rgba(255,255,255,0.18) 0%, transparent 70%)",
+                  "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.12) 50%, transparent 60%)",
+                backgroundSize: "200% 100%",
               }}
             />
           )}
@@ -193,9 +199,25 @@ export function PayButton({
           )}
         </motion.button>
 
-        <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-[#8a7866]">
-          <ShieldCheck className="w-3 h-3" strokeWidth={2} />
-          <span>Pago seguro · Wompi sandbox</span>
+        {/* Trust row: secure + badges */}
+        <div className="mt-3.5 flex items-center justify-center">
+          <div className="flex items-center gap-1.5">
+            <Lock className="w-3 h-3 text-[#8a7866]" strokeWidth={2.2} />
+            <span className="text-[10px] uppercase tracking-[0.18em] text-[#8a7866] font-medium">
+              Pago seguro
+            </span>
+          </div>
+          <span className="mx-2.5 w-px h-3 bg-[#d4a574]/40" />
+          <div className="flex items-center gap-2">
+            <img src="/showcase/visa.svg" alt="Visa" className="h-[14px] w-auto opacity-60" />
+            <img src="/showcase/mastercard.svg" alt="Mastercard" className="h-[14px] w-auto opacity-60" />
+            <img src="/showcase/nequi.svg" alt="Nequi" className="h-[14px] w-auto opacity-60" />
+          </div>
+          <span className="mx-2.5 w-px h-3 bg-[#d4a574]/40" />
+          <div className="flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3 text-[#8a7866]" strokeWidth={2} />
+            <span className="text-[9px] text-[#8a7866]">Wompi</span>
+          </div>
         </div>
       </div>
     </div>

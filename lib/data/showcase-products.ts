@@ -22,7 +22,7 @@ const ALL_PRODUCTS: ShowcaseProduct[] = [
     priceInCents: 2490000,
     category: "crepes",
     imageUrl:
-      "https://images.unsplash.com/photo-1519676867240-f03562e64548?auto=format&fit=crop&crop=center&w=800&q=85",
+      "https://images.unsplash.com/photo-1631206753348-db44968fd440?auto=format&fit=crop&crop=center&w=800&q=85",
     emoji: "🍓",
     accentFrom: "#fde4e4",
     accentTo: "#f8b4b4",
@@ -37,7 +37,7 @@ const ALL_PRODUCTS: ShowcaseProduct[] = [
     priceInCents: 2850000,
     category: "waffles",
     imageUrl:
-      "https://images.unsplash.com/photo-1562376552-0d160a2f238d?auto=format&fit=crop&crop=center&w=800&q=85",
+      "https://images.unsplash.com/photo-1598214886806-c87b84b7078b?auto=format&fit=crop&crop=center&w=800&q=85",
     emoji: "🧇",
     accentFrom: "#fef3c7",
     accentTo: "#fbbf24",
@@ -52,7 +52,7 @@ const ALL_PRODUCTS: ShowcaseProduct[] = [
     priceInCents: 1150000,
     category: "bebidas",
     imageUrl:
-      "https://images.unsplash.com/photo-1523371683702-26783cd53fe7?auto=format&fit=crop&crop=center&w=800&q=85",
+      "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&crop=center&w=800&q=85",
     emoji: "🍒",
     accentFrom: "#fecdd3",
     accentTo: "#f43f5e",
@@ -67,7 +67,7 @@ const ALL_PRODUCTS: ShowcaseProduct[] = [
     priceInCents: 1550000,
     category: "helados",
     imageUrl:
-      "https://images.unsplash.com/photo-1501443762994-82bd5dace89a?auto=format&fit=crop&crop=center&w=800&q=85",
+      "https://images.unsplash.com/photo-1567206563064-6f60f40a2b57?auto=format&fit=crop&crop=center&w=800&q=85",
     emoji: "🍦",
     accentFrom: "#f0f9ff",
     accentTo: "#bae6fd",
@@ -82,7 +82,7 @@ const ALL_PRODUCTS: ShowcaseProduct[] = [
     priceInCents: 1990000,
     category: "postres",
     imageUrl:
-      "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&crop=center&w=800&q=85",
+      "https://images.unsplash.com/photo-1586040140378-b5634cb4c8fc?auto=format&fit=crop&crop=center&w=800&q=85",
     emoji: "🍰",
     accentFrom: "#fef3e2",
     accentTo: "#fcd34d",
@@ -97,7 +97,7 @@ const ALL_PRODUCTS: ShowcaseProduct[] = [
     priceInCents: 1250000,
     category: "bebidas",
     imageUrl:
-      "https://images.unsplash.com/photo-1542990253-0d8ba5d68e52?auto=format&fit=crop&crop=center&w=800&q=85",
+      "https://images.unsplash.com/photo-1517578239113-b03992dcdd25?auto=format&fit=crop&crop=center&w=800&q=85",
     emoji: "☕",
     accentFrom: "#fce7d4",
     accentTo: "#d4a574",
