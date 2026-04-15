@@ -25,10 +25,10 @@ export function QrActions({ url }: { url: string }) {
       style={{
         background: copied
           ? "linear-gradient(135deg, #16a34a 0%, #15803d 100%)"
-          : "linear-gradient(135deg, #c8102e 0%, #a50d26 100%)",
+          : "linear-gradient(135deg, #3d1f0d 0%, #2d1810 100%)",
         boxShadow: copied
           ? "0 6px 20px rgba(22,163,74,0.30)"
-          : "0 6px 20px rgba(200,16,46,0.30)",
+          : "0 6px 20px rgba(61,31,13,0.35)",
         transition: "background 0.3s, box-shadow 0.3s",
       }}
     >
