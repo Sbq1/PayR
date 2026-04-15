@@ -14,23 +14,24 @@ interface BillFeedProps {
 
 export function BillFeed({ items }: BillFeedProps) {
   return (
-    <section className="px-5 pb-3">
-      <div className="flex items-baseline justify-between mb-3">
+    <section className="px-5 pb-3 pt-4">
+      <div className="flex items-baseline justify-between mb-4">
         <h2
-          className="text-2xl leading-none"
           style={{
             fontFamily: "var(--font-showcase, 'Parisienne', cursive)",
             color: "#c8102e",
+            fontSize: "28px",
+            lineHeight: 1,
           }}
         >
           tu cuenta
         </h2>
-        <span className="text-[10px] uppercase tracking-widest text-[#8a7866]">
+        <span className="text-[10px] uppercase tracking-[0.22em] text-[#8a7866] font-medium">
           {items.length} {items.length === 1 ? "ítem" : "ítems"}
         </span>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         {items.map((item, idx) => {
           const product = findProductById(item.productId);
           return (
@@ -56,11 +57,12 @@ function BillItemCard({
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 14 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, delay: idx * 0.08, ease: [0.22, 1, 0.36, 1] }}
-      className="relative bg-white rounded-3xl overflow-hidden shadow-[0_4px_20px_rgba(45,24,16,0.06)]"
+      transition={{ duration: 0.5, delay: idx * 0.1, ease: [0.22, 1, 0.36, 1] }}
+      className="relative bg-white rounded-[28px] overflow-hidden shadow-[0_6px_28px_rgba(45,24,16,0.08)]"
     >
+      {/* Imagen con overlay editorial */}
       <div className="relative aspect-[16/11] bg-[#fef3e2] overflow-hidden">
         {showImage ? (
           <img
@@ -80,43 +82,59 @@ function BillItemCard({
             <span className="text-[80px]">{product?.emoji ?? "🍽️"}</span>
           </div>
         )}
-        <div className="absolute top-3 right-3 min-w-[32px] h-8 px-2 rounded-full bg-[#2d1810] text-white text-xs font-bold flex items-center justify-center tabular-nums shadow-[0_4px_12px_rgba(45,24,16,0.4)]">
-          ×{item.quantity}
-        </div>
-      </div>
 
-      <div className="p-4 flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          {product?.tagline && (
-            <p
-              className="text-xs mb-0.5"
-              style={{
-                fontFamily: "var(--font-showcase, 'Parisienne', cursive)",
-                color: "#c8102e",
-                fontSize: "15px",
-              }}
-            >
-              {product.tagline}
-            </p>
-          )}
+        {/* Gradiente inferior editorial */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-[60%] pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to top, rgba(45,24,16,0.72) 0%, rgba(45,24,16,0.18) 60%, transparent 100%)",
+          }}
+        />
+
+        {/* Nombre y precio en el overlay */}
+        <div className="absolute inset-x-0 bottom-0 p-4 text-white">
           <h3
-            className="font-bold text-[#2d1810] text-base leading-tight"
+            className="font-bold leading-tight text-[19px] mb-0.5"
             style={{ fontFamily: "var(--font-fraunces), serif" }}
           >
             {item.name}
           </h3>
-          <p className="text-[11px] text-[#8a7866] mt-1 tabular-nums">
-            {formatCOP(item.unitPrice)} c/u
-          </p>
-        </div>
-        <div className="flex flex-col items-end flex-shrink-0">
           <span
-            className="text-lg font-bold text-[#2d1810] tabular-nums"
+            className="text-[22px] font-bold tabular-nums"
             style={{ fontFamily: "var(--font-fraunces), serif" }}
           >
             {formatCOP(item.totalPrice)}
           </span>
         </div>
+
+        {/* Quantity badge — editorial light */}
+        <div className="absolute top-3 right-3 min-w-[34px] h-8 px-2.5 rounded-full bg-white/90 border border-[#f4e4c8] text-[#2d1810] text-xs font-bold flex items-center justify-center tabular-nums shadow-sm">
+          ×{item.quantity}
+        </div>
+      </div>
+
+      {/* Bloque inferior: tagline + precio unitario */}
+      <div className="px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          {product?.tagline ? (
+            <p
+              style={{
+                fontFamily: "var(--font-showcase, 'Parisienne', cursive)",
+                color: "#c8102e",
+                fontSize: "16px",
+                lineHeight: 1.2,
+              }}
+            >
+              {product.tagline}
+            </p>
+          ) : (
+            <p className="text-[11px] text-[#8a7866]">{item.name}</p>
+          )}
+        </div>
+        <p className="text-[11px] text-[#8a7866] tabular-nums flex-shrink-0">
+          {formatCOP(item.unitPrice)} c/u
+        </p>
       </div>
     </motion.article>
   );

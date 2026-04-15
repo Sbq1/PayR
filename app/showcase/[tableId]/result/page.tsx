@@ -54,58 +54,70 @@ function ResultContent() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#fef3e2" }}>
+      {/* Header */}
       <div className="pt-6">
         <ShowcaseHeader />
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-10">
+        {/* Círculo de estado */}
         <motion.div
-          initial={{ scale: 0.6, opacity: 0 }}
+          initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 260, damping: 18 }}
-          className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
-          style={{ background: `${cfg.color}18` }}
+          transition={{ type: "spring", stiffness: 280, damping: 18 }}
+          className="w-28 h-28 rounded-full flex items-center justify-center mb-7"
+          style={{
+            background: `${cfg.color}14`,
+            boxShadow: `0 0 0 10px ${cfg.color}0a`,
+          }}
         >
-          <cfg.icon className="w-12 h-12" style={{ color: cfg.color }} strokeWidth={2} />
+          <cfg.icon
+            strokeWidth={1.75}
+            style={{ color: cfg.color, width: 56, height: 56 }}
+          />
         </motion.div>
 
+        {/* Título */}
         <motion.h1
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="text-3xl font-bold text-[#2d1810] text-center mb-3"
+          transition={{ delay: 0.12, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="text-[38px] font-bold text-[#2d1810] text-center mb-3 leading-tight"
           style={{ fontFamily: "var(--font-fraunces), serif" }}
         >
           {cfg.title}
         </motion.h1>
 
+        {/* Mensaje empático */}
         <motion.p
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="text-sm text-[#8a7866] text-center max-w-xs mb-8 leading-relaxed"
+          transition={{ delay: 0.18, duration: 0.4 }}
+          className="text-base text-[#8a7866] text-center max-w-[280px] mb-8 leading-relaxed"
         >
           {cfg.message}
         </motion.p>
 
+        {/* Referencia */}
         {reference && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.25 }}
-            className="px-4 py-2 rounded-full bg-white/60 border border-[#f4e4c8] mb-8"
+            transition={{ delay: 0.28 }}
+            className="px-4 py-2 rounded-full bg-white border border-[#f4e4c8] shadow-sm mb-8"
           >
-            <p className="text-[10px] uppercase tracking-widest text-[#8a7866] font-mono">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[#8a7866] font-mono">
               Ref · {reference}
             </p>
           </motion.div>
         )}
 
+        {/* Acciones según estado */}
         {display === "APPROVED" && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.32 }}
             className="flex flex-col items-center gap-3 w-full max-w-xs"
           >
             <div className="flex items-center gap-2 text-xs text-[#8a7866]">
@@ -120,10 +132,17 @@ function ResultContent() {
             </div>
 
             <Link href="/showcase" className="w-full">
-              <button className="w-full py-3.5 rounded-2xl bg-[#2d1810] hover:bg-[#1c0f0a] text-white font-bold text-sm flex items-center justify-center gap-2 transition-colors">
+              <motion.button
+                whileTap={{ scale: 0.975 }}
+                className="w-full py-3.5 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2"
+                style={{
+                  background: "linear-gradient(135deg, #2d1810 0%, #1c0f0a 100%)",
+                  boxShadow: "0 8px 24px rgba(45,24,16,0.22)",
+                }}
+              >
                 Volver al menú
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </motion.button>
             </Link>
           </motion.div>
         )}
@@ -132,15 +151,20 @@ function ResultContent() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="flex flex-col gap-2 w-full max-w-xs"
+            transition={{ delay: 0.32 }}
+            className="flex flex-col gap-2.5 w-full max-w-xs"
           >
-            <button
+            <motion.button
+              whileTap={{ scale: 0.975 }}
               onClick={() => router.back()}
-              className="w-full py-3.5 rounded-2xl bg-[#c8102e] text-white font-bold text-sm"
+              className="w-full py-3.5 rounded-2xl text-white font-bold text-sm"
+              style={{
+                background: "linear-gradient(135deg, #c8102e 0%, #a50d26 100%)",
+                boxShadow: "0 8px 24px rgba(200,16,46,0.28)",
+              }}
             >
               Intentar de nuevo
-            </button>
+            </motion.button>
             <Link href="/showcase">
               <button className="w-full py-3 text-sm text-[#8a7866] hover:text-[#2d1810] transition-colors">
                 Volver al menú
@@ -153,13 +177,18 @@ function ResultContent() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.32 }}
             className="flex flex-col gap-2 w-full max-w-xs"
           >
-            <button
+            <motion.button
+              whileTap={{ scale: 0.975 }}
               onClick={verify}
               disabled={verifying}
-              className="w-full py-3.5 rounded-2xl bg-[#2d1810] text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-3.5 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+              style={{
+                background: "linear-gradient(135deg, #2d1810 0%, #1c0f0a 100%)",
+                boxShadow: "0 8px 24px rgba(45,24,16,0.22)",
+              }}
             >
               {verifying ? (
                 <>
@@ -169,13 +198,13 @@ function ResultContent() {
               ) : (
                 "Verificar estado"
               )}
-            </button>
+            </motion.button>
           </motion.div>
         )}
 
         {!["APPROVED", "DECLINED", "ERROR", "VOIDED", "PENDING"].includes(display || "") && (
           <Link href="/showcase">
-            <button className="py-3 px-6 rounded-2xl bg-white text-[#2d1810] font-bold text-sm border border-[#f4e4c8]">
+            <button className="py-3 px-6 rounded-2xl bg-white text-[#2d1810] font-bold text-sm border border-[#f4e4c8] shadow-sm">
               Volver al menú
             </button>
           </Link>

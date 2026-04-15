@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
-import { Parisienne } from "next/font/google";
+import { Parisienne, Fraunces } from "next/font/google";
 
 const parisienne = Parisienne({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-showcase",
   display: "swap",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+  weight: ["400", "600", "700", "900"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -21,7 +29,7 @@ export default function ShowcaseLayout({
 }) {
   return (
     <div
-      className={`${parisienne.variable} min-h-screen`}
+      className={`${parisienne.variable} ${fraunces.variable} min-h-screen antialiased selection:bg-[#c8102e]/20`}
       style={{ background: "#fef3e2" }}
     >
       {children}

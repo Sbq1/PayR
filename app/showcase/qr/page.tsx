@@ -29,68 +29,97 @@ export default async function ShowcaseQrPage() {
       className="min-h-screen flex flex-col"
       style={{ background: "#fef3e2" }}
     >
+      {/* Nav */}
       <div className="flex items-center gap-3 px-5 pt-5 pb-2">
         <Link
           href="/showcase"
-          className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md border border-[#f4e4c8] flex items-center justify-center hover:bg-white transition-colors"
+          className="w-10 h-10 rounded-full bg-white border border-[#f4e4c8] flex items-center justify-center hover:bg-white/80 transition-colors shadow-sm"
           aria-label="Volver al showcase"
-          style={{ WebkitBackdropFilter: "blur(8px)" }}
         >
           <ArrowLeft className="w-5 h-5 text-[#2d1810]" />
         </Link>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-10">
-        <div className="text-center mb-6">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-12">
+        {/* Logo editorial */}
+        <div className="text-center mb-8">
           <p
-            className="text-3xl leading-none mb-1"
             style={{
               fontFamily: "var(--font-showcase, 'Parisienne', cursive)",
               color: "#c8102e",
+              fontSize: "52px",
+              lineHeight: 1,
+              letterSpacing: "-0.01em",
             }}
           >
-            escaneá para probar
+            crepes & waffles
           </p>
-          <p className="text-xs uppercase tracking-[0.28em] text-[#8a7866] font-semibold">
-            · desde tu celular ·
+          <p className="text-[10px] uppercase tracking-[0.3em] text-[#8a7866] font-medium mt-1.5">
+            · escaneá desde tu celular ·
           </p>
         </div>
 
+        {/* Card QR */}
         <div
-          className="relative p-6 bg-white rounded-[32px] shadow-[0_20px_60px_rgba(45,24,16,0.12)] border border-[#f4e4c8]"
+          className="relative p-6 bg-white rounded-[32px] shadow-[0_20px_60px_rgba(45,24,16,0.12)]"
+          style={{
+            border: "2px solid rgba(212,165,116,0.35)",
+          }}
         >
           <div
             className="w-[280px] h-[280px] md:w-[340px] md:h-[340px]"
             dangerouslySetInnerHTML={{ __html: svg }}
           />
 
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#c8102e] text-white text-[10px] font-bold tracking-widest uppercase shadow-md">
-            Crepes & Waffles
+          {/* Badge superior — estilo editorial */}
+          <div
+            className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-[#fef3e2] border border-[#d4a574]/50 shadow-sm"
+            style={{ whiteSpace: "nowrap" }}
+          >
+            <span
+              className="font-bold text-[#c8102e] text-[13px]"
+              style={{ fontFamily: "var(--font-fraunces), serif" }}
+            >
+              Crepes & Waffles
+            </span>
           </div>
 
-          <p
-            className="text-center mt-4 text-xs text-[#8a7866]"
-            style={{ fontFamily: "var(--font-fraunces), serif" }}
-          >
-            Mesa 12 · Cuenta abierta
-          </p>
+          {/* Label inferior */}
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <span
+              className="text-[13px] font-medium text-[#2d1810]"
+              style={{ fontFamily: "var(--font-fraunces), serif" }}
+            >
+              Mesa 12
+            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#d4a574]" />
+            <span className="text-[12px] text-[#8a7866]">Cuenta abierta</span>
+          </div>
         </div>
 
-        <div className="mt-8 w-full max-w-sm flex flex-col items-center gap-3">
-          <div className="text-center">
-            <p className="text-[10px] uppercase tracking-widest text-[#8a7866] mb-1">
+        {/* URL + acciones */}
+        <div className="mt-8 w-full max-w-sm flex flex-col items-center gap-4">
+          <div
+            className="w-full px-4 py-3 rounded-2xl bg-white border border-[#f4e4c8] text-center"
+          >
+            <p className="text-[9px] uppercase tracking-[0.28em] text-[#8a7866] mb-1.5 font-medium">
               URL
             </p>
-            <p className="font-mono text-xs text-[#2d1810] break-all">
+            <p className="font-mono text-[12px] text-[#2d1810] break-all">
               {url}
             </p>
           </div>
           <QrActions url={url} />
         </div>
 
-        <p className="mt-8 max-w-xs text-center text-xs text-[#8a7866] leading-relaxed">
+        {/* Guía + tarjeta sandbox */}
+        <p className="mt-6 max-w-xs text-center text-[13px] text-[#8a7866] leading-relaxed">
           Apuntá la cámara y abrí el link. Podés pagar con tarjeta sandbox{" "}
-          <span className="font-mono text-[#c8102e] font-semibold">4242 4242 4242 4242</span>
+          <span
+            className="inline-block px-2 py-0.5 rounded-full bg-[#c8102e]/10 font-mono text-[#c8102e] font-semibold text-[12px]"
+          >
+            4242 4242 4242 4242
+          </span>
           .
         </p>
       </div>
