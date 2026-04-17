@@ -12,7 +12,12 @@ import {
   TrendingUp,
   Star,
   Sparkles,
+  BarChart3,
+  PieChart,
+  LineChart,
+  UtensilsCrossed,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { useSession } from "@/hooks/use-session";
 import type { KpiDashboard, KpiPeriod } from "@/types/kpi";
@@ -22,6 +27,20 @@ const periodLabels: Record<KpiPeriod, string> = {
   week: "Esta semana",
   month: "Este mes",
 };
+
+const EmptyChartState = ({ title, icon: Icon }: { title: string; icon: LucideIcon }) => (
+  <div className="flex flex-col items-center justify-center py-16 text-center">
+    <div className="w-14 h-14 rounded-full bg-[#f5f5f4] flex items-center justify-center mb-4">
+      <Icon className="w-7 h-7 text-[#78716c]" strokeWidth={1.5} />
+    </div>
+    <h3 className="text-[18px] font-serif font-bold text-[#1c1410] mb-1">
+      Sin datos para este periodo
+    </h3>
+    <p className="text-[13px] text-[#78716c]">
+      No hay actividad suficiente para mostrar {title.toLowerCase()}.
+    </p>
+  </div>
+);
 
 export default function DashboardPage() {
   const { restaurantId } = useSession();
@@ -49,7 +68,8 @@ export default function DashboardPage() {
       isCurrency: true,
       delta: data?.comparison?.salesDelta ?? 0,
       icon: DollarSign,
-      accent: "bg-indigo-50 text-indigo-600",
+      accentBg: "bg-[#c2410c]/10",
+      accentIcon: "text-[#c2410c]",
     },
     {
       title: "Ticket promedio",
@@ -59,7 +79,8 @@ export default function DashboardPage() {
       isCurrency: true,
       delta: null,
       icon: Receipt,
-      accent: "bg-violet-50 text-violet-600",
+      accentBg: "bg-[#1c1410]/10",
+      accentIcon: "text-[#1c1410]",
     },
     {
       title: "Órdenes",
@@ -69,7 +90,8 @@ export default function DashboardPage() {
       isCurrency: false,
       delta: data?.comparison?.ordersDelta ?? 0,
       icon: ShoppingBag,
-      accent: "bg-emerald-50 text-emerald-600",
+      accentBg: "bg-emerald-50",
+      accentIcon: "text-emerald-700",
     },
     {
       title: "Propina prom.",
@@ -79,7 +101,8 @@ export default function DashboardPage() {
       isCurrency: false,
       delta: null,
       icon: Percent,
-      accent: "bg-amber-50 text-amber-600",
+      accentBg: "bg-amber-50",
+      accentIcon: "text-amber-600",
     },
   ];
 
@@ -89,7 +112,7 @@ export default function DashboardPage() {
   }));
 
   const productsChartData = (data?.topProducts || []).map((p) => ({
-    name: p.name.length > 20 ? p.name.slice(0, 20) + "..." : p.name,
+    name: p.name.length > 25 ? p.name.slice(0, 25) + "..." : p.name,
     Cantidad: p.quantity,
   }));
 
@@ -112,27 +135,27 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-[20px] font-bold text-gray-900">
+          <h1 className="text-[28px] font-bold text-[#1c1410] font-serif tracking-tight">
             Performance Overview
           </h1>
-          <p className="text-[13px] text-gray-500 mt-0.5 capitalize">
+          <p className="text-[14px] text-[#78716c] mt-0.5 capitalize">
             {dateStr}
           </p>
         </div>
-        <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
+        <div className="flex items-center gap-1 bg-[#f5f5f4] p-1 rounded-xl">
           {(["today", "week", "month"] as KpiPeriod[]).map((p) => (
             <button
               key={p}
               type="button"
               onClick={() => setPeriod(p)}
-              className={`px-3.5 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
+              className={`px-4 py-1.5 rounded-[10px] text-[13px] font-medium transition-all ${
                 period === p
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "bg-[#c2410c] text-white shadow-sm elev-sm"
+                  : "text-[#78716c] hover:text-[#1c1410]"
               }`}
             >
               {periodLabels[p]}
@@ -142,10 +165,19 @@ export default function DashboardPage() {
       </div>
 
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-28 rounded-xl bg-gray-50 animate-pulse" />
-          ))}
+        <div className="space-y-8">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-[140px] rounded-[20px] bg-white border border-[#e7e5e4] p-5">
+                 <div className="flex justify-between">
+                    <div className="h-3 w-20 bg-[#f5f5f4] rounded-full animate-pulse"></div>
+                    <div className="h-10 w-10 bg-[#f5f5f4] rounded-xl animate-pulse"></div>
+                 </div>
+                 <div className="h-10 w-28 bg-[#f5f5f4] rounded-lg mt-4 animate-pulse"></div>
+              </div>
+            ))}
+          </div>
+          <div className="h-[360px] rounded-[24px] bg-white border border-[#e7e5e4] animate-pulse" />
         </div>
       ) : (
         <>
@@ -154,20 +186,20 @@ export default function DashboardPage() {
             {kpiCards.map((kpi) => (
               <div
                 key={kpi.title}
-                className="rounded-xl border border-gray-200 bg-white p-5"
+                className="group rounded-[20px] border border-[#e7e5e4] bg-white p-5 elev-sm card-lift"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[11px] font-medium text-[#78716c] uppercase tracking-widest">
                     {kpi.title}
                   </p>
                   <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center ${kpi.accent}`}
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${kpi.accentBg} ${kpi.accentIcon}`}
                   >
-                    <kpi.icon className="w-4 h-4" strokeWidth={2} />
+                    <kpi.icon className="w-5 h-5" strokeWidth={2} />
                   </div>
                 </div>
-                <div className="flex items-end gap-2">
-                  <span className="text-[24px] font-bold text-gray-900 tabular-nums">
+                <div className="flex items-end gap-2.5">
+                  <span className="text-[32px] font-bold text-[#1c1410] font-serif tabular-nums leading-none tracking-tight">
                     <AnimatedCounter
                       target={
                         kpi.isCurrency
@@ -181,14 +213,14 @@ export default function DashboardPage() {
                   </span>
                   {kpi.delta !== null && kpi.delta !== 0 && (
                     <span
-                      className={`flex items-center gap-0.5 text-[11px] font-medium pb-1 ${
+                      className={`flex items-center gap-0.5 text-[13px] font-medium pb-[3px] ${
                         kpi.delta > 0 ? "text-emerald-600" : "text-red-500"
                       }`}
                     >
                       {kpi.delta > 0 ? (
-                        <ArrowUp className="h-3 w-3" />
+                        <ArrowUp className="h-3.5 w-3.5" />
                       ) : (
-                        <ArrowDown className="h-3 w-3" />
+                        <ArrowDown className="h-3.5 w-3.5" />
                       )}
                       {Math.abs(kpi.delta)}%
                     </span>
@@ -200,140 +232,131 @@ export default function DashboardPage() {
 
           {/* ── Insights Row ── */}
           {(data?.bestSeller || data?.avgDailyRevenue || data?.upsellConversion?.rate) && (
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-3">
               {data?.bestSeller && (
-                <div className="flex items-center gap-2.5 rounded-lg bg-gray-50 px-4 py-2.5">
-                  <Star className="w-4 h-4 text-amber-500" />
-                  <div>
-                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-                      Plato estrella
-                    </p>
-                    <p className="text-[13px] font-semibold text-gray-900">
-                      {data.bestSeller.name}{" "}
-                      <span className="text-gray-500 font-normal">
-                        — {data.bestSeller.quantity} vendidos
-                      </span>
-                    </p>
-                  </div>
+                <div className="flex items-center gap-3 rounded-full bg-[#f5f5f4] px-5 py-2.5 border border-transparent hover:border-[#e7e5e4] transition-colors">
+                  <Star className="w-4 h-4 text-amber-500 fill-amber-500/20" />
+                  <p className="text-[14px] font-medium text-[#1c1410]">
+                    {data.bestSeller.name} <span className="text-[#78716c] font-normal mx-1">—</span> {data.bestSeller.quantity} vendidos
+                  </p>
                 </div>
               )}
               {data?.avgDailyRevenue > 0 && (
-                <div className="flex items-center gap-2.5 rounded-lg bg-gray-50 px-4 py-2.5">
-                  <TrendingUp className="w-4 h-4 text-indigo-500" />
-                  <div>
-                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-                      Promedio diario
-                    </p>
-                    <p className="text-[13px] font-semibold text-gray-900">
-                      $
-                      {new Intl.NumberFormat("es-CO").format(
-                        Math.round(data.avgDailyRevenue / 100)
-                      )}
-                    </p>
-                  </div>
+                <div className="flex items-center gap-3 rounded-full bg-[#f5f5f4] px-5 py-2.5 border border-transparent hover:border-[#e7e5e4] transition-colors">
+                  <TrendingUp className="w-4 h-4 text-[#c2410c]" />
+                  <p className="text-[14px] font-medium text-[#1c1410]">
+                    <span className="text-[#78716c] font-normal mr-2">Promedio diario</span>
+                    ${new Intl.NumberFormat("es-CO").format(Math.round(data.avgDailyRevenue / 100))}
+                  </p>
                 </div>
               )}
               {data?.upsellConversion?.rate > 0 && (
-                <div className="flex items-center gap-2.5 rounded-lg bg-gray-50 px-4 py-2.5">
-                  <Sparkles className="w-4 h-4 text-violet-500" />
-                  <div>
-                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-                      Conversión sugeridos
-                    </p>
-                    <p className="text-[13px] font-semibold text-gray-900">
-                      {data.upsellConversion.rate}%
-                    </p>
-                  </div>
+                <div className="flex items-center gap-3 rounded-full bg-[#f5f5f4] px-5 py-2.5 border border-transparent hover:border-[#e7e5e4] transition-colors">
+                  <Sparkles className="w-4 h-4 text-[#1c1410]" />
+                  <p className="text-[14px] font-medium text-[#1c1410]">
+                    <span className="text-[#78716c] font-normal mr-2">Sugeridos</span>
+                    {data.upsellConversion.rate}% conv.
+                  </p>
                 </div>
               )}
             </div>
           )}
 
           {/* ── Sales Chart (full width) ── */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <p className="text-[13px] font-medium text-gray-500 mb-4">
+          <div className="rounded-[24px] border border-[#e7e5e4] bg-white p-6 elev-sm">
+            <h3 className="text-[18px] font-serif font-bold text-[#1c1410] mb-1">
               Ventas por día
+            </h3>
+            <p className="text-[13px] text-[#78716c] mb-6">
+              Rendimiento general de ventas
             </p>
             {salesChartData.length > 0 ? (
               <AreaChart
                 data={salesChartData}
                 index="date"
                 categories={["Ventas"]}
-                colors={["indigo"]}
+                colors={["orange"]}
                 valueFormatter={(v) =>
                   `$${new Intl.NumberFormat("es-CO").format(v)}`
                 }
-                className="h-56"
+                className="h-72 mt-4"
                 showLegend={false}
+                yAxisWidth={60}
               />
             ) : (
-              <p className="text-[13px] text-gray-400 text-center py-16">
-                Sin datos para este periodo
-              </p>
+              <EmptyChartState title="las ventas por día" icon={LineChart} />
             )}
           </div>
 
           {/* ── Charts Row ── */}
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
-              <p className="text-[13px] font-medium text-gray-500 mb-4">
-                Horas pico
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="rounded-[20px] border border-[#e7e5e4] bg-white p-6 elev-sm flex flex-col">
+              <h3 className="text-[18px] font-serif font-bold text-[#1c1410] mb-1">
+                Horas pico de operación
+              </h3>
+              <p className="text-[13px] text-[#78716c] mb-6">
+                Volumen de órdenes por segmento
               </p>
-              {peakHoursData.length > 0 ? (
-                <BarChart
-                  data={peakHoursData}
-                  index="Hora"
-                  categories={["Ordenes"]}
-                  colors={["indigo"]}
-                  className="h-52"
-                  showLegend={false}
-                />
-              ) : (
-                <p className="text-[13px] text-gray-400 text-center py-12">
-                  Sin datos para este periodo
-                </p>
-              )}
+              <div className="flex-grow flex flex-col justify-end">
+                {peakHoursData.length > 0 ? (
+                  <BarChart
+                    data={peakHoursData}
+                    index="Hora"
+                    categories={["Ordenes"]}
+                    colors={["orange"]}
+                    className="h-64"
+                    showLegend={false}
+                  />
+                ) : (
+                  <EmptyChartState title="las horas pico" icon={BarChart3} />
+                )}
+              </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
-              <p className="text-[13px] font-medium text-gray-500 mb-4">
-                Métodos de pago
+            <div className="rounded-[20px] border border-[#e7e5e4] bg-white p-6 elev-sm flex flex-col">
+              <h3 className="text-[18px] font-serif font-bold text-[#1c1410] mb-1">
+                Métodos preferidos
+              </h3>
+              <p className="text-[13px] text-[#78716c] mb-6">
+                Distribución de pagos
               </p>
-              {paymentMethodsData.length > 0 ? (
-                <DonutChart
-                  data={paymentMethodsData}
-                  category="value"
-                  index="name"
-                  colors={["indigo", "violet", "slate", "emerald", "amber"]}
-                  className="h-52"
-                />
-              ) : (
-                <p className="text-[13px] text-gray-400 text-center py-12">
-                  Sin datos para este periodo
-                </p>
-              )}
+              <div className="flex-grow flex items-center justify-center">
+                {paymentMethodsData.length > 0 ? (
+                  <DonutChart
+                    data={paymentMethodsData}
+                    category="value"
+                    index="name"
+                    colors={["orange", "stone", "slate", "amber"]}
+                    className="h-64"
+                  />
+                ) : (
+                  <EmptyChartState title="los métodos de pago" icon={PieChart} />
+                )}
+              </div>
             </div>
           </div>
 
           {/* ── Products Chart ── */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5">
-            <p className="text-[13px] font-medium text-gray-500 mb-4">
-              Productos más vendidos
+          <div className="rounded-[24px] border border-[#e7e5e4] bg-white p-6 elev-sm">
+            <h3 className="text-[18px] font-serif font-bold text-[#1c1410] mb-1">
+              Top 10 productos más vendidos
+            </h3>
+            <p className="text-[13px] text-[#78716c] mb-6">
+              Volumen de unidades
             </p>
             {productsChartData.length > 0 ? (
               <BarChart
                 data={productsChartData}
                 index="name"
                 categories={["Cantidad"]}
-                colors={["violet"]}
-                className="h-52"
+                colors={["stone"]}
+                className="h-80"
                 showLegend={false}
                 layout="vertical"
+                yAxisWidth={140}
               />
             ) : (
-              <p className="text-[13px] text-gray-400 text-center py-12">
-                Sin datos para este periodo
-              </p>
+              <EmptyChartState title="los productos top" icon={UtensilsCrossed} />
             )}
           </div>
         </>
