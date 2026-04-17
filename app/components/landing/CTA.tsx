@@ -5,9 +5,9 @@ import { ArrowRight } from "lucide-react";
 
 export function CTA() {
   return (
-    <section className="bg-[#1c1410] py-20 lg:py-32 relative overflow-hidden">
+    <section className="bg-[#1c1410] py-20 lg:py-32 relative overflow-hidden wood-grain-dark">
       {/* Decorative Warm Blob */}
-      <div className="absolute -top-[100px] -right-[100px] w-96 h-96 bg-[#c2410c] rounded-full blur-[150px] opacity-40 mix-blend-screen" />
+      <div className="absolute -top-[100px] -right-[100px] w-96 h-96 bg-[#c2410c] rounded-full blur-[120px] opacity-30 mix-blend-screen" />
       
       <div className="mx-auto max-w-5xl px-6 lg:px-8 relative z-10 text-center fade-in-up">
         <h2 className="font-serif text-[40px] md:text-[64px] font-black text-white tracking-tight leading-[1.05] mb-6">

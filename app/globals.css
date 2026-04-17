@@ -181,3 +181,74 @@
 .btn-lift:active {
   transform: translateY(0) scale(0.98);
 }
+
+/* ============================================
+   WOOD GRAIN / BARK TEXTURE (editorial restaurant)
+   High-freq on X + very low on Y = horizontal plank grain.
+   Inline SVG data URL = zero network, browser-cacheable.
+   ============================================ */
+.wood-grain {
+  position: relative;
+}
+.wood-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9 0.015' numOctaves='2' seed='7'/><feColorMatrix values='0 0 0 0 0.11 0 0 0 0 0.08 0 0 0 0 0.06 0 0 0 0.9 0'/></filter><rect width='100%25' height='100%25' filter='url(%23g)'/></svg>");
+  background-size: 600px 600px;
+  background-repeat: repeat;
+  mix-blend-mode: multiply;
+}
+
+.wood-grain-dark {
+  position: relative;
+}
+.wood-grain-dark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.08;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9 0.015' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 0.98 0 0 0 0 0.95 0 0 0 0 0.9 0 0 0 0.7 0'/></filter><rect width='100%25' height='100%25' filter='url(%23g)'/></svg>");
+  background-size: 600px 600px;
+  background-repeat: repeat;
+  mix-blend-mode: screen;
+}
+
+@media (max-width: 640px) {
+  .wood-grain::before,
+  .wood-grain-dark::before {
+    opacity: 0.035;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wood-grain::before,
+  .wood-grain-dark::before {
+    opacity: 0.025;
+  }
+}
+
+/* ============================================
+   ELEVATION SYSTEM (warm editorial, brown-tinted)
+   ============================================ */
+.elev-sm { box-shadow: 0 1px 2px rgba(28,20,16,0.04), 0 1px 3px rgba(28,20,16,0.03); }
+.elev-md { box-shadow: 0 4px 8px rgba(28,20,16,0.04), 0 8px 20px rgba(28,20,16,0.06); }
+.elev-lg { box-shadow: 0 12px 24px rgba(28,20,16,0.06), 0 24px 48px rgba(28,20,16,0.08); }
+
+.card-lift {
+  transition: transform 0.3s var(--ease-out),
+              box-shadow 0.3s var(--ease-out),
+              border-color 0.3s var(--ease-out);
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(28,20,16,0.05), 0 16px 32px rgba(28,20,16,0.07);
+  border-color: #d6d3d1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-lift:hover { transform: none; }
+}

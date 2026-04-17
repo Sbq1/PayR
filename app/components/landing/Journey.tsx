@@ -18,13 +18,13 @@ export function Journey() {
         </div>
 
         <div className="relative max-w-4xl mx-auto">
-           {/* Background guiding line */}
-           <div className="hidden md:block absolute top-[48px] left-8 right-8 h-px bg-[#e7e5e4]" />
+           {/* Background guiding line — terracotta-directional */}
+           <div className="hidden md:block absolute top-[48px] left-8 right-8 h-px bg-gradient-to-r from-transparent via-[#d6d3d1] to-[#c2410c]/40" />
 
            <div className="grid md:grid-cols-3 gap-12 text-center relative z-10">
               
               <div className="fade-in-up">
-                 <div className="w-24 h-24 bg-[#fdfaf6] border border-[#e7e5e4] rounded-full mx-auto flex items-center justify-center mb-6 shadow-sm">
+                 <div className="w-24 h-24 bg-gradient-to-br from-[#fdfaf6] to-[#f5f5f4] border border-[#e7e5e4] rounded-full mx-auto flex items-center justify-center mb-6 elev-md">
                     <KeyRound className="w-8 h-8 text-[#1c1410]" />
                  </div>
                  <h3 className="font-serif text-[20px] font-bold text-[#1c1410] mb-2">1. Vincula tus Pasarelas</h3>
@@ -34,7 +34,7 @@ export function Journey() {
               </div>
 
               <div className="fade-in-up" style={{ animationDelay: "0.1s" }}>
-                 <div className="w-24 h-24 bg-[#fdfaf6] border border-[#e7e5e4] rounded-full mx-auto flex items-center justify-center mb-6 shadow-sm">
+                 <div className="w-24 h-24 bg-gradient-to-br from-[#fdfaf6] to-[#f5f5f4] border border-[#e7e5e4] rounded-full mx-auto flex items-center justify-center mb-6 elev-md">
                     <Printer className="w-8 h-8 text-[#1c1410]" />
                  </div>
                  <h3 className="font-serif text-[20px] font-bold text-[#1c1410] mb-2">2. Despliega las Mesas</h3>
@@ -44,7 +44,7 @@ export function Journey() {
               </div>
 
               <div className="fade-in-up" style={{ animationDelay: "0.2s" }}>
-                 <div className="w-24 h-24 bg-[#c2410c] shadow-[0_4px_16px_rgba(194,65,12,0.4)] border border-[#c2410c] rounded-full mx-auto flex items-center justify-center mb-6">
+                 <div className="w-24 h-24 bg-[#c2410c] shadow-[0_8px_24px_rgba(194,65,12,0.35),0_2px_6px_rgba(194,65,12,0.25)] border border-[#c2410c] rounded-full mx-auto flex items-center justify-center mb-6">
                     <HandPlatter className="w-8 h-8 text-white" />
                  </div>
                  <h3 className="font-serif text-[20px] font-bold text-[#1c1410] mb-2">3. Opera Inmediatamente</h3>

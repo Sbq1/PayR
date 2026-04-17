@@ -13,7 +13,7 @@ export function Navbar({ scrolled }: { scrolled: boolean }) {
       <header
         className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 border-b ${
           scrolled
-            ? "bg-[#fdfaf6]/90 backdrop-blur-md border-[#e7e5e4] shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+            ? "bg-[#fdfaf6]/90 backdrop-blur-md border-[#e7e5e4] elev-sm"
             : "bg-transparent border-transparent"
         }`}
       >

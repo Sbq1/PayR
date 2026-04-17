@@ -2,12 +2,13 @@
 
 export function SocialProof() {
   return (
-    <section className="py-12 border-y border-[#e7e5e4] bg-[#f5f5f4]/50">
+    <section className="py-14 border-y border-[#e7e5e4] bg-[#f5f5f4]/50">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <p className="text-center text-[13px] font-bold uppercase tracking-widest text-[#78716c] mb-8">
+        <p className="text-center text-[13px] font-bold uppercase tracking-widest text-[#78716c] mb-6">
           Tecnología y rieles verificables potenciados por
         </p>
-        <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-8 sm:gap-x-20 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+        <div className="mx-auto mb-10 h-px w-20 bg-[#c2410c]/60" />
+        <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-8 sm:gap-x-20 opacity-70 hover:opacity-100 transition-opacity duration-500">
           
           <div className="flex items-center gap-2 font-bold text-[22px] text-[#1c1410]">
              {/* Wompi mock logo */}

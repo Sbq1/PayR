@@ -19,7 +19,7 @@ export function Pricing() {
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto items-stretch">
            
            {/* Starter */}
-           <div className="bg-white border border-[#e7e5e4] rounded-[32px] p-8 flex flex-col fade-in-up">
+           <div className="bg-white border border-[#e7e5e4] rounded-[32px] p-8 flex flex-col fade-in-up card-lift elev-md">
               <h3 className="font-bold text-[#1c1410] text-[18px] mb-4">Starter</h3>
               <div className="flex items-baseline gap-1 mb-2">
                  <span className="text-[36px] font-black tabular-nums text-[#1c1410]">$89.000</span>
@@ -38,7 +38,7 @@ export function Pricing() {
            </div>
 
            {/* Pro */}
-           <div className="bg-white border-2 border-[#c2410c] shadow-[0_16px_40px_rgba(194,65,12,0.15)] rounded-[32px] p-8 flex flex-col relative md:scale-105 z-10 fade-in-up" style={{ animationDelay: "0.1s" }}>
+           <div className="bg-white border-2 border-[#c2410c] shadow-[0_16px_40px_rgba(194,65,12,0.15)] rounded-[32px] p-8 flex flex-col relative md:scale-105 z-10 fade-in-up card-lift" style={{ animationDelay: "0.1s" }}>
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#c2410c] text-white px-4 py-1.5 rounded-full text-[12px] font-bold uppercase tracking-widest shadow-md flex items-center gap-1.5">
                  <Sparkles className="w-3.5 h-3.5" /> Plan Recomendado
               </div>
@@ -61,7 +61,7 @@ export function Pricing() {
            </div>
 
            {/* Enterprise */}
-           <div className="bg-white border border-[#e7e5e4] rounded-[32px] p-8 flex flex-col fade-in-up" style={{ animationDelay: "0.2s" }}>
+           <div className="bg-white border border-[#e7e5e4] rounded-[32px] p-8 flex flex-col fade-in-up card-lift elev-md" style={{ animationDelay: "0.2s" }}>
               <h3 className="font-bold text-[#1c1410] text-[18px] mb-4">Enterprise</h3>
               <div className="flex items-baseline gap-1 mb-2">
                  <span className="text-[36px] font-black text-[#1c1410]">Custom</span>
