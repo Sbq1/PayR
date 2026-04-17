@@ -6,10 +6,17 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, Eye, X, ChevronLeft, ChevronRight, Search, Download } from "lucide-react";
+import {
+  Loader2,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Download,
+  UtensilsCrossed,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "@/hooks/use-session";
 import { formatCOP } from "@/lib/utils/currency";
@@ -63,10 +70,10 @@ interface OrdersResponse {
 }
 
 const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
-  PENDING: { bg: "bg-amber-50", text: "text-amber-600", label: "Pendiente" },
-  PAYING: { bg: "bg-blue-50", text: "text-blue-600", label: "Pagando" },
-  PAID: { bg: "bg-emerald-50", text: "text-emerald-600", label: "Pagada" },
-  CANCELLED: { bg: "bg-red-50", text: "text-red-500", label: "Cancelada" },
+  PENDING: { bg: "bg-amber-50", text: "text-amber-800", label: "Pendiente" },
+  PAYING: { bg: "bg-blue-50", text: "text-blue-800", label: "Pagando" },
+  PAID: { bg: "bg-emerald-50", text: "text-emerald-700", label: "Pagada" },
+  CANCELLED: { bg: "bg-red-50", text: "text-red-800", label: "Cancelada" },
 };
 
 const periodFilters = [
@@ -226,189 +233,201 @@ export default function OrdersPage() {
   const orders = data?.orders ?? [];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-[15px] font-semibold text-gray-900">Ordenes</h1>
-          <p className="text-[13px] text-gray-500">
-            {data ? `${data.total} orden${data.total !== 1 ? "es" : ""}` : "Cargando..."}
+          <h1 className="text-[24px] md:text-[28px] font-bold text-[#1c1410] font-serif">Órdenes</h1>
+          <p className="text-[14px] text-[#78716c] mt-1">
+            {data ? `${data.total} orden${data.total !== 1 ? "es" : ""} este período` : "Cargando órdenes..."}
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        {/* Period */}
-        <div className="flex items-center rounded-lg border border-gray-200 p-0.5">
-          {periodFilters.map((p) => (
-            <button
-              key={p.value}
-              onClick={() => { setPeriodFilter(p.value); setPage(1); }}
-              className={`px-3 py-1 text-[12px] font-medium rounded-md transition-colors ${
-                periodFilter === p.value
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-500 hover:text-gray-900"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Period Pills */}
+        <div className="flex items-center gap-1 bg-[#f5f5f4] p-1 rounded-xl">
+          {periodFilters.map((p) => {
+            const isActive = periodFilter === p.value;
+            return (
+              <button
+                key={p.value}
+                onClick={() => { setPeriodFilter(p.value); setPage(1); }}
+                className={`px-4 py-1.5 text-[13px] font-medium rounded-[10px] transition-all ${
+                  isActive
+                    ? "bg-[#c2410c] text-white shadow-sm elev-sm"
+                    : "text-[#78716c] hover:text-[#1c1410]"
+                }`}
+              >
+                {p.label}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Status */}
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-lg bg-white text-gray-700 outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-1"
-        >
-          <option value="">Todos los estados</option>
-          <option value="PENDING">Pendiente</option>
-          <option value="PAYING">Pagando</option>
-          <option value="PAID">Pagada</option>
-          <option value="CANCELLED">Cancelada</option>
-        </select>
-
-        {/* Search */}
+        {/* Status Dropdown */}
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            className="appearance-none pl-4 pr-10 py-2 h-auto text-[13px] font-medium border border-[#e7e5e4] rounded-[10px] bg-white text-[#1c1410] outline-none hover:border-[#d6d3d1] transition-colors focus-visible:ring-2 focus-visible:ring-[#c2410c] focus-visible:ring-offset-1 elev-sm"
+          >
+            <option value="">Todos los estados</option>
+            <option value="PENDING">Pendiente</option>
+            <option value="PAYING">Pagando</option>
+            <option value="PAID">Pagada</option>
+            <option value="CANCELLED">Cancelada</option>
+          </select>
+          <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+            <ChevronRight className="w-4 h-4 text-[#78716c] rotate-90" />
+          </div>
+        </div>
+
+        {/* Search Input */}
+        <div className="relative flex-grow md:flex-grow-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#78716c] pointer-events-none" />
           <input
             type="search"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value.slice(0, 80))}
-            placeholder="Buscar por mesa, producto, ID, referencia..."
+            placeholder="Buscar por mesa, ID..."
             aria-label="Buscar órdenes"
-            className="pl-8 pr-7 py-1.5 text-[12px] w-[260px] border border-gray-200 rounded-lg bg-white text-gray-700 outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-1"
+            className="pl-9 pr-8 py-2 w-full md:w-[280px] h-auto text-[13px] border border-[#e7e5e4] rounded-[10px] bg-white text-[#1c1410] outline-none hover:border-[#d6d3d1] transition-colors focus-visible:ring-2 focus-visible:ring-[#c2410c] focus-visible:ring-offset-1 elev-sm placeholder:text-[#78716c]/70"
           />
           {searchInput && (
             <button
               onClick={() => setSearchInput("")}
               aria-label="Limpiar búsqueda"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[#78716c] hover:text-[#1c1410] p-1"
             >
-              <X className="w-3 h-3" />
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
 
-        {/* Export */}
+        {/* Export Button */}
         <button
           onClick={handleExport}
           disabled={exporting}
-          className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium border border-gray-200 rounded-lg bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-1"
+          className="ml-auto inline-flex items-center gap-2 px-4 py-2 text-[13px] font-medium border border-[#e7e5e4] rounded-[10px] bg-white text-[#1c1410] hover:text-[#c2410c] hover:border-[#c2410c]/30 hover:bg-[#c2410c]/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c2410c] focus-visible:ring-offset-1 elev-sm"
         >
           {exporting ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-4 h-4" />
           )}
-          Exportar CSV
+          CSV
         </button>
       </div>
 
-      {/* Table */}
+      {/* Main List / Table Area */}
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+        <div className="flex flex-col gap-3 py-4">
+          {[1,2,3,4,5].map(i => (
+            <div key={i} className="animate-pulse flex items-center justify-between p-5 bg-white border border-[#e7e5e4] rounded-[12px] h-20">
+              <div className="flex gap-4 items-center w-1/2">
+                <div className="w-16 h-4 bg-[#f5f5f4] rounded"></div>
+                <div className="w-24 h-4 bg-[#f5f5f4] rounded"></div>
+                <div className="w-16 h-4 bg-[#f5f5f4] rounded hidden md:block"></div>
+              </div>
+              <div className="w-20 h-6 bg-[#f5f5f4] rounded-full"></div>
+            </div>
+          ))}
         </div>
       ) : orders.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-[13px] text-gray-500">
+        <Card className="border-0 shadow-none bg-transparent">
+          <CardContent className="py-24 text-center flex flex-col items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-[#f5f5f4] flex items-center justify-center mb-6">
+              <UtensilsCrossed className="w-8 h-8 text-[#78716c]" strokeWidth={1.5} />
+            </div>
+            <h3 className="text-[20px] font-serif text-[#1c1410] font-bold mb-2">
               No hay órdenes para este período
+            </h3>
+            <p className="text-[14px] text-[#78716c]">
+              Intenta cambiando los filtros o ajustando la fecha.
             </p>
           </CardContent>
         </Card>
       ) : (
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left font-medium text-gray-500 px-4 py-2.5">Orden</th>
-                  <th className="text-left font-medium text-gray-500 px-4 py-2.5">Mesa</th>
-                  <th className="text-left font-medium text-gray-500 px-4 py-2.5">Items</th>
-                  <th className="text-right font-medium text-gray-500 px-4 py-2.5">Total</th>
-                  <th className="text-right font-medium text-gray-500 px-4 py-2.5">Propina</th>
-                  <th className="text-left font-medium text-gray-500 px-4 py-2.5">Estado</th>
-                  <th className="text-left font-medium text-gray-500 px-4 py-2.5">Pago</th>
-                  <th className="text-left font-medium text-gray-500 px-4 py-2.5">Fecha</th>
-                  <th className="px-4 py-2.5"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => {
-                  const st = statusConfig[order.status] || statusConfig.PENDING;
-                  const payment = order.payments[0];
-                  return (
-                    <tr
-                      key={order.id}
-                      className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors"
-                    >
-                      <td className="px-4 py-3 font-mono text-gray-600">
-                        #{order.id.slice(-8)}
-                      </td>
-                      <td className="px-4 py-3 text-gray-900">
-                        {order.tables.label || `Mesa ${order.tables.table_number}`}
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {order.order_items.length} item{order.order_items.length !== 1 ? "s" : ""}
-                      </td>
-                      <td className="px-4 py-3 text-right font-medium text-gray-900">
-                        {formatCOP(order.total)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-gray-500">
-                        {order.tip_percentage ? `${order.tip_percentage}%` : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge
-                          variant="secondary"
-                          className={`${st.bg} ${st.text} border-0 text-[11px]`}
-                        >
-                          {st.label}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {payment?.payment_method_type || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-gray-400">
-                        {formatDate(order.created_at)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => setDetailOrder(order)}
-                          className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+        <div className="space-y-3">
+          {orders.map((order) => {
+            const st = statusConfig[order.status] || statusConfig.PENDING;
+            const payment = order.payments[0];
+            return (
+              <div
+                key={order.id}
+                onClick={() => setDetailOrder(order)}
+                className="group relative flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 md:px-5 md:py-4 bg-white border border-[#e7e5e4] rounded-[12px] elev-sm card-lift hover:bg-[#fdfaf6] cursor-pointer"
+              >
+                {/* Left side / Mobile Top */}
+                <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-5 flex-grow">
+                  <div className="flex justify-between items-start md:items-center md:hidden w-full mb-1">
+                    <span className="font-serif font-bold text-[18px] text-[#1c1410]">{formatCOP(order.total)}</span>
+                    <Badge variant="secondary" className={`${st.bg} ${st.text} border-0 text-[11px] px-2.5 py-0.5 rounded-full font-medium`}>
+                      {st.label}
+                    </Badge>
+                  </div>
+
+                  <div className="text-[13px] flex items-center gap-3 text-[#1c1410]">
+                    <span className="font-mono text-[#78716c] uppercase tracking-wider text-[12px]">
+                      #{order.id.slice(-6)}
+                    </span>
+                    <span className="w-1 h-1 rounded-full bg-[#d6d3d1] hidden md:block"></span>
+                    <span className="font-medium">{order.tables.label || `Mesa ${order.tables.table_number}`}</span>
+                  </div>
+
+                  <span className="w-1 h-1 rounded-full bg-[#d6d3d1] hidden md:block"></span>
+
+                  <div className="text-[13px] text-[#78716c] flex items-center gap-3">
+                    <span>{order.order_items.length} item{order.order_items.length !== 1 ? "s" : ""}</span>
+                    <span className="w-1 h-1 rounded-full bg-[#d6d3d1]"></span>
+                    <span>{payment?.payment_method_type || "--"}</span>
+                    <span className="w-1 h-1 rounded-full bg-[#d6d3d1]"></span>
+                    <span>{formatDate(order.created_at)}</span>
+                  </div>
+                </div>
+
+                {/* Right side / Mobile Bottom */}
+                <div className="flex items-center justify-between md:justify-end gap-5">
+                  <Badge variant="secondary" className={`${st.bg} ${st.text} border-0 text-[11px] px-2.5 py-0.5 rounded-full font-medium hidden md:inline-flex whitespace-nowrap`}>
+                    {st.label}
+                  </Badge>
+
+                  <div className="text-right hidden md:block">
+                    <div className="font-serif font-bold text-[16px] text-[#1c1410]">
+                      {formatCOP(order.total)}
+                    </div>
+                  </div>
+
+                  <div className="text-[#d6d3d1] group-hover:text-[#c2410c] transition-colors md:ml-2">
+                    <ChevronRight className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
       {/* Pagination */}
       {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-between text-[12px] text-gray-500">
+        <div className="flex items-center justify-between pt-6 border-t border-[#e7e5e4] text-[13px] text-[#78716c]">
           <p>
             Página {data.page} de {data.totalPages} ({data.total} órdenes)
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-2 border border-[#e7e5e4] rounded-[10px] bg-white hover:bg-[#f5f5f4] hover:text-[#1c1410] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
               disabled={page >= data.totalPages}
-              className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-2 border border-[#e7e5e4] rounded-[10px] bg-white hover:bg-[#f5f5f4] hover:text-[#1c1410] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -416,135 +435,137 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {/* Detail Modal */}
+      {/* Detail Modal (Receipt Style) */}
       <Dialog open={!!detailOrder} onOpenChange={() => setDetailOrder(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-[15px]">
-              Orden #{detailOrder?.id.slice(-8)}
-            </DialogTitle>
-          </DialogHeader>
-
+        <DialogContent className="max-w-lg bg-[#fdfaf6] border-[#e7e5e4] p-0 overflow-hidden shadow-2xl rounded-[24px]">
+          <DialogTitle className="sr-only">
+            Detalle de orden {detailOrder ? `#${detailOrder.id.slice(-8)}` : ""}
+          </DialogTitle>
           {detailOrder && (
-            <div className="space-y-5 pt-2">
-              {/* Summary */}
-              <div className="grid grid-cols-2 gap-3 text-[13px]">
-                <div>
-                  <p className="text-gray-400">Mesa</p>
-                  <p className="font-medium text-gray-900">
-                    {detailOrder.tables.label || `Mesa ${detailOrder.tables.table_number}`}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-400">Fecha</p>
-                  <p className="font-medium text-gray-900">
-                    {formatDate(detailOrder.created_at)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-400">Estado</p>
-                  <Badge
-                    variant="secondary"
-                    className={`${statusConfig[detailOrder.status]?.bg} ${statusConfig[detailOrder.status]?.text} border-0 text-[11px]`}
-                  >
-                    {statusConfig[detailOrder.status]?.label}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-gray-400">Personas</p>
-                  <p className="font-medium text-gray-900">{detailOrder.customer_count}</p>
+            <div className="flex flex-col max-h-[85vh]">
+              {/* Receipt Header */}
+              <div className="bg-white px-6 py-6 border-b border-dashed border-[#d6d3d1] relative">
+                <div className="absolute top-0 inset-x-0 h-1 bg-[#c2410c]"></div>
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <Badge variant="secondary" className={`${statusConfig[detailOrder.status]?.bg} ${statusConfig[detailOrder.status]?.text} border-0 text-[11px] px-2.5 py-0.5 rounded-full font-medium mb-3`}>
+                      {statusConfig[detailOrder.status]?.label}
+                    </Badge>
+                    <h2 className="text-[22px] font-serif font-bold text-[#1c1410] mb-1">
+                      {detailOrder.tables.label || `Mesa ${detailOrder.tables.table_number}`}
+                    </h2>
+                    <p className="text-[13px] text-[#78716c] font-mono">
+                      #{detailOrder.id.slice(-8)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[13px] text-[#1c1410] font-medium mb-1">
+                      {formatDate(detailOrder.created_at).split(",")[0]}
+                    </p>
+                    <p className="text-[13px] text-[#78716c]">
+                      {formatDate(detailOrder.created_at).split(",")[1]}
+                    </p>
+                    <p className="text-[13px] text-[#78716c] mt-2">
+                      {detailOrder.customer_count} personas
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {/* Items */}
-              <div>
-                <p className="text-[12px] font-medium text-gray-400 uppercase tracking-wide mb-2">
-                  Items
+              {/* Receipt Body (Scrollable) */}
+              <div className="px-6 py-6 overflow-y-auto scrollbar-hide flex-grow bg-[#fdfaf6]">
+                <p className="text-[11px] font-bold text-[#78716c] uppercase tracking-widest mb-4">
+                  Detalle del Consumo
                 </p>
-                <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
+                <div className="space-y-4">
                   {detailOrder.order_items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between px-3 py-2 text-[13px]">
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-900">{item.name}</span>
+                    <div key={item.id} className="flex items-start justify-between text-[14px]">
+                      <div className="pr-4">
+                        <p className="text-[#1c1410] font-medium leading-snug">
+                          {item.quantity}x {item.name}
+                        </p>
                         {item.is_upsell && (
-                          <Badge variant="secondary" className="bg-purple-50 text-purple-600 border-0 text-[10px]">
+                          <Badge variant="secondary" className="mt-1.5 bg-[#c2410c]/10 text-[#c2410c] border-0 text-[10px] px-2 py-0">
                             Sugerido
                           </Badge>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 text-gray-500">
-                        <span>x{item.quantity}</span>
-                        <span className="font-medium text-gray-900 w-24 text-right">
-                          {formatCOP(item.total_price)}
-                        </span>
-                      </div>
+                      <p className="text-[#1c1410] font-medium whitespace-nowrap pt-[1px]">
+                        {formatCOP(item.total_price)}
+                      </p>
                     </div>
                   ))}
                 </div>
-              </div>
 
-              {/* Totals */}
-              <div className="space-y-1.5 text-[13px]">
-                <div className="flex justify-between text-gray-500">
-                  <span>Subtotal</span>
-                  <span>{formatCOP(detailOrder.subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-gray-500">
-                  <span>IVA</span>
-                  <span>{formatCOP(detailOrder.tax)}</span>
-                </div>
-                {detailOrder.tip_amount > 0 && (
-                  <div className="flex justify-between text-gray-500">
-                    <span>Propina ({detailOrder.tip_percentage}%)</span>
-                    <span>{formatCOP(detailOrder.tip_amount)}</span>
+                <div className="my-6 border-b border-dashed border-[#d6d3d1]"></div>
+
+                {/* Subtotals & Total */}
+                <div className="space-y-2 text-[14px]">
+                  <div className="flex justify-between text-[#78716c]">
+                    <span>Subtotal</span>
+                    <span>{formatCOP(detailOrder.subtotal)}</span>
                   </div>
-                )}
-                <div className="flex justify-between font-semibold text-gray-900 pt-1.5 border-t border-gray-200">
-                  <span>Total</span>
-                  <span>{formatCOP(detailOrder.total)}</span>
+                  <div className="flex justify-between text-[#78716c]">
+                    <span>IVA & Impoconsumo</span>
+                    <span>{formatCOP(detailOrder.tax)}</span>
+                  </div>
+                  {detailOrder.tip_amount > 0 && (
+                    <div className="flex justify-between text-[#78716c]">
+                      <span>Propina voluntaria ({detailOrder.tip_percentage}%)</span>
+                      <span>{formatCOP(detailOrder.tip_amount)}</span>
+                    </div>
+                  )}
+                  
+                  <div className="pt-4 pb-2 mt-4 flex justify-between items-end border-t border-[#e7e5e4]">
+                    <span className="text-[16px] font-bold text-[#1c1410]">Total</span>
+                    <span className="text-[28px] font-serif font-bold text-[#1c1410] leading-none">
+                      {formatCOP(detailOrder.total)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Payment & Audit Info */}
+                <div className="mt-8 bg-white rounded-xl p-4 border border-[#e7e5e4] text-[13px]">
+                  {detailOrder.payments[0] && (
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex justify-between items-center text-[#78716c]">
+                        <span>Método de pago</span>
+                        <span className="font-medium text-[#1c1410]">{detailOrder.payments[0].payment_method_type || "N/A"}</span>
+                      </div>
+                      {detailOrder.payments[0].reference && (
+                        <div className="flex justify-between items-center text-[#78716c]">
+                          <span>Referencia</span>
+                          <span className="font-mono text-[12px]">{detailOrder.payments[0].reference}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {detailOrder.status === "CANCELLED" && detailOrder.cancelled_by && (
+                    <div className="mt-4 pt-4 border-t border-[#e7e5e4] text-red-700">
+                      <p className="font-medium">Cancelada por {detailOrder.cancelled_by.name || detailOrder.cancelled_by.email}</p>
+                      {detailOrder.cancelled_at && <p className="text-red-500/80 mt-0.5">{formatDate(detailOrder.cancelled_at)}</p>}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Payment info */}
-              {detailOrder.payments[0] && (
-                <div className="text-[12px] text-gray-400">
-                  Pago: {detailOrder.payments[0].payment_method_type || "N/A"} · {formatCOP(detailOrder.payments[0].amount_in_cents)}
-                  {detailOrder.payments[0].paid_at && (
-                    <> · {formatDate(detailOrder.payments[0].paid_at)}</>
-                  )}
-                  {detailOrder.payments[0].reference && (
-                    <> · Ref: <span className="font-mono">{detailOrder.payments[0].reference}</span></>
-                  )}
-                </div>
-              )}
-
-              {/* Cancellation audit */}
-              {detailOrder.status === "CANCELLED" && detailOrder.cancelled_by && (
-                <div className="rounded-lg border border-red-100 bg-red-50/60 px-3 py-2 text-[12px] text-red-700">
-                  Cancelada por{" "}
-                  <span className="font-medium">
-                    {detailOrder.cancelled_by.name || detailOrder.cancelled_by.email}
-                  </span>
-                  {detailOrder.cancelled_at && (
-                    <> · {formatDate(detailOrder.cancelled_at)}</>
-                  )}
-                </div>
-              )}
-
-              {/* Cancel button — only for PENDING */}
+              {/* Receipt Footer Actions */}
               {detailOrder.status === "PENDING" && (
-                <button
-                  onClick={() => handleCancel(detailOrder.id)}
-                  disabled={cancelling}
-                  className="flex items-center justify-center gap-2 w-full py-2.5 text-[13px] font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
-                >
-                  {cancelling ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <X className="w-3.5 h-3.5" />
-                  )}
-                  Cancelar orden
-                </button>
+                <div className="p-4 bg-white border-t border-[#e7e5e4]">
+                  <button
+                    onClick={() => handleCancel(detailOrder.id)}
+                    disabled={cancelling}
+                    className="flex items-center justify-center gap-2 w-full py-3.5 text-[14px] font-medium text-red-600 border border-red-200 rounded-[12px] bg-red-50/50 hover:bg-red-50 transition-colors disabled:opacity-50"
+                  >
+                    {cancelling ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <X className="w-4 h-4" />
+                    )}
+                    Cancelar esta orden
+                  </button>
+                </div>
               )}
             </div>
           )}
