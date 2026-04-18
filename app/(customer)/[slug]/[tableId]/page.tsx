@@ -1,7 +1,8 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useBill } from "@/hooks/use-bill";
+import { useCustomerSession } from "@/hooks/use-customer-session";
 import { useBillStore } from "@/lib/stores/bill.store";
 import { formatCOP } from "@/lib/utils/currency";
 import { ThemeProvider } from "@/components/restaurant/theme-provider";
@@ -16,22 +17,38 @@ import Link from "next/link";
 
 export default function BillPage() {
   const params = useParams<{ slug: string; tableId: string }>();
-  const { isLoading, error } = useBill(params.slug, params.tableId);
+  const searchParams = useSearchParams();
+
+  const qrToken = searchParams.get("qrToken");
+  const qrVersionRaw = searchParams.get("qrVersion");
+  const qrVersion = qrVersionRaw ? Number(qrVersionRaw) : null;
+
+  const {
+    token,
+    loading: sessionLoading,
+    error: sessionError,
+  } = useCustomerSession(params.slug, params.tableId, qrToken, qrVersion);
+
+  const { isLoading, error: billError } = useBill(params.slug, params.tableId, token);
+
   const {
     data, tipPercentage, tipAmount, selectedUpsells,
     setTip, toggleUpsell, getTotal, getUpsellTotal,
   } = useBillStore();
 
-  if (isLoading) return <BillSkeleton />;
+  if (sessionLoading || isLoading) return <BillSkeleton />;
 
-  if (error || !data) {
+  // La sesión falla antes que el bill: prioriza ese mensaje para que el
+  // comensal entienda que debe re-escanear.
+  const displayError = sessionError ?? billError;
+  if (displayError || !data) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
         <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
           <AlertCircle className="w-8 h-8 text-red-400" />
         </div>
         <h2 className="text-lg font-semibold text-gray-900 mb-2">No pudimos cargar tu cuenta</h2>
-        <p className="text-sm text-gray-500 mb-6">{error || "Cuenta no encontrada"}</p>
+        <p className="text-sm text-gray-500 mb-6">{displayError || "Cuenta no encontrada"}</p>
         <button
           onClick={() => window.location.reload()}
           className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-medium text-gray-700 transition-colors"

@@ -4,6 +4,10 @@ import { useSearchParams, useParams } from "next/navigation";
 import { CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
+import {
+  customerAuthHeader,
+  clearCustomerSession,
+} from "@/hooks/use-customer-session";
 
 function ResultContent() {
   const searchParams = useSearchParams();
@@ -20,10 +24,17 @@ function ResultContent() {
     try {
       const res = await fetch("/api/payment/verify", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...customerAuthHeader(params.tableId),
+        },
         body: JSON.stringify({ reference }),
       });
-      if (res.ok) {
+      if (res.status === 401) {
+        // Sesión murió mientras el comensal estaba en el flujo de pago;
+        // no bloqueamos el resultado porque el webhook/back lo terminará.
+        clearCustomerSession(params.tableId);
+      } else if (res.ok) {
         const data = await res.json();
         setVerifiedStatus(data.status);
       }

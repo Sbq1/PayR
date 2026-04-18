@@ -2,18 +2,30 @@
 
 import { useEffect, useRef } from "react";
 import { useBillStore } from "@/lib/stores/bill.store";
+import { clearCustomerSession } from "@/hooks/use-customer-session";
 
 /**
- * Hook que carga la cuenta desde la API y la guarda en el store.
- * Limpia el store al cambiar de mesa y aborta fetch en unmount.
+ * Carga la cuenta desde /api/bill con Bearer del token de sesión del
+ * comensal. No dispara fetch hasta que `token` esté disponible; así la
+ * page puede gatear la carga con useCustomerSession sin fetches previos.
+ *
+ * Si la API devuelve 401 (sesión expirada/revocada), limpia sessionStorage
+ * para que el siguiente escaneo del QR genere una sesión fresca.
  */
-export function useBill(slug: string, tableId: string) {
+export function useBill(slug: string, tableId: string, token: string | null) {
   const store = useBillStore();
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    // Limpiar store al cambiar de mesa para evitar datos stale
     store.reset();
+
+    if (!token) {
+      // Sin token, no hay fetch. El loading del bill.store arranca en true
+      // (para casos legacy); lo bajamos para que la page decida desde el
+      // hook de sesión si muestra skeleton, error o nada.
+      store.setLoading(false);
+      return;
+    }
 
     const abortCtrl = new AbortController();
     abortRef.current = abortCtrl;
@@ -23,8 +35,17 @@ export function useBill(slug: string, tableId: string) {
       try {
         const res = await fetch(
           `/api/bill?slug=${encodeURIComponent(slug)}&tableId=${encodeURIComponent(tableId)}`,
-          { signal: abortCtrl.signal }
+          {
+            signal: abortCtrl.signal,
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
+
+        if (res.status === 401) {
+          clearCustomerSession(tableId);
+          store.setError("Tu sesión expiró. Vuelve a escanear el QR.");
+          return;
+        }
 
         if (!res.ok) {
           const body = await res.json().catch(() => ({ error: "Error desconocido" }));
@@ -47,7 +68,7 @@ export function useBill(slug: string, tableId: string) {
       abortCtrl.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug, tableId]);
+  }, [slug, tableId, token]);
 
   return {
     data: store.data,
