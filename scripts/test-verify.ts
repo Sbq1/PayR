@@ -22,7 +22,31 @@ import { PrismaClient } from "../lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { signQrToken } from "../lib/services/qr-token.service";
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+// Usa el dev server local por default. NO leer NEXT_PUBLIC_APP_URL — ese
+// apunta a producción y el test escribe data con prefijo TEST-VERIFY-*
+// que no queremos ensuciar en prod. Override explícito con TEST_BASE_URL.
+const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:3000";
+
+/**
+ * fetch JSON con error útil si llega HTML (típico cuando el server no
+ * corre o se apunta a la URL equivocada y Next devuelve una 404 HTML).
+ */
+async function fetchJson(
+  url: string,
+  init?: RequestInit
+): Promise<{ status: number; body: unknown }> {
+  const res = await fetch(url, init);
+  const text = await res.text();
+  try {
+    return { status: res.status, body: text ? JSON.parse(text) : {} };
+  } catch {
+    throw new Error(
+      `Respuesta no-JSON de ${url} (status ${res.status}). ` +
+        `¿Servidor dev corriendo en ${BASE_URL}? ` +
+        `Primeros 80 chars: ${text.slice(0, 80).replace(/\n/g, " ")}`
+    );
+  }
+}
 
 const passed: string[] = [];
 const failed: string[] = [];
@@ -174,7 +198,7 @@ async function testVerifyFlow() {
     // Obtener JWT vía session/start con el QR recién creado.
     console.log("\n[3/5] Crear sesión del comensal vía /api/session/start");
     const qrToken = signQrToken(tableId, 1);
-    const sessionRes = await fetch(`${BASE_URL}/api/session/start`, {
+    const sessionRes = await fetchJson(`${BASE_URL}/api/session/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -184,7 +208,7 @@ async function testVerifyFlow() {
         qrVersion: 1,
       }),
     });
-    const sessionBody = await sessionRes.json();
+    const sessionBody = sessionRes.body as { token?: string; error?: string };
     assert(
       "session/start responde 200",
       sessionRes.status === 200,
