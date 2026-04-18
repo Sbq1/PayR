@@ -1,18 +1,25 @@
 import { db } from "@/lib/db";
 import { getPaymentAdapter } from "@/lib/adapters/payment";
 import { getPosAdapter } from "@/lib/adapters/pos";
-import { NotFoundError, PaymentError } from "@/lib/utils/errors";
+import { AppError, NotFoundError, PaymentError } from "@/lib/utils/errors";
 import type { WompiWebhookEvent, WompiWidgetConfig } from "@/lib/adapters/payment/types";
 
 type WompiTransaction = WompiWebhookEvent["data"]["transaction"];
 
+const LOCK_TTL_MS = 4 * 60 * 1000; // 4min — cubre widget Wompi + margen.
+
 /**
- * Crea un pago para una orden:
- * 1. Busca orden + restaurante
- * 2. Actualiza tip y total
- * 3. Genera referencia unica
- * 4. Crea registro Payment en BD
- * 5. Retorna config del widget Wompi
+ * Crea un payment bajo lock optimista. Ver plan §3 (state machine) y §4
+ * (flow end-to-end). Pasos:
+ *   1. Validaciones de ownership + tip + status no-final
+ *   2. Retry logic PAYING — consulta Wompi para no duplicar cargo
+ *   3. Lock optimista: UPDATE condicional que permite PENDING, PAYING
+ *      expirado, o PAYING del mismo sessionId (retry propio). count=0
+ *      → 409 ORDER_VERSION_MISMATCH.
+ *   4. Crea Payment con evidencia Ley 2300 (tip_disclaimer_* si tip>0)
+ *      + cols DIAN (customer_document_*; dian_doc_type queda null hasta
+ *      Fase 3 que aplica la regla 5 UVT según fe_regime del restaurante).
+ *   5. Llama Wompi fuera de la TX para obtener widget config.
  */
 export async function createPayment(params: {
   orderId: string;
@@ -20,11 +27,20 @@ export async function createPayment(params: {
   tableId: string;
   tipPercentage: number;
   tipAmount: number;
+  acceptedTipDisclaimer: boolean;
+  tipDisclaimerTextVersion: string;
+  customerDocument?: {
+    type: "CC" | "CE" | "NIT" | "PASSPORT";
+    number: string;
+  };
   customerEmail?: string;
+  expectedVersion: number;
+  sessionId: string;
 }): Promise<{
   paymentId: string;
   reference: string;
   widgetConfig: WompiWidgetConfig;
+  orderVersion: number;
 }> {
   const {
     orderId,
@@ -32,109 +48,147 @@ export async function createPayment(params: {
     tableId: claimedTableId,
     tipPercentage,
     tipAmount,
+    acceptedTipDisclaimer,
+    tipDisclaimerTextVersion,
+    customerDocument,
     customerEmail,
+    expectedVersion,
+    sessionId,
   } = params;
 
-  // Transacción atómica para prevenir race conditions (doble pago)
-  const { payment, totalWithTip, restaurant, tableId } = await db.$transaction(async (tx) => {
-    // 1. Buscar orden con lock implícito dentro de transacción
-    const order = await tx.order.findUnique({
-      where: { id: orderId },
-      include: { restaurants: true },
-    });
+  const { payment, tableId, restaurant, nextVersion } = await db.$transaction(
+    async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+        include: { restaurants: true },
+      });
+      if (!order) throw new NotFoundError("Orden");
+      if (order.restaurants.slug !== claimedSlug) throw new NotFoundError("Orden");
+      if (order.table_id !== claimedTableId) throw new NotFoundError("Orden");
 
-    if (!order) throw new NotFoundError("Orden");
+      if (tipAmount > order.subtotal) {
+        throw new PaymentError("Monto de propina excede el máximo permitido");
+      }
+      // Defensa en profundidad — Zod ya exige disclaimer si tip>0.
+      if (tipAmount > 0 && !acceptedTipDisclaimer) {
+        throw new PaymentError("Falta aceptación del aviso de propina (Ley 2300)");
+      }
 
-    // Ownership check: la orden debe pertenecer al slug+tableId declarado.
-    // Sin esto, un atacante con cualquier orderId puede inflar tip/total
-    // de órdenes ajenas.
-    if (order.restaurants.slug !== claimedSlug) {
-      throw new NotFoundError("Orden");
-    }
-    if (order.table_id !== claimedTableId) {
-      throw new NotFoundError("Orden");
-    }
+      if (order.status === "PAID") throw new PaymentError("Esta orden ya fue pagada");
+      if (order.status === "CANCELLED") throw new PaymentError("Esta orden fue cancelada");
+      if (order.status === "REFUNDED" || order.status === "PARTIALLY_REFUNDED") {
+        throw new PaymentError("Esta orden tiene un reembolso registrado");
+      }
 
-    // Validación de tipAmount contra subtotal real de la orden.
-    // Prevenir manipulación: tip no puede exceder el subtotal de la orden
-    // (100% de propina es el máximo razonable).
-    if (tipAmount > order.subtotal) {
-      throw new PaymentError("Monto de propina excede el máximo permitido");
-    }
+      // Retry logic: si ya hubo intento en Wompi, no duplicar el cargo.
+      if (order.status === "PAYING") {
+        const lastPayment = await tx.payment.findFirst({
+          where: { order_id: orderId, status: "PENDING" },
+          orderBy: { created_at: "desc" },
+        });
+        if (lastPayment) {
+          const wompiStatus = await checkWompiTransactionStatus(
+            order.restaurants,
+            lastPayment.reference
+          );
+          if (wompiStatus === "APPROVED") {
+            throw new PaymentError("Esta orden ya fue pagada");
+          }
+          if (wompiStatus === "PENDING") {
+            throw new PaymentError("Ya hay un pago en proceso para esta orden");
+          }
+          // DECLINED / ERROR / VOIDED / null → permitir retry tras marcar
+          // el payment viejo con el estado real.
+          await tx.payment.update({
+            where: { id: lastPayment.id },
+            data: { status: mapWompiStatus(wompiStatus || "ERROR") },
+          });
+        }
+      }
 
-    if (order.status === "PAID") throw new PaymentError("Esta orden ya fue pagada");
-    if (order.status === "CANCELLED") throw new PaymentError("Esta orden fue cancelada");
+      const total = order.subtotal + order.tax + tipAmount;
 
-    // If PAYING, check if previous payment can be retried
-    if (order.status === "PAYING") {
-      const lastPayment = await tx.payment.findFirst({
-        where: { order_id: orderId, status: "PENDING" },
-        orderBy: { created_at: "desc" },
+      // Lock optimista. 3 branches permitidas en el OR:
+      //   - orden PENDING con version match → nuevo lock
+      //   - PAYING expirado → override del lock muerto
+      //   - PAYING del mismo session → retry del propio comensal
+      // count=0 → otra sesión ganó; devolvemos 409.
+      const lockResult = await tx.order.updateMany({
+        where: {
+          id: orderId,
+          version: expectedVersion,
+          OR: [
+            { status: "PENDING" },
+            {
+              AND: [
+                { status: "PAYING" },
+                { lock_expires_at: { lt: new Date() } },
+              ],
+            },
+            {
+              AND: [
+                { status: "PAYING" },
+                { locked_by_session_id: sessionId },
+              ],
+            },
+          ],
+        },
+        data: {
+          status: "PAYING",
+          version: { increment: 1 },
+          locked_at: new Date(),
+          lock_expires_at: new Date(Date.now() + LOCK_TTL_MS),
+          locked_by_session_id: sessionId,
+          tip_amount: tipAmount,
+          tip_percentage: tipPercentage,
+          total,
+        },
       });
 
-      if (lastPayment) {
-        // Check with Wompi if the transaction actually exists/succeeded
-        const wompiStatus = await checkWompiTransactionStatus(
-          order.restaurants,
-          lastPayment.reference
+      if (lockResult.count === 0) {
+        throw new AppError(
+          "Otra sesión está procesando esta mesa. Volvé a cargar la cuenta.",
+          409,
+          "ORDER_VERSION_MISMATCH"
         );
-
-        if (wompiStatus === "APPROVED") {
-          throw new PaymentError("Esta orden ya fue pagada");
-        }
-
-        if (wompiStatus === "PENDING") {
-          // Transaction genuinely in progress in Wompi — block retry
-          throw new PaymentError("Ya hay un pago en proceso para esta orden");
-        }
-
-        // Transaction failed, was voided, or never created — allow retry
-        await tx.payment.update({
-          where: { id: lastPayment.id },
-          data: { status: mapWompiStatus(wompiStatus || "ERROR") },
-        });
       }
+
+      const reference = `SC-${orderId.slice(-8)}-${Date.now()}`;
+      const pmt = await tx.payment.create({
+        data: {
+          order_id: orderId,
+          reference,
+          amount_in_cents: total,
+          currency: "COP",
+          status: "PENDING",
+          customer_email: customerEmail || null,
+          tip_amount: tipAmount,
+          tip_percentage: tipPercentage,
+          tip_disclaimer_accepted_at: tipAmount > 0 ? new Date() : null,
+          tip_disclaimer_text_version:
+            tipAmount > 0 ? tipDisclaimerTextVersion : null,
+          customer_document_type: customerDocument?.type ?? null,
+          customer_document_number: customerDocument?.number ?? null,
+          // dian_doc_type: null — Fase 3 lo setea con lógica 5 UVT
+        },
+      });
+
+      await tx.table.update({
+        where: { id: order.table_id },
+        data: { status: "PAYING" },
+      });
+
+      return {
+        payment: pmt,
+        tableId: order.table_id,
+        restaurant: order.restaurants,
+        nextVersion: expectedVersion + 1,
+      };
     }
-
-    const rest = order.restaurants;
-    const total = order.subtotal + order.tax + tipAmount;
-
-    // 2. Actualizar orden a PAYING
-    await tx.order.update({
-      where: { id: orderId },
-      data: {
-        tip_percentage: tipPercentage,
-        tip_amount: tipAmount,
-        total,
-        status: "PAYING",
-      },
-    });
-
-    // 3. Crear registro de pago con referencia única
-    const reference = `SC-${orderId.slice(-8)}-${Date.now()}`;
-    const pmt = await tx.payment.create({
-      data: {
-        order_id: orderId,
-        reference,
-        amount_in_cents: total,
-        currency: "COP",
-        status: "PENDING",
-        customer_email: customerEmail || null,
-      },
-    });
-
-    // 4. Mark table as paying
-    await tx.table.update({
-      where: { id: order.table_id },
-      data: { status: "PAYING" },
-    });
-
-    return { payment: pmt, totalWithTip: total, restaurant: rest, tableId: order.table_id };
-  });
+  );
 
   const reference = payment.reference;
 
-  // 5. Obtener config del widget Wompi (o demo)
   const adapter = getPaymentAdapter({
     posProvider: restaurant.pos_provider,
     wompiPublicKey: restaurant.wompi_public_key,
@@ -147,7 +201,7 @@ export async function createPayment(params: {
   const redirectUrl = `${appUrl}/${restaurant.slug}/${tableId}/result?ref=${reference}`;
 
   const widgetConfig = await adapter.createTransaction({
-    amountInCents: totalWithTip,
+    amountInCents: Number(payment.amount_in_cents),
     reference,
     redirectUrl,
     customerEmail,
@@ -157,6 +211,7 @@ export async function createPayment(params: {
     paymentId: payment.id,
     reference,
     widgetConfig,
+    orderVersion: nextVersion,
   };
 }
 

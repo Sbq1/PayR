@@ -5,6 +5,12 @@ import type { StandardBill } from "@/lib/adapters/pos/types";
 
 export interface BillResponse {
   orderId: string;
+  /**
+   * Version del lock optimista. El cliente debe enviarlo de vuelta en
+   * POST /api/payment/create como `expectedVersion` para que el server
+   * detecte si otra sesión modificó la orden entre el bill y el pago.
+   */
+  orderVersion: number;
   restaurant: {
     name: string;
     slug: string;
@@ -162,6 +168,7 @@ export async function getBillForTable(
 
   return {
     orderId: order.id,
+    orderVersion: order.version,
     restaurant: {
       name: restaurant.name,
       slug: restaurant.slug,
