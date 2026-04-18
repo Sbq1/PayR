@@ -266,3 +266,16 @@ model ProcessedWebhook {
   @@index([received_at], map: "idx_processed_webhooks_received")
   @@map("processed_webhooks")
 }
+
+/// Parámetros tributarios DIAN actualizables por año.
+/// Fuente de verdad del UVT para la lógica del 5 UVT (documento POS vs FE).
+/// Se actualiza anualmente por Resolución DIAN — script `seed-tax-parameters`
+/// inserta el año siguiente antes del 1 de enero.
+model TaxParameter {
+  year              Int      @id
+  uvt_cop           Int
+  source_resolution String?
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("tax_parameters")
+}
