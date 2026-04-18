@@ -3,18 +3,9 @@ import { createHash } from "node:crypto";
 import { db } from "@/lib/db";
 import { AppError } from "@/lib/utils/errors";
 
-/**
- * Autenticación efímera del comensal (distinta del staff login).
- *
- * - JWT HS256 firmado con AUTH_SECRET (reusado con scope diferente).
- * - Claims: { sid, scope: "table:<tid>" | "receipt:<paymentId>", rid, tid }.
- * - TTL 2h para scope table; 15min para scope receipt (post-pago).
- * - Hash SHA256 del JWT se guarda en sessions.token_hash para permitir
- *   revocación server-side sin invalidar la firma.
- *
- * Este módulo es server-only. Importarlo desde client components va a
- * expandir el bundle con 'node:crypto' y potencialmente filtrar el secret.
- */
+// Server-only. JWT HS256 con AUTH_SECRET; hash SHA256 en sessions.token_hash
+// para revocación sin invalidar firma. Scope 'table:<tid>' (2h) pre-pago,
+// 'receipt:<paymentId>' (15min) post-pago.
 
 export const CUSTOMER_SESSION_TTL_SECONDS = 2 * 60 * 60; // 2h
 export const RECEIPT_SCOPE_TTL_SECONDS = 15 * 60; // 15min
@@ -101,25 +92,26 @@ export interface CustomerSessionContext {
 }
 
 /**
- * Middleware de auth para endpoints del comensal.
- *
- * 1. Lee Authorization: Bearer <jwt>.
- * 2. Verifica firma HS256.
- * 3. Valida en DB: sesión existe, no revocada, no expirada.
- * 4. Valida restaurant.is_active (feature de negocio — restaurantes pausados
- *    no reciben pagos aunque el QR siga físicamente vivo).
- * 5. Valida consistencia DB vs claims (defensa contra JWT fabricado con
- *    claims distintos al row real).
- * 6. Opcionalmente narrow contra tableId / restaurantSlug provistos por
- *    el handler para IDOR defense-in-depth.
- *
- * Lanza AppError con códigos semánticos mapeados por handleApiError:
- * - SESSION_MISSING (401): falta header o está vacío
- * - SESSION_INVALID (401): firma, claims malformados o sesión no existe
- * - SESSION_REVOKED (401): revoked_at IS NOT NULL
- * - SESSION_EXPIRED (401): expires_at < NOW()
- * - RESTAURANT_INACTIVE (403): restaurante pausado
- * - FORBIDDEN (403): narrow check falló (IDOR)
+ * Punto único que bloquea operaciones cuando un restaurante está pausado
+ * (is_active=false). Cuando llegue `subscription_status`, se extiende aquí
+ * en vez de en cada callsite.
+ */
+export function assertRestaurantOperational(
+  restaurant: { is_active: boolean }
+): void {
+  if (!restaurant.is_active) {
+    throw new AppError(
+      "Este restaurante está pausado temporalmente. Paga al mesero.",
+      403,
+      "RESTAURANT_INACTIVE"
+    );
+  }
+}
+
+/**
+ * Middleware de auth para endpoints del comensal. Lanza AppError con
+ * código semántico (SESSION_MISSING / SESSION_INVALID / SESSION_REVOKED /
+ * SESSION_EXPIRED / RESTAURANT_INACTIVE / FORBIDDEN).
  */
 export async function requireCustomerSession(
   request: Request,
@@ -139,56 +131,34 @@ export async function requireCustomerSession(
     claims = await verifyCustomerJwt(token);
   } catch (err) {
     if (err instanceof AppError) throw err;
-    // Errores de jose (firma inválida, exp vencido, etc.)
-    throw new AppError(
-      "Sesión inválida o expirada",
-      401,
-      "SESSION_INVALID"
-    );
+    throw new AppError("Sesión inválida o expirada", 401, "SESSION_INVALID");
   }
 
-  const tokenHash = hashToken(token);
   const row = await db.session.findUnique({
-    where: { token_hash: tokenHash },
+    where: { token_hash: hashToken(token) },
     include: {
-      restaurants: {
-        select: { id: true, slug: true, is_active: true },
-      },
+      restaurants: { select: { id: true, slug: true, is_active: true } },
     },
   });
 
-  if (!row) {
-    throw new AppError("Sesión no encontrada", 401, "SESSION_INVALID");
-  }
-  if (row.revoked_at) {
-    throw new AppError("Sesión revocada", 401, "SESSION_REVOKED");
-  }
+  if (!row) throw new AppError("Sesión no encontrada", 401, "SESSION_INVALID");
+  if (row.revoked_at) throw new AppError("Sesión revocada", 401, "SESSION_REVOKED");
   if (row.expires_at.getTime() <= Date.now()) {
     throw new AppError("Sesión expirada", 401, "SESSION_EXPIRED");
   }
 
-  // Consistencia entre claims firmados y estado DB. Si divergen, el JWT
-  // probablemente fue manipulado o el row fue modificado manualmente.
+  // Consistencia claims vs DB — defensa contra JWT con claims manipulados
+  // cuyo hash colisiona fortuitamente con otra row (improbable pero barato).
   if (row.restaurant_id !== claims.rid || row.table_id !== claims.tid) {
     throw new AppError("Sesión inconsistente", 401, "SESSION_INVALID");
   }
 
-  if (!row.restaurants.is_active) {
-    throw new AppError(
-      "Este restaurante está pausado temporalmente. Paga al mesero.",
-      403,
-      "RESTAURANT_INACTIVE"
-    );
-  }
+  assertRestaurantOperational(row.restaurants);
 
-  // IDOR narrow — el handler especifica el tableId/slug que espera de la URL.
-  if (narrow?.tableId !== undefined && narrow.tableId !== row.table_id) {
+  if (narrow?.tableId && narrow.tableId !== row.table_id) {
     throw new AppError("Acceso denegado", 403, "FORBIDDEN");
   }
-  if (
-    narrow?.restaurantSlug !== undefined &&
-    narrow.restaurantSlug !== row.restaurants.slug
-  ) {
+  if (narrow?.restaurantSlug && narrow.restaurantSlug !== row.restaurants.slug) {
     throw new AppError("Acceso denegado", 403, "FORBIDDEN");
   }
 

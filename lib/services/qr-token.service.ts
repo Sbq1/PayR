@@ -1,26 +1,9 @@
 import crypto from "node:crypto";
 import { AppError } from "@/lib/utils/errors";
 
-/**
- * Token HMAC para QR firmado.
- *
- * Flujo:
- * - `signQrToken(tableId, tokenVersion)` produce un token que se codifica
- *   en la URL del QR (o en un query param). El token es un HMAC-SHA256
- *   sobre el payload `${tableId}:${tokenVersion}` con `QR_SECRET`.
- * - `verifyQrToken(token, tableId, expectedVersion)` valida que el token
- *   coincida con la versión vigente del QR del `tableId`. Constant-time
- *   compare vía `crypto.timingSafeEqual` para prevenir timing attacks.
- *
- * Rotación:
- * - Por compromise específico de una mesa: incrementar
- *   `qr_codes.token_version` → el QR viejo falla verify.
- * - Por compromise global del secret: rotar `QR_SECRET` con ventana dual
- *   (runbook docs/runbooks/qr-secret-rotation.md, fase 5 del plan).
- *
- * Este módulo es servidor-only: nunca debe importarse en client components
- * porque expondría QR_SECRET en el bundle.
- */
+// Server-only. HMAC-SHA256 sobre `${tableId}:${version}` con QR_SECRET.
+// Rotación fina vía qr_codes.token_version; rotación global del secret
+// vía ventana dual (docs/runbooks/qr-secret-rotation.md).
 
 const MIN_SECRET_LENGTH = 32;
 
@@ -36,28 +19,14 @@ function getSecret(): string {
   return s;
 }
 
-/**
- * Firma un token HMAC para el QR de una mesa en una versión específica.
- *
- * @param tableId    UUID de la mesa (debe venir del server, no del cliente)
- * @param tokenVersion versión actual del QR (desde `qr_codes.token_version`)
- * @returns token base64url (43 chars)
- */
 export function signQrToken(tableId: string, tokenVersion: number): string {
-  const payload = `${tableId}:${tokenVersion}`;
   return crypto
     .createHmac("sha256", getSecret())
-    .update(payload)
+    .update(`${tableId}:${tokenVersion}`)
     .digest("base64url");
 }
 
-/**
- * Verifica un token QR contra la versión esperada.
- * Retorna `true` si el token es válido para esa combinación.
- *
- * Usa constant-time compare para evitar timing attacks.
- * Nunca lanza — retorna false ante cualquier input inválido.
- */
+/** Nunca lanza — retorna false ante input inválido. Constant-time. */
 export function verifyQrToken(
   token: string,
   tableId: string,
