@@ -104,6 +104,7 @@ model Restaurant {
   subscription_plans     SubscriptionPlan @relation(fields: [plan_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   tables                 Table[]
   upsell_products        UpsellProduct[]
+  sessions               Session[]
 
   @@index([slug], map: "idx_restaurants_slug")
   @@map("restaurants")
@@ -122,18 +123,21 @@ model Table {
   orders               Order[]
   qr_codes             QrCode?
   restaurants          Restaurant   @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sessions             Session[]
 
   @@unique([restaurant_id, table_number])
   @@map("tables")
 }
 
 model QrCode {
-  id         String   @id @default(dbgenerated("(gen_random_uuid())::text"))
-  table_id   String   @unique
-  url        String   @unique
-  is_active  Boolean  @default(true)
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  tables     Table    @relation(fields: [table_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id            String   @id @default(dbgenerated("(gen_random_uuid())::text"))
+  table_id      String   @unique
+  url           String   @unique
+  is_active     Boolean  @default(true)
+  token_version Int      @default(1)
+  rotated_at    DateTime @default(now()) @db.Timestamptz(6)
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  tables        Table    @relation(fields: [table_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("qr_codes")
 }
@@ -195,6 +199,7 @@ model Payment {
   created_at           DateTime       @default(now()) @db.Timestamptz(6)
   paid_at              DateTime?      @db.Timestamptz(6)
   orders               Order          @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sessions             Session[]
 
   @@index([order_id], map: "idx_payments_order")
   @@index([reference], map: "idx_payments_reference")
@@ -278,4 +283,30 @@ model TaxParameter {
   created_at        DateTime @default(now()) @db.Timestamptz(6)
 
   @@map("tax_parameters")
+}
+
+/// Sesión efímera del comensal post-escaneo QR.
+/// Emitida por POST /api/session/start. TTL 2h, hash del JWT en token_hash
+/// para revocación vía revoked_at sin invalidar la firma.
+/// scope 'table' = operación normal; 'receipt' = post-pago, ver comprobante.
+model Session {
+  id            String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  table_id      String
+  restaurant_id String
+  token_hash    String    @unique
+  scope         String    @default("table") // 'table' | 'receipt'
+  payment_id    String?
+  user_agent    String?
+  ip            String?
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  expires_at    DateTime  @db.Timestamptz(6)
+  revoked_at    DateTime? @db.Timestamptz(6)
+
+  tables      Table      @relation(fields: [table_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  restaurants Restaurant @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  payments    Payment?   @relation(fields: [payment_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([expires_at], map: "idx_sessions_expires")
+  @@index([table_id, expires_at], map: "idx_sessions_table")
+  @@map("sessions")
 }
