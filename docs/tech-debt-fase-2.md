@@ -90,7 +90,59 @@ informativo "Esta orden tiene un reembolso registrado".
 
 ---
 
-## 6. Mensaje 409 engañoso en refund cuando el status cambió
+## 6. customerDocument nuevo ignorado en reuse path
+
+**Archivo:** [lib/services/payment.service.ts](../lib/services/payment.service.ts)
+
+Cuando el flow entra al reuse path (Wompi PENDING/null + misma sess + no
+too old + amount match), el `customerDocument` del request actual se
+ignora: se mantiene el del Payment original.
+
+Si el user escaneó el QR, inició Payment sin doc, luego volvió a
+submit con doc → el Payment reusado no recibe el doc.
+
+**Fix sugerido:** comparar `customerDocument` input vs persistido; si
+cambió, no reusar (marcar ERROR y crear nuevo).
+
+**Riesgo:** bajo — impacta solo el flow 5 UVT de Fase 3 donde el doc
+es obligatorio. En Fase 2 el doc es opcional.
+
+---
+
+## 7. Mensaje 409 genérico cuando la order pasó a PAID mid-flow
+
+**Archivo:** [lib/services/payment.service.ts](../lib/services/payment.service.ts)
+
+Si durante el `checkWompiTransactionStatus` (hasta 5s) un webhook
+concurrente marca la order como PAID, el snapshot de `order` en
+memoria queda stale. El `updateMany` dentro de TX rechaza con
+`count=0 → 409 ORDER_VERSION_MISMATCH` con mensaje "Otra sesión está
+procesando esta mesa" cuando la realidad es "ya pagaste vos".
+
+**Fix sugerido:** en la rama `count=0`, hacer `findUnique(order)` y
+distinguir: si `status='PAID'` → 200 con mensaje "ya pagada".
+
+**Riesgo:** ninguno de correctness, solo UX de error.
+
+---
+
+## 8. Type de `paymentToMarkStatus` permite `"APPROVED"`
+
+**Archivo:** [lib/services/payment.service.ts:112](../lib/services/payment.service.ts)
+
+`paymentToMarkStatus: ReturnType<typeof mapWompiStatus>` incluye
+`"APPROVED"`. Semánticamente imposible por las guardas (el throw de
+APPROVED está arriba), pero el type no lo veda.
+
+**Fix sugerido:** narrower type + switch explícito en la rama
+DECLINED/VOIDED/ERROR para que TS haga el narrow.
+
+**Riesgo:** defensivo. Si alguien refactoriza y remueve el throw
+APPROVED, podríamos marcar un Payment viejo APPROVED sin el webhook.
+
+---
+
+## 9. Mensaje 409 engañoso en refund cuando el status cambió
 
 **Archivo:** [app/api/payment/refund/route.ts](../app/api/payment/refund/route.ts)
 

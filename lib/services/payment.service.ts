@@ -137,14 +137,26 @@ export async function createPayment(params: {
       const tooOld =
         Date.now() - lastPayment.created_at.getTime() > LOCK_TTL_MS * 2;
 
+      // Guard de monto (fix A1 post-audit): si el order.total actual difiere
+      // del amount congelado del Payment previo (ej. POS sync agregó ítems
+      // mid-flow), reusar cobraría el monto viejo → subpago al restaurante.
+      // No reusar; crear Payment nuevo con el total correcto.
+      const currentTotal = order.subtotal + order.tax + tipAmount;
+      const amountMatches =
+        Number(lastPayment.amount_in_cents) === currentTotal;
+
+      const canReuse = sameSession && !tooOld && amountMatches;
+
       if (wompiStatus === "PENDING") {
-        if (sameSession && !tooOld) {
+        if (canReuse) {
           reusablePayment = {
             id: lastPayment.id,
             reference: lastPayment.reference,
             amountInCents: Number(lastPayment.amount_in_cents),
           };
-        } else if (sameSession && tooOld) {
+        } else if (sameSession) {
+          // Misma sess pero stale (tooOld o amount drift): marcar ERROR y
+          // permitir nuevo Payment.
           paymentToMarkId = lastPayment.id;
           paymentToMarkStatus = "ERROR";
         } else {
@@ -152,9 +164,9 @@ export async function createPayment(params: {
         }
       } else if (wompiStatus === null) {
         // Wompi no tiene la transacción — user abandonó pre-checkout, o
-        // Wompi API cayó. Misma sess + reciente → reusar reference existente
-        // es idempotente en Wompi (reusa el intent).
-        if (sameSession && !tooOld) {
+        // Wompi API cayó. Misma sess + reciente + mismo monto → reusar
+        // reference existente es idempotente en Wompi (reusa el intent).
+        if (canReuse) {
           reusablePayment = {
             id: lastPayment.id,
             reference: lastPayment.reference,
