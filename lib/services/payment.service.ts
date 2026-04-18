@@ -10,16 +10,27 @@ const LOCK_TTL_MS = 4 * 60 * 1000; // 4min — cubre widget Wompi + margen.
 
 /**
  * Crea un payment bajo lock optimista. Ver plan §3 (state machine) y §4
- * (flow end-to-end). Pasos:
- *   1. Validaciones de ownership + tip + status no-final
- *   2. Retry logic PAYING — consulta Wompi para no duplicar cargo
- *   3. Lock optimista: UPDATE condicional que permite PENDING, PAYING
- *      expirado, o PAYING del mismo sessionId (retry propio). count=0
- *      → 409 ORDER_VERSION_MISMATCH.
- *   4. Crea Payment con evidencia Ley 2300 (tip_disclaimer_* si tip>0)
- *      + cols DIAN (customer_document_*; dian_doc_type queda null hasta
- *      Fase 3 que aplica la regla 5 UVT según fe_regime del restaurante).
- *   5. Llama Wompi fuera de la TX para obtener widget config.
+ * (flow end-to-end).
+ *
+ * Estructura post-review Fase 2 (evita saturar pool DB):
+ *   1. Fail-fast de config (NEXT_PUBLIC_APP_URL obligatoria)
+ *   2. Lectura + validaciones ownership/tip/status FUERA de TX
+ *   3. Retry logic PAYING FUERA de TX — checkWompiTransactionStatus hace
+ *      fetch HTTP hasta 5s; si vive dentro de db.$transaction mantiene
+ *      lock DB durante ese tiempo y con 15 conexiones Supabase + 10 pagos
+ *      concurrentes el pool se satura. Outcome se guarda en variables.
+ *   4. Decisión de reuse vs. crear nuevo:
+ *      - APPROVED          → throw "ya fue pagada"
+ *      - PENDING + same    → reuse widget (si no too old)
+ *      - PENDING + other   → throw "ya hay pago en proceso"
+ *      - null + same       → reuse widget (si no too old)
+ *      - null + other      → marcar viejo ERROR, crear nuevo
+ *      - DECLINED/VOIDED/ERROR → marcar viejo, crear nuevo
+ *      Guard de edad: si lastPayment.created_at > LOCK_TTL × 2 (8min),
+ *      nunca reusar — marcar ERROR y permitir nuevo Payment.
+ *   5. TX corta: update viejo (opcional) + lock optimista + crea Payment
+ *      + actualiza mesa. Sin HTTP externo adentro.
+ *   6. adapter.createTransaction fuera de TX (solo firma integrity, no HTTP).
  */
 export async function createPayment(params: {
   orderId: string;
@@ -56,54 +67,143 @@ export async function createPayment(params: {
     sessionId,
   } = params;
 
+  // 1. Fail-fast: sin NEXT_PUBLIC_APP_URL no podemos construir redirectUrl;
+  //    mejor cortar antes de tocar DB que mandar al user a localhost en prod.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) {
+    throw new AppError(
+      "NEXT_PUBLIC_APP_URL no configurado",
+      500,
+      "CONFIG_ERROR"
+    );
+  }
+
+  // 2. Lectura + validaciones fuera de TX (no bloquean pool).
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    include: { restaurants: true },
+  });
+  if (!order) throw new NotFoundError("Orden");
+  if (order.restaurants.slug !== claimedSlug) throw new NotFoundError("Orden");
+  if (order.table_id !== claimedTableId) throw new NotFoundError("Orden");
+
+  if (tipAmount > order.subtotal) {
+    throw new PaymentError("Monto de propina excede el máximo permitido");
+  }
+  // Defensa en profundidad — Zod ya exige disclaimer si tip>0.
+  if (tipAmount > 0 && !acceptedTipDisclaimer) {
+    throw new PaymentError("Falta aceptación del aviso de propina (Ley 2300)");
+  }
+
+  if (order.status === "PAID") throw new PaymentError("Esta orden ya fue pagada");
+  if (order.status === "CANCELLED") throw new PaymentError("Esta orden fue cancelada");
+  if (order.status === "REFUNDED" || order.status === "PARTIALLY_REFUNDED") {
+    throw new PaymentError("Esta orden tiene un reembolso registrado");
+  }
+
+  // 3. Retry logic FUERA de TX — si hubo intento previo en Wompi, no duplicar
+  //    el cargo. El JWT comensal expira en 2h (requireCustomerSession rechaza
+  //    antes de llegar acá), así que un "mismo sessionId" no viene del futuro
+  //    lejano; el guard de edad cubre widgets abandonados pero dentro de 2h.
+  let paymentToMarkId: string | null = null;
+  // En este flow siempre seteamos DECLINED/VOIDED/ERROR (APPROVED/PENDING
+  // se manejan antes con throw o reuse). El tipo amplio del return de
+  // mapWompiStatus evita un cast; las ramas de abajo nunca producen APPROVED.
+  let paymentToMarkStatus: ReturnType<typeof mapWompiStatus> = "ERROR";
+  let reusablePayment:
+    | { id: string; reference: string; amountInCents: number }
+    | null = null;
+
+  if (order.status === "PAYING") {
+    const lastPayment = await db.payment.findFirst({
+      where: { order_id: orderId, status: "PENDING" },
+      orderBy: { created_at: "desc" },
+    });
+    if (lastPayment) {
+      const wompiStatus = await checkWompiTransactionStatus(
+        order.restaurants,
+        lastPayment.reference
+      );
+
+      if (wompiStatus === "APPROVED") {
+        throw new PaymentError("Esta orden ya fue pagada");
+      }
+
+      const sameSession = order.locked_by_session_id === sessionId;
+      // Guard de edad: si el Payment tiene más de LOCK_TTL × 2 (8min),
+      // aunque sea misma sess el widget cliente probablemente expiró.
+      // Marcamos ERROR y creamos uno nuevo — riesgo residual de doble cobro
+      // si Wompi aprueba después es bajo (widget Wompi timeouts ~5min).
+      const tooOld =
+        Date.now() - lastPayment.created_at.getTime() > LOCK_TTL_MS * 2;
+
+      if (wompiStatus === "PENDING") {
+        if (sameSession && !tooOld) {
+          reusablePayment = {
+            id: lastPayment.id,
+            reference: lastPayment.reference,
+            amountInCents: Number(lastPayment.amount_in_cents),
+          };
+        } else if (sameSession && tooOld) {
+          paymentToMarkId = lastPayment.id;
+          paymentToMarkStatus = "ERROR";
+        } else {
+          throw new PaymentError("Ya hay un pago en proceso para esta orden");
+        }
+      } else if (wompiStatus === null) {
+        // Wompi no tiene la transacción — user abandonó pre-checkout, o
+        // Wompi API cayó. Misma sess + reciente → reusar reference existente
+        // es idempotente en Wompi (reusa el intent).
+        if (sameSession && !tooOld) {
+          reusablePayment = {
+            id: lastPayment.id,
+            reference: lastPayment.reference,
+            amountInCents: Number(lastPayment.amount_in_cents),
+          };
+        } else {
+          paymentToMarkId = lastPayment.id;
+          paymentToMarkStatus = "ERROR";
+        }
+      } else {
+        // DECLINED / VOIDED / ERROR → permitir retry tras marcar el viejo.
+        paymentToMarkId = lastPayment.id;
+        paymentToMarkStatus = mapWompiStatus(wompiStatus);
+      }
+    }
+  }
+
+  // 4. Reuse path: regenerar widget con misma reference y salir sin tocar DB.
+  if (reusablePayment) {
+    const adapter = getPaymentAdapter({
+      posProvider: order.restaurants.pos_provider,
+      wompiPublicKey: order.restaurants.wompi_public_key,
+      wompiPrivateKey: order.restaurants.wompi_private_key,
+      wompiEventsSecret: order.restaurants.wompi_events_secret,
+      wompiIntegritySecret: order.restaurants.wompi_integrity_secret,
+    });
+    const redirectUrl = `${appUrl}/${order.restaurants.slug}/${order.table_id}/result?ref=${reusablePayment.reference}`;
+    const widgetConfig = await adapter.createTransaction({
+      amountInCents: reusablePayment.amountInCents,
+      reference: reusablePayment.reference,
+      redirectUrl,
+      customerEmail,
+    });
+    return {
+      paymentId: reusablePayment.id,
+      reference: reusablePayment.reference,
+      widgetConfig,
+      orderVersion: order.version,
+    };
+  }
+
+  // 5. TX corta — solo operaciones DB.
   const { payment, tableId, restaurant, nextVersion } = await db.$transaction(
     async (tx) => {
-      const order = await tx.order.findUnique({
-        where: { id: orderId },
-        include: { restaurants: true },
-      });
-      if (!order) throw new NotFoundError("Orden");
-      if (order.restaurants.slug !== claimedSlug) throw new NotFoundError("Orden");
-      if (order.table_id !== claimedTableId) throw new NotFoundError("Orden");
-
-      if (tipAmount > order.subtotal) {
-        throw new PaymentError("Monto de propina excede el máximo permitido");
-      }
-      // Defensa en profundidad — Zod ya exige disclaimer si tip>0.
-      if (tipAmount > 0 && !acceptedTipDisclaimer) {
-        throw new PaymentError("Falta aceptación del aviso de propina (Ley 2300)");
-      }
-
-      if (order.status === "PAID") throw new PaymentError("Esta orden ya fue pagada");
-      if (order.status === "CANCELLED") throw new PaymentError("Esta orden fue cancelada");
-      if (order.status === "REFUNDED" || order.status === "PARTIALLY_REFUNDED") {
-        throw new PaymentError("Esta orden tiene un reembolso registrado");
-      }
-
-      // Retry logic: si ya hubo intento en Wompi, no duplicar el cargo.
-      if (order.status === "PAYING") {
-        const lastPayment = await tx.payment.findFirst({
-          where: { order_id: orderId, status: "PENDING" },
-          orderBy: { created_at: "desc" },
+      if (paymentToMarkId) {
+        await tx.payment.update({
+          where: { id: paymentToMarkId },
+          data: { status: paymentToMarkStatus },
         });
-        if (lastPayment) {
-          const wompiStatus = await checkWompiTransactionStatus(
-            order.restaurants,
-            lastPayment.reference
-          );
-          if (wompiStatus === "APPROVED") {
-            throw new PaymentError("Esta orden ya fue pagada");
-          }
-          if (wompiStatus === "PENDING") {
-            throw new PaymentError("Ya hay un pago en proceso para esta orden");
-          }
-          // DECLINED / ERROR / VOIDED / null → permitir retry tras marcar
-          // el payment viejo con el estado real.
-          await tx.payment.update({
-            where: { id: lastPayment.id },
-            data: { status: mapWompiStatus(wompiStatus || "ERROR") },
-          });
-        }
       }
 
       const total = order.subtotal + order.tax + tipAmount;
@@ -112,7 +212,7 @@ export async function createPayment(params: {
       //   - orden PENDING con version match → nuevo lock
       //   - PAYING expirado → override del lock muerto
       //   - PAYING del mismo session → retry del propio comensal
-      // count=0 → otra sesión ganó; devolvemos 409.
+      // count=0 → otra sesión ganó o status cambió a PAID/CANCELLED → 409.
       const lockResult = await tx.order.updateMany({
         where: {
           id: orderId,
@@ -187,8 +287,8 @@ export async function createPayment(params: {
     }
   );
 
+  // 6. adapter.createTransaction fuera de TX (no hace HTTP; solo firma integrity).
   const reference = payment.reference;
-
   const adapter = getPaymentAdapter({
     posProvider: restaurant.pos_provider,
     wompiPublicKey: restaurant.wompi_public_key,
@@ -197,7 +297,6 @@ export async function createPayment(params: {
     wompiIntegritySecret: restaurant.wompi_integrity_secret,
   });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const redirectUrl = `${appUrl}/${restaurant.slug}/${tableId}/result?ref=${reference}`;
 
   const widgetConfig = await adapter.createTransaction({

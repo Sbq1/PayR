@@ -13,8 +13,16 @@ import { AppError } from "@/lib/utils/errors";
 //
 // Se saca del camino happy path con el menor número de queries (1-2).
 
-/** Ventana durante la cual un request en vuelo bloquea duplicados. */
-const IN_FLIGHT_WINDOW_MS = 30_000;
+/**
+ * Ventana durante la cual un request en vuelo bloquea duplicados.
+ *
+ * 60s post-review Fase 2: cubre timeout típico Wompi (15-30s) + margen
+ * para el user tarda en completar tarjeta. A 30s un tercer click tras
+ * timeout de Wompi caía fuera de la ventana y se creaba Payment #2;
+ * combinado con el reuse-si-misma-sess en payment.service.ts evita
+ * doble cobro sin empeorar UX.
+ */
+const IN_FLIGHT_WINDOW_MS = 60_000;
 const DEFAULT_TTL_SECONDS = 24 * 60 * 60; // 24h
 
 export interface IdempotencyParams {
@@ -103,7 +111,7 @@ export async function withIdempotency<T>(
         "IDEMPOTENCY_IN_FLIGHT"
       );
     }
-    // Lock stale (>30s sin completar) — asumimos que el handler crasheó
+    // Lock stale (>60s sin completar) — asumimos que el handler crasheó
     // y dejó el slot huérfano. Procedemos con el update abajo para
     // re-tomarlo.
   }
