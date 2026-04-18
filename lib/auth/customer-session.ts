@@ -10,20 +10,10 @@ import { AppError } from "@/lib/utils/errors";
 export const CUSTOMER_SESSION_TTL_SECONDS = 2 * 60 * 60; // 2h
 export const RECEIPT_SCOPE_TTL_SECONDS = 15 * 60; // 15min
 
-let _secretCache: Uint8Array | null = null;
-
 function getSecret(): Uint8Array {
-  if (_secretCache) return _secretCache;
   const s = process.env.AUTH_SECRET;
-  if (!s) {
-    throw new AppError(
-      "AUTH_SECRET no configurado",
-      500,
-      "CONFIG_ERROR"
-    );
-  }
-  _secretCache = new TextEncoder().encode(s);
-  return _secretCache;
+  if (!s) throw new AppError("AUTH_SECRET no configurado", 500, "CONFIG_ERROR");
+  return new TextEncoder().encode(s);
 }
 
 export type CustomerScope = `table:${string}` | `receipt:${string}`;

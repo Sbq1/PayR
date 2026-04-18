@@ -65,8 +65,9 @@ export async function startSession(
     },
   });
 
-  // "TABLE_NOT_FOUND" genérico para todos los 404 para no servir de oráculo
-  // de enumeración (mesa inexistente vs inactiva vs slug mismatch).
+  // TABLE_NOT_FOUND colapsa 3 casos (mesa inexistente / inactiva / slug
+  // mismatch) para no enumerar. RESTAURANT_INACTIVE abajo sí es específico
+  // — el copy amigable al comensal gana sobre hiding en ese caso.
   if (!table || !table.is_active || table.restaurants.slug !== input.slug) {
     throw new AppError("Mesa no encontrada", 404, "TABLE_NOT_FOUND");
   }
