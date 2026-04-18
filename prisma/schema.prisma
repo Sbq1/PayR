@@ -21,6 +21,7 @@ model User {
   cancelled_orders      Order[]              @relation("OrderCancelledBy")
   password_reset_tokens PasswordResetToken[]
   auth_events           AuthEvent[]
+  initiated_refunds     Refund[]
 
   @@map("users")
 }
@@ -143,26 +144,31 @@ model QrCode {
 }
 
 model Order {
-  id                   String       @id @default(dbgenerated("(gen_random_uuid())::text"))
-  restaurant_id        String
-  table_id             String
-  siigo_invoice_id     String?
-  subtotal             Int
-  tax                  Int          @default(0)
-  tip_amount           Int          @default(0)
-  tip_percentage       Float?
-  total                Int
-  customer_count       Int          @default(1)
-  status               order_status @default(PENDING)
-  cancelled_by_user_id String?
-  cancelled_at         DateTime?    @db.Timestamptz(6)
-  created_at           DateTime     @default(now()) @db.Timestamptz(6)
-  updated_at           DateTime     @default(now()) @db.Timestamptz(6)
-  order_items          OrderItem[]
-  restaurants          Restaurant   @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  tables               Table        @relation(fields: [table_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  cancelled_by         User?        @relation("OrderCancelledBy", fields: [cancelled_by_user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  payments             Payment[]
+  id                    String       @id @default(dbgenerated("(gen_random_uuid())::text"))
+  restaurant_id         String
+  table_id              String
+  siigo_invoice_id      String?
+  subtotal              Int
+  tax                   Int          @default(0)
+  tip_amount            Int          @default(0)
+  tip_percentage        Float?
+  total                 Int
+  customer_count        Int          @default(1)
+  status                order_status @default(PENDING)
+  version               Int          @default(0)
+  locked_at             DateTime?    @db.Timestamptz(6)
+  lock_expires_at       DateTime?    @db.Timestamptz(6)
+  locked_by_session_id  String?
+  cancelled_by_user_id  String?
+  cancelled_at          DateTime?    @db.Timestamptz(6)
+  created_at            DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime     @default(now()) @db.Timestamptz(6)
+  order_items           OrderItem[]
+  restaurants           Restaurant   @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tables                Table        @relation(fields: [table_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cancelled_by          User?        @relation("OrderCancelledBy", fields: [cancelled_by_user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  locked_by_session     Session?     @relation("OrderLockedBySession", fields: [locked_by_session_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  payments              Payment[]
 
   @@index([restaurant_id, created_at], map: "idx_orders_restaurant_date")
   @@index([table_id], map: "idx_orders_table")
@@ -186,20 +192,29 @@ model OrderItem {
 }
 
 model Payment {
-  id                   String         @id @default(dbgenerated("(gen_random_uuid())::text"))
-  order_id             String
-  wompi_transaction_id String?        @unique
-  reference            String         @unique
-  amount_in_cents      Int
-  currency             String         @default("COP")
-  status               payment_status @default(PENDING)
-  payment_method_type  String?
-  customer_email       String?
-  wompi_response       Json?
-  created_at           DateTime       @default(now()) @db.Timestamptz(6)
-  paid_at              DateTime?      @db.Timestamptz(6)
-  orders               Order          @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  sessions             Session[]
+  id                           String         @id @default(dbgenerated("(gen_random_uuid())::text"))
+  order_id                     String
+  wompi_transaction_id         String?        @unique
+  reference                    String         @unique
+  amount_in_cents              Int
+  currency                     String         @default("COP")
+  status                       payment_status @default(PENDING)
+  payment_method_type          String?
+  customer_email               String?
+  wompi_response               Json?
+  tip_amount                   Int            @default(0)
+  tip_percentage               Decimal?       @db.Decimal(5, 2)
+  tip_disclaimer_accepted_at   DateTime?      @db.Timestamptz(6)
+  tip_disclaimer_text_version  String?
+  customer_document_type       String?
+  customer_document_number     String?
+  dian_doc_type                String?
+  refunded_amount              Int            @default(0)
+  created_at                   DateTime       @default(now()) @db.Timestamptz(6)
+  paid_at                      DateTime?      @db.Timestamptz(6)
+  orders                       Order          @relation(fields: [order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sessions                     Session[]
+  refunds                      Refund[]
 
   @@index([order_id], map: "idx_payments_order")
   @@index([reference], map: "idx_payments_reference")
@@ -229,6 +244,8 @@ enum order_status {
   PAYING
   PAID
   CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
 }
 
 enum payment_status {
@@ -237,6 +254,8 @@ enum payment_status {
   DECLINED
   VOIDED
   ERROR
+  REFUNDED
+  PARTIALLY_REFUNDED
 }
 
 enum plan_tier {
@@ -302,11 +321,63 @@ model Session {
   expires_at    DateTime  @db.Timestamptz(6)
   revoked_at    DateTime? @db.Timestamptz(6)
 
-  tables      Table      @relation(fields: [table_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  restaurants Restaurant @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  payments    Payment?   @relation(fields: [payment_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  tables           Table             @relation(fields: [table_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  restaurants      Restaurant        @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  payments         Payment?          @relation(fields: [payment_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  locked_orders    Order[]           @relation("OrderLockedBySession")
+  idempotency_keys IdempotencyKey[]
 
   @@index([expires_at], map: "idx_sessions_expires")
   @@index([table_id, expires_at], map: "idx_sessions_table")
   @@map("sessions")
+}
+
+/// Header HTTP Idempotency-Key. PK compuesto (key, session_id, endpoint)
+/// evita colisiones cross-session y cross-endpoint. Ver migración 4 para
+/// semántica de request_hash / locked_at / completed_at / expires_at.
+model IdempotencyKey {
+  key             String
+  session_id      String
+  endpoint        String
+  request_hash    String
+  response_status Int?
+  response_body   Json?
+  locked_at       DateTime  @default(now()) @db.Timestamptz(6)
+  completed_at    DateTime? @db.Timestamptz(6)
+  expires_at      DateTime  @db.Timestamptz(6)
+
+  session Session @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([key, session_id, endpoint])
+  @@index([expires_at], map: "idx_idempotency_expires")
+  @@map("idempotency_keys")
+}
+
+/// Skeleton v1: el staff del restaurante abre el modal de refund; este
+/// endpoint crea el row con status='PENDING' y un humano procesa el
+/// refund real en panel Wompi + nota crédito Siigo. Post-piloto (v2)
+/// será automatizado. 3 capas anti-race: idempotency_key UNIQUE +
+/// unique index de dedupe semántico + lock optimista en
+/// payments.refunded_amount. Ver migración 8.
+model Refund {
+  id                   String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  payment_id           String
+  amount_in_cents      Int
+  reason               String
+  reason_hash          String
+  idempotency_key      String    @unique
+  initiated_by         String
+  status               String    @default("PENDING") // PENDING | APPROVED | FAILED
+  wompi_refund_id      String?
+  siigo_credit_note_id String?
+  error_message        String?
+  created_at           DateTime  @default(now()) @db.Timestamptz(6)
+  processed_at         DateTime? @db.Timestamptz(6)
+
+  payments Payment @relation(fields: [payment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user     User    @relation(fields: [initiated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([payment_id], map: "idx_refunds_payment")
+  @@index([status], map: "idx_refunds_status")
+  @@map("refunds")
 }
