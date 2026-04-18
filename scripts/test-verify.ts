@@ -28,22 +28,34 @@ import { signQrToken } from "../lib/services/qr-token.service";
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:3000";
 
 /**
- * fetch JSON con error útil si llega HTML (típico cuando el server no
- * corre o se apunta a la URL equivocada y Next devuelve una 404 HTML).
+ * fetch con mensaje útil ante los 2 modos de falla típicos:
+ *  - network error (servidor caído) → Node fetch lanza antes del response
+ *  - HTML 404 (URL equivocada) → response OK pero JSON.parse explota
  */
 async function fetchJson(
   url: string,
   init?: RequestInit
 ): Promise<{ status: number; body: unknown }> {
-  const res = await fetch(url, init);
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `No se pudo conectar a ${url}.\n` +
+        `  ¿Tenés "npm run dev" corriendo en ${BASE_URL}?\n` +
+        `  (Para apuntar a otro host, setear TEST_BASE_URL.)\n` +
+        `  Detalle: ${msg}`
+    );
+  }
   const text = await res.text();
   try {
     return { status: res.status, body: text ? JSON.parse(text) : {} };
   } catch {
     throw new Error(
-      `Respuesta no-JSON de ${url} (status ${res.status}). ` +
-        `¿Servidor dev corriendo en ${BASE_URL}? ` +
-        `Primeros 80 chars: ${text.slice(0, 80).replace(/\n/g, " ")}`
+      `Respuesta no-JSON de ${url} (status ${res.status}).\n` +
+        `  ¿${BASE_URL} tiene Fase 1 deployada?\n` +
+        `  Primeros 80 chars: ${text.slice(0, 80).replace(/\n/g, " ")}`
     );
   }
 }
