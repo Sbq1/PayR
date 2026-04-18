@@ -4,6 +4,8 @@ import { getPosAdapter } from "@/lib/adapters/pos";
 import { NotFoundError, PaymentError } from "@/lib/utils/errors";
 import type { WompiWebhookEvent, WompiWidgetConfig } from "@/lib/adapters/payment/types";
 
+type WompiTransaction = WompiWebhookEvent["data"]["transaction"];
+
 /**
  * Crea un pago para una orden:
  * 1. Busca orden + restaurante
@@ -305,35 +307,216 @@ async function checkWompiTransactionStatus(
   reference: string
 ): Promise<string | null> {
   if (!restaurant.wompi_public_key) return null;
+  const txn = await fetchWompiTransactionByReference(
+    restaurant.wompi_public_key,
+    reference,
+    5_000
+  );
+  return txn?.status ?? null;
+}
+
+/**
+ * Consulta Wompi API y retorna el objeto transaction completo si existe.
+ * Compartido entre `checkWompiTransactionStatus` (retry en createPayment) y
+ * `reconcilePayment` (verify + cron de reconciliación).
+ */
+async function fetchWompiTransactionByReference(
+  publicKey: string,
+  reference: string,
+  timeoutMs = 10_000
+): Promise<WompiTransaction | null> {
+  const env = (process.env.WOMPI_ENVIRONMENT || "sandbox")
+    .replace(/\\n|\n/g, "")
+    .trim();
+  const baseUrl =
+    env === "production"
+      ? "https://production.wompi.co"
+      : "https://sandbox.wompi.co";
 
   try {
-    const env = (process.env.WOMPI_ENVIRONMENT || "sandbox")
-      .replace(/\\n|\n/g, "")
-      .trim();
-    const baseUrl =
-      env === "production"
-        ? "https://production.wompi.co"
-        : "https://sandbox.wompi.co";
-
     const res = await fetch(
-      `${baseUrl}/v1/transactions?reference=${reference}`,
+      `${baseUrl}/v1/transactions?reference=${encodeURIComponent(reference)}`,
       {
-        headers: {
-          Authorization: `Bearer ${restaurant.wompi_public_key}`,
-        },
-        signal: AbortSignal.timeout(5_000),
+        headers: { Authorization: `Bearer ${publicKey}` },
+        signal: AbortSignal.timeout(timeoutMs),
       }
     );
-
     if (!res.ok) return null;
-
     const { data } = await res.json();
-    if (data && data.length > 0) return data[0].status;
-
-    return null; // No transaction found in Wompi
+    if (Array.isArray(data) && data.length > 0) {
+      return data[0] as WompiTransaction;
+    }
+    return null;
   } catch {
-    return null; // Network error — treat as no transaction
+    return null;
   }
+}
+
+/**
+ * Resultado de reconciliar un payment con Wompi.
+ * El caller decide cómo mapear a HTTP status / métrica.
+ */
+export type ReconcileOutcome =
+  | { status: "APPROVED"; applied: boolean; alreadyFinal?: boolean }
+  | { status: "DECLINED" | "VOIDED" | "ERROR"; applied: boolean }
+  | { status: "PENDING" }
+  | { status: "NOT_FOUND" }
+  | { status: "MISMATCH"; field: "reference" | "amount" | "currency" };
+
+/**
+ * Reconcilia un payment con Wompi por reference.
+ *
+ * Consulta Wompi API, valida reference/amount/currency exactos, y aplica
+ * la transición de estado de forma atómica con re-check dentro de la TX
+ * para prevenir race conditions con el webhook concurrente.
+ *
+ * Idempotente: si el payment ya está en estado final, retorna `alreadyFinal`.
+ *
+ * Usado por:
+ * - `/api/payment/verify` (polling del cliente tras redirect Wompi)
+ * - `/api/cron/reconcile-payments-*` (reconciliación server-side)
+ */
+export async function reconcilePayment(
+  reference: string
+): Promise<ReconcileOutcome> {
+  const payment = await db.payment.findUnique({
+    where: { reference },
+    include: {
+      orders: { include: { restaurants: true } },
+    },
+  });
+
+  if (!payment) return { status: "NOT_FOUND" };
+
+  if (payment.status === "APPROVED") {
+    return { status: "APPROVED", applied: false, alreadyFinal: true };
+  }
+  if (
+    payment.status === "DECLINED" ||
+    payment.status === "VOIDED" ||
+    payment.status === "ERROR"
+  ) {
+    return { status: payment.status, applied: false };
+  }
+  if (payment.status !== "PENDING") {
+    return { status: "PENDING" };
+  }
+
+  const restaurant = payment.orders.restaurants;
+
+  // Sin credenciales Wompi completas (modo demo) → nada que reconciliar.
+  if (
+    !restaurant.wompi_public_key ||
+    !restaurant.wompi_private_key ||
+    !restaurant.wompi_events_secret ||
+    !restaurant.wompi_integrity_secret
+  ) {
+    return { status: "PENDING" };
+  }
+
+  const txn = await fetchWompiTransactionByReference(
+    restaurant.wompi_public_key,
+    reference
+  );
+
+  if (!txn) return { status: "PENDING" };
+
+  // Validación estricta antes de aplicar transición.
+  if (txn.reference !== payment.reference) {
+    return { status: "MISMATCH", field: "reference" };
+  }
+  if (txn.amount_in_cents !== payment.amount_in_cents) {
+    return { status: "MISMATCH", field: "amount" };
+  }
+  if (txn.currency !== "COP") {
+    return { status: "MISMATCH", field: "currency" };
+  }
+
+  if (txn.status === "APPROVED") {
+    const result = await db.$transaction(async (tx) => {
+      const fresh = await tx.payment.findUnique({
+        where: { id: payment.id },
+        select: { status: true },
+      });
+      if (!fresh || fresh.status !== "PENDING") {
+        return { applied: false };
+      }
+
+      await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          wompi_transaction_id: txn.id,
+          status: "APPROVED",
+          payment_method_type: txn.payment_method_type,
+          customer_email: txn.customer_email || payment.customer_email,
+          paid_at: new Date(),
+        },
+      });
+
+      await tx.order.update({
+        where: { id: payment.order_id },
+        data: { status: "PAID" },
+      });
+
+      await tx.table.update({
+        where: { id: payment.orders.table_id },
+        data: { status: "AVAILABLE" },
+      });
+
+      return { applied: true };
+    });
+
+    // Cerrar en POS fuera de la TX DB (I/O externo, no transaccional).
+    if (result.applied && payment.orders.siigo_invoice_id) {
+      try {
+        const posAdapter = getPosAdapter({
+          posProvider: restaurant.pos_provider,
+          siigoUsername: restaurant.siigo_username,
+          siigoAccessKey: restaurant.siigo_access_key,
+        });
+        await posAdapter.closeTable(
+          payment.orders.siigo_invoice_id,
+          payment.amount_in_cents
+        );
+      } catch (error) {
+        console.error("Error closing table in POS:", error);
+      }
+    }
+
+    return { status: "APPROVED", applied: result.applied };
+  }
+
+  if (
+    txn.status === "DECLINED" ||
+    txn.status === "VOIDED" ||
+    txn.status === "ERROR"
+  ) {
+    // Narrow el string del API externo al literal union aceptado por Prisma.
+    const finalStatus: "DECLINED" | "VOIDED" | "ERROR" = txn.status;
+
+    const applied = await db.$transaction(async (tx) => {
+      const fresh = await tx.payment.findUnique({
+        where: { id: payment.id },
+        select: { status: true },
+      });
+      if (!fresh || fresh.status !== "PENDING") return false;
+
+      await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          wompi_transaction_id: txn.id,
+          status: finalStatus,
+          payment_method_type: txn.payment_method_type,
+        },
+      });
+      return true;
+    });
+
+    return { status: finalStatus, applied };
+  }
+
+  // Wompi todavía en PENDING u otro estado no final.
+  return { status: "PENDING" };
 }
 
 function mapWompiStatus(
