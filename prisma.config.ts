@@ -11,6 +11,10 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DIRECT_URL"]!,
+    // MIGRATION_URL usa el role `postgres` (superuser) — necesario para DDL
+    // (CREATE TABLE, ALTER TYPE, etc.) que el role `payr_prod` de DIRECT_URL
+    // no tiene permiso para ejecutar. Principio de mínimo privilegio:
+    // runtime usa payr_prod limitado; migraciones usan postgres superuser.
+    url: process.env["MIGRATION_URL"] ?? process.env["DIRECT_URL"]!,
   },
 });
