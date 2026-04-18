@@ -321,20 +321,21 @@ model Session {
   expires_at    DateTime  @db.Timestamptz(6)
   revoked_at    DateTime? @db.Timestamptz(6)
 
-  tables           Table             @relation(fields: [table_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  restaurants      Restaurant        @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  payments         Payment?          @relation(fields: [payment_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
-  locked_orders    Order[]           @relation("OrderLockedBySession")
-  idempotency_keys IdempotencyKey[]
+  tables        Table      @relation(fields: [table_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  restaurants   Restaurant @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  payments      Payment?   @relation(fields: [payment_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  locked_orders Order[]    @relation("OrderLockedBySession")
 
   @@index([expires_at], map: "idx_sessions_expires")
   @@index([table_id, expires_at], map: "idx_sessions_table")
   @@map("sessions")
 }
 
-/// Header HTTP Idempotency-Key. PK compuesto (key, session_id, endpoint)
-/// evita colisiones cross-session y cross-endpoint. Ver migración 4 para
-/// semántica de request_hash / locked_at / completed_at / expires_at.
+/// Header HTTP Idempotency-Key. PK compuesto (key, session_id, endpoint).
+/// `session_id` es un SCOPE genérico (sesión efímera del comensal para
+/// endpoints /api/..., o user.id del staff para endpoints del dashboard).
+/// Sin FK: las sesiones de comensal tienen TTL 2h y los users no se
+/// borran; el cron expire-sessions purga por expires_at (Fase 4).
 model IdempotencyKey {
   key             String
   session_id      String
@@ -345,8 +346,6 @@ model IdempotencyKey {
   locked_at       DateTime  @default(now()) @db.Timestamptz(6)
   completed_at    DateTime? @db.Timestamptz(6)
   expires_at      DateTime  @db.Timestamptz(6)
-
-  session Session @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([key, session_id, endpoint])
   @@index([expires_at], map: "idx_idempotency_expires")
