@@ -97,6 +97,7 @@ model Restaurant {
   qr_logo_data           Bytes?
   qr_logo_mime           String?
   qr_frame_style         String           @default("none")
+  fe_regime              fe_regime        @default(OPTIONAL)
   is_active              Boolean          @default(true)
   created_at             DateTime         @default(now()) @db.Timestamptz(6)
   updated_at             DateTime         @default(now()) @db.Timestamptz(6)
@@ -268,6 +269,16 @@ enum table_status {
   AVAILABLE
   OCCUPIED
   PAYING
+}
+
+/// Régimen de Factura Electrónica DIAN del restaurante.
+/// - MANDATORY: total >= 5 UVT exige customer_document → dian_doc_type='E_INVOICE'
+/// - OPTIONAL:  documento equivalente POS siempre; FE bajo solicitud
+/// - EXEMPT:    no emite FE bajo ningún monto
+enum fe_regime {
+  MANDATORY
+  OPTIONAL
+  EXEMPT
 }
 
 enum auth_event_type {
