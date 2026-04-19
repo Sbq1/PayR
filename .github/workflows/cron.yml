@@ -1,0 +1,57 @@
+# Workaround para Vercel Hobby (cron limitado a 1/día).
+# GitHub Actions cron: mínimo 5min, best-effort (puede retrasarse hasta ~15min
+# en horas pico). Aceptable pre-piloto; al upgradar a Vercel Pro, restaurar
+# vercel.json y eliminar este archivo.
+#
+# Secrets requeridos en el repo (Settings → Secrets and variables → Actions):
+#   - VERCEL_APP_URL    → p.ej. https://smart-checkout.vercel.app
+#   - CRON_SECRET       → mismo valor que Vercel env var CRON_SECRET
+name: External Crons (Hobby workaround)
+
+on:
+  schedule:
+    # reconcile-payments-hot: originalmente */2, degradado a */5 por límite GH Actions
+    - cron: "*/5 * * * *"
+    # reconcile-payments-zombie + expire-sessions: originalmente */5, mantenido
+    - cron: "*/15 * * * *"
+  workflow_dispatch: # permite disparo manual desde UI
+
+jobs:
+  reconcile-hot:
+    if: github.event.schedule == '*/5 * * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit reconcile-payments-hot
+        run: |
+          curl -fsS "$VERCEL_APP_URL/api/cron/reconcile-payments-hot" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            --max-time 60 | tee /dev/stderr
+        env:
+          VERCEL_APP_URL: ${{ secrets.VERCEL_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+  reconcile-zombie:
+    if: github.event.schedule == '*/15 * * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit reconcile-payments-zombie
+        run: |
+          curl -fsS "$VERCEL_APP_URL/api/cron/reconcile-payments-zombie" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            --max-time 60 | tee /dev/stderr
+        env:
+          VERCEL_APP_URL: ${{ secrets.VERCEL_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+  expire-sessions:
+    if: github.event.schedule == '*/15 * * * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit expire-sessions
+        run: |
+          curl -fsS "$VERCEL_APP_URL/api/cron/expire-sessions" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            --max-time 60 | tee /dev/stderr
+        env:
+          VERCEL_APP_URL: ${{ secrets.VERCEL_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
