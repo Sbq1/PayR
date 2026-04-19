@@ -1,0 +1,61 @@
+import { NextRequest } from "next/server";
+import { db } from "@/lib/db";
+import { verifyCronSecret } from "@/lib/utils/cron-auth";
+
+/**
+ * GET /api/cron/expire-sessions  (Vercel Cron cada 5 min)
+ *
+ * Barrido en una sola TX:
+ *  1) Libera locks de orders PAYING stale (guard: no existe payment APPROVED).
+ *  2) Revoca sessions vencidas (revoked_at NULL AND expires_at < NOW()).
+ *  3) Purga idempotency_keys vencidas.
+ *  4) GC processed_webhooks > 180 días.
+ *
+ * Una sola transacción para consistencia del barrido; si algo falla, nada
+ * cambia y el próximo tick reintenta.
+ */
+export async function GET(request: NextRequest) {
+  if (!verifyCronSecret(request)) {
+    return Response.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const [locksReleased, sessionsRevoked, idempotencyPurged, webhooksPurged] =
+    await db.$transaction([
+      db.$executeRaw`
+        UPDATE orders
+           SET status = 'PENDING',
+               version = version + 1,
+               locked_at = NULL,
+               lock_expires_at = NULL,
+               locked_by_session_id = NULL
+         WHERE status = 'PAYING'
+           AND lock_expires_at < NOW()
+           AND NOT EXISTS (
+             SELECT 1 FROM payments
+              WHERE payments.order_id = orders.id
+                AND payments.status = 'APPROVED'
+           )
+      `,
+      db.$executeRaw`
+        UPDATE sessions
+           SET revoked_at = NOW()
+         WHERE revoked_at IS NULL
+           AND expires_at < NOW()
+      `,
+      db.$executeRaw`
+        DELETE FROM idempotency_keys
+         WHERE expires_at < NOW()
+      `,
+      db.$executeRaw`
+        DELETE FROM processed_webhooks
+         WHERE received_at < NOW() - INTERVAL '180 days'
+      `,
+    ]);
+
+  return Response.json({
+    locksReleased,
+    sessionsRevoked,
+    idempotencyPurged,
+    webhooksPurged,
+  });
+}
