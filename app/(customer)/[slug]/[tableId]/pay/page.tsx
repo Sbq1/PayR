@@ -16,11 +16,7 @@ import { DemoCheckout } from "@/components/payment/demo-checkout";
 import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import type { WompiWidgetConfig } from "@/lib/adapters/payment/types";
-
-// Versionado del texto de Ley 2300/2023. Si el texto cambia en el futuro
-// se incrementa este identificador y se guarda junto al timestamp en
-// payments.tip_disclaimer_text_version como evidencia legal.
-const TIP_DISCLAIMER_VERSION = "ley-2300-v1";
+import { CURRENT_TIP_DISCLAIMER_VERSION } from "@/lib/constants/legal-texts";
 
 export default function PayPage() {
   const params = useParams<{ slug: string; tableId: string }>();
@@ -90,7 +86,7 @@ export default function PayPage() {
           expectedVersion: data!.orderVersion,
           // Ley 2300: evidencia por pago. Se persiste en payments.
           acceptedTipDisclaimer: needsDisclaimer ? acceptedTip : false,
-          tipDisclaimerTextVersion: TIP_DISCLAIMER_VERSION,
+          tipDisclaimerTextVersion: CURRENT_TIP_DISCLAIMER_VERSION,
         }),
       });
 

@@ -1,4 +1,15 @@
 import { z } from "zod/v4";
+import {
+  TIP_DISCLAIMER_VERSIONS,
+  CURRENT_TIP_DISCLAIMER_VERSION,
+} from "@/lib/constants/legal-texts";
+
+// Whitelist derivado del mapa versionado — evita que un cliente inyecte
+// strings arbitrarios como evidencia legal en payments.tip_disclaimer_text_version.
+const TIP_DISCLAIMER_VERSION_KEYS = Object.keys(TIP_DISCLAIMER_VERSIONS) as [
+  string,
+  ...string[],
+];
 
 // Body de POST /api/payment/create. Desde Fase 2 incluye evidencia legal
 // (Ley 2300) + documento DIAN condicional + expectedVersion para el
@@ -21,7 +32,11 @@ export const createPaymentSchema = z
 
     // Ley 2300: aceptación explícita obligatoria cuando hay propina > 0.
     acceptedTipDisclaimer: z.boolean().default(false),
-    tipDisclaimerTextVersion: z.string().max(40).default("ley-2300-v1"),
+    // Enum whitelist desde lib/constants/legal-texts.ts. Un string
+    // arbitrario rompe la trazabilidad legal.
+    tipDisclaimerTextVersion: z
+      .enum(TIP_DISCLAIMER_VERSION_KEYS)
+      .default(CURRENT_TIP_DISCLAIMER_VERSION),
 
     // DIAN 5 UVT: identificación del adquiriente. Opcional en el schema,
     // pero el service rechaza 422 si fe_regime='MANDATORY' y total >= 5UVT
