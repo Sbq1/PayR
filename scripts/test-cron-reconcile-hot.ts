@@ -131,10 +131,12 @@ async function main() {
         },
       });
       createdRefs.push(ref);
-      // Forzar updated_at via raw.
+      // Forzar created_at via raw. `make_interval` evita concat integer||text
+      // que requiere cast explícito en PG. Usamos created_at porque el
+      // schema de payments no tiene updated_at (ver route.ts).
       await db.$executeRaw`
         UPDATE payments
-           SET updated_at = NOW() - (${updatedAgoSec} || ' seconds')::interval
+           SET created_at = NOW() - make_interval(secs => ${updatedAgoSec})
          WHERE reference = ${ref}
       `;
     }

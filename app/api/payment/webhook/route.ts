@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { db } from "@/lib/db";
 import { handlePaymentWebhook } from "@/lib/services/payment.service";
 import { PaymentError } from "@/lib/utils/errors";
@@ -29,10 +30,20 @@ const webhookLimiter = rateLimit("wompi-webhook-global", {
  */
 export async function POST(request: NextRequest) {
   // Rate limit global ANTES de parsear JSON y validar HMAC para proteger CPU.
-  const rl = await webhookLimiter.check("global");
-  if (!rl.success) {
-    logger.error("webhook.rate_limited", { resetAt: rl.resetAt });
-    return rateLimitResponse(rl.resetAt);
+  // Fail-OPEN ante error de Upstash: processed_webhooks + HMAC ya cubren
+  // replay/atacante. Perder un webhook vale más (UX +3min al cron reconcile)
+  // que bloquear por una caída rara de Redis. Sentry WARN para monitoreo.
+  try {
+    const rl = await webhookLimiter.check("global");
+    if (!rl.success) {
+      logger.error("webhook.rate_limited", { resetAt: rl.resetAt });
+      return rateLimitResponse(rl.resetAt);
+    }
+  } catch (err) {
+    Sentry.captureMessage(
+      "Webhook rate limit check failed, failing open",
+      { level: "warning", extra: { error: String(err) } }
+    );
   }
 
   try {

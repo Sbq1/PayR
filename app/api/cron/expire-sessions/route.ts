@@ -19,38 +19,45 @@ export async function GET(request: NextRequest) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  // Callback-form para poder configurar `timeout: 30s` — cubre barrido
+  // grande de webhooks >180d tras GC backlog. Default de Prisma (5s)
+  // podría quedar corto en primer tick o picos.
   const [locksReleased, sessionsRevoked, idempotencyPurged, webhooksPurged] =
-    await db.$transaction([
-      db.$executeRaw`
-        UPDATE orders
-           SET status = 'PENDING',
-               version = version + 1,
-               locked_at = NULL,
-               lock_expires_at = NULL,
-               locked_by_session_id = NULL
-         WHERE status = 'PAYING'
-           AND lock_expires_at < NOW()
-           AND NOT EXISTS (
-             SELECT 1 FROM payments
-              WHERE payments.order_id = orders.id
-                AND payments.status = 'APPROVED'
-           )
-      `,
-      db.$executeRaw`
-        UPDATE sessions
-           SET revoked_at = NOW()
-         WHERE revoked_at IS NULL
-           AND expires_at < NOW()
-      `,
-      db.$executeRaw`
-        DELETE FROM idempotency_keys
-         WHERE expires_at < NOW()
-      `,
-      db.$executeRaw`
-        DELETE FROM processed_webhooks
-         WHERE received_at < NOW() - INTERVAL '180 days'
-      `,
-    ]);
+    await db.$transaction(
+      async (tx) => {
+        const locks = await tx.$executeRaw`
+          UPDATE orders
+             SET status = 'PENDING',
+                 version = version + 1,
+                 locked_at = NULL,
+                 lock_expires_at = NULL,
+                 locked_by_session_id = NULL
+           WHERE status = 'PAYING'
+             AND lock_expires_at < NOW()
+             AND NOT EXISTS (
+               SELECT 1 FROM payments
+                WHERE payments.order_id = orders.id
+                  AND payments.status = 'APPROVED'
+             )
+        `;
+        const sessions = await tx.$executeRaw`
+          UPDATE sessions
+             SET revoked_at = NOW()
+           WHERE revoked_at IS NULL
+             AND expires_at < NOW()
+        `;
+        const idem = await tx.$executeRaw`
+          DELETE FROM idempotency_keys
+           WHERE expires_at < NOW()
+        `;
+        const webhooks = await tx.$executeRaw`
+          DELETE FROM processed_webhooks
+           WHERE received_at < NOW() - INTERVAL '180 days'
+        `;
+        return [locks, sessions, idem, webhooks] as const;
+      },
+      { timeout: 30_000 }
+    );
 
   return Response.json({
     locksReleased,
