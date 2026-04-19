@@ -33,6 +33,13 @@ export default function PayPage() {
   // 400 vía superRefine si tipAmount > 0 && !acceptedTipDisclaimer.
   const [acceptedTip, setAcceptedTip] = useState(false);
 
+  // DIAN 5 UVT: documento del adquiriente, obligatorio si fe_regime
+  // MANDATORY y total >= 5 UVT. Server rechaza 422 DOCUMENT_REQUIRED_5UVT.
+  const [docType, setDocType] = useState<"CC" | "CE" | "NIT" | "PASSPORT">(
+    "CC"
+  );
+  const [docNumber, setDocNumber] = useState("");
+
   // Si no hay data en store, redirigir a la cuenta
   if (!data) {
     return (
@@ -54,7 +61,15 @@ export default function PayPage() {
   const upsellTotal = getUpsellTotal();
   const finalTip = tipAmount + upsellTotal;
   const needsDisclaimer = finalTip > 0;
-  const canPay = !needsDisclaimer || acceptedTip;
+
+  // Documento obligatorio: MANDATORY + total ≥ 5 UVT. El server es
+  // autoritativo — si el cliente bypassa, 422 DOCUMENT_REQUIRED_5UVT.
+  const needsDocument =
+    restaurant.feRegime === "MANDATORY" && grandTotal >= restaurant.fiveUvtCents;
+  const docNumberValid = /^[A-Z0-9-]{4,20}$/i.test(docNumber);
+  const docValid = !needsDocument || docNumberValid;
+
+  const canPay = (!needsDisclaimer || acceptedTip) && docValid;
 
   async function handleCreatePayment() {
     if (isCreating) return; // idem-safe pero barato: evita doble fire del mismo click.
@@ -87,6 +102,10 @@ export default function PayPage() {
           // Ley 2300: evidencia por pago. Se persiste en payments.
           acceptedTipDisclaimer: needsDisclaimer ? acceptedTip : false,
           tipDisclaimerTextVersion: CURRENT_TIP_DISCLAIMER_VERSION,
+          // DIAN 5 UVT: documento del adquiriente (solo si aplica).
+          customerDocument: needsDocument
+            ? { type: docType, number: docNumber }
+            : undefined,
         }),
       });
 
@@ -187,6 +206,54 @@ export default function PayPage() {
             </label>
           )}
 
+          {/* DIAN 5 UVT — documento del adquiriente (solo MANDATORY + ≥5 UVT) */}
+          {needsDocument && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-3">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Documento para factura electrónica
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Este pago supera el umbral DIAN de 5 UVT. Por ley requerimos
+                  tu documento para emitir la factura.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <select
+                  value={docType}
+                  onChange={(e) =>
+                    setDocType(
+                      e.target.value as "CC" | "CE" | "NIT" | "PASSPORT"
+                    )
+                  }
+                  className="w-24 px-3 py-2.5 rounded-xl border border-gray-200 text-sm bg-white"
+                >
+                  <option value="CC">CC</option>
+                  <option value="CE">CE</option>
+                  <option value="NIT">NIT</option>
+                  <option value="PASSPORT">Pasaporte</option>
+                </select>
+                <input
+                  type="text"
+                  value={docNumber}
+                  onChange={(e) =>
+                    setDocNumber(e.target.value.replace(/[^A-Za-z0-9-]/g, ""))
+                  }
+                  placeholder="Número"
+                  maxLength={20}
+                  className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 text-sm"
+                  autoComplete="off"
+                  inputMode="text"
+                />
+              </div>
+              {docNumber.length > 0 && !docNumberValid && (
+                <p className="text-[11px] text-red-500">
+                  Debe tener 4-20 caracteres alfanuméricos
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Metodos de pago info */}
           <div className="mt-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
             <p className="text-xs text-gray-400 text-center">
@@ -239,6 +306,11 @@ export default function PayPage() {
               {needsDisclaimer && !acceptedTip && (
                 <p className="mt-2 text-[11px] text-center text-gray-400">
                   Marca la casilla para confirmar la propina voluntaria
+                </p>
+              )}
+              {needsDocument && !docNumberValid && (
+                <p className="mt-2 text-[11px] text-center text-gray-400">
+                  Completá tu documento para factura DIAN
                 </p>
               )}
             </>
