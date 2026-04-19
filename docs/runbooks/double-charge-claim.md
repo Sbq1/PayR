@@ -102,12 +102,24 @@ De la clasificación 1.3: **el cobro duplicado es el que NO cierra la orden leg�
 
 Por ahora el endpoint `/api/payment/refund` es **skeleton** (v1 del plan). No ejecuta Wompi automáticamente. Flujo:
 
-**Opción A — vía Dashboard** (cuando la UI exista):
-1. Login con tu usuario OWNER/ADMIN
-2. Restaurant → Pagos → buscar reference → Botón "Refund"
-3. Ingresar `amount_in_cents` (parcial o total) + razón
+**Opción A — vía Dashboard (recomendado)**:
+1. Login con tu usuario OWNER en el dashboard
+2. Ir a **Pagos** (`/payments`)
+3. Filtrar por estado `Aprobado` (o activar toggle "Solo colgados" si es un PENDING stuck)
+4. Localizar la row por `reference` (columna Referencia) — ayuda comparar con el monto y la mesa del ticket
+5. Click en el botón **Devolver** (solo aparece si `status=APPROVED` o `PARTIALLY_REFUNDED` y queda saldo)
+6. En el modal:
+   - **Monto a devolver (COP)**: por defecto viene el saldo restante (amount − refunded). Ajustar si es refund parcial.
+   - **Motivo**: mínimo 5 caracteres. Ej: `"Doble cobro — mismo order_id, race de idempotency. Ticket #N"`.
+7. Confirmar → el sistema crea el registro en `refunds` con `status=PENDING` y ajusta `payments.refunded_amount` en la misma transacción. Toast de éxito.
+8. **Importante**: el dinero todavía NO volvió al comensal. Continuar con pasos 2.3 (Wompi) y 2.4 (Siigo nota crédito si aplica) para ejecutar el refund real.
 
-**Opción B — vía curl (hoy)**:
+Errores esperables en el modal:
+- `409 REFUND_EXCEEDS_PAYMENT` — el monto ingresado supera el saldo disponible. Revisar la columna `Devuelto` y restar.
+- `409 REFUND_DUPLICATE` — ya existe un refund con el mismo (payment, monto, motivo) en el día. Cambiar motivo o consultar si fue procesado.
+- `409 IDEMPOTENCY_IN_FLIGHT` — otro operador está procesando el mismo refund. Esperar 60s y reintentar.
+
+**Opción B — vía curl (fallback si el dashboard no está accesible)**:
 
 ```bash
 # Staff session cookie requerida (sc-session). Obtener del navegador logueado.
