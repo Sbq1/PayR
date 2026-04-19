@@ -4,10 +4,18 @@ import { handlePaymentWebhook } from "@/lib/services/payment.service";
 import { PaymentError } from "@/lib/utils/errors";
 import { corsHeaders } from "@/lib/utils/cors";
 import { logger } from "@/lib/utils/logger";
+import { rateLimit, rateLimitResponse } from "@/lib/utils/rate-limit";
 import type { WompiWebhookEvent } from "@/lib/adapters/payment/types";
 
 const REPLAY_WINDOW_SECONDS = 300; // 5 min
 const TRANSACTION_UPDATED = "transaction.updated";
+
+// Rate limit global: protege el CPU del check HMAC ante flood malicioso.
+// 300/min = 5/s, holgado para ráfagas legítimas de Wompi.
+const webhookLimiter = rateLimit("wompi-webhook-global", {
+  interval: 60_000,
+  limit: 300,
+});
 
 /**
  * POST /api/payment/webhook
@@ -20,6 +28,13 @@ const TRANSACTION_UPDATED = "transaction.updated";
  * - Error de procesamiento → 200
  */
 export async function POST(request: NextRequest) {
+  // Rate limit global ANTES de parsear JSON y validar HMAC para proteger CPU.
+  const rl = await webhookLimiter.check("global");
+  if (!rl.success) {
+    logger.error("webhook.rate_limited", { resetAt: rl.resetAt });
+    return rateLimitResponse(rl.resetAt);
+  }
+
   try {
     const event: WompiWebhookEvent = await request.json();
 
