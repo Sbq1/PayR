@@ -2,15 +2,15 @@ import { db } from "@/lib/db";
 import { AppError } from "@/lib/utils/errors";
 
 /**
- * Retorna el UVT vigente para el año actual desde `tax_parameters`.
+ * UVT vigente del año actual desde `tax_parameters`.
  *
- * El UVT se actualiza anualmente por Resolución DIAN. Un script
- * (`scripts/seed-tax-parameters.ts`) debe insertar el año siguiente
- * antes del 1 de enero. Si falta, lanza para que una alerta dispare
- * antes de que un comensal vea un error.
+ * DIAN publica el UVT anual por Resolución (ej. Res. 193/2024 → UVT 2026 =
+ * $51.736 COP). NUNCA hardcoded ni env var: un UVT desactualizado genera
+ * rechazos silenciosos de factura electrónica.
  *
- * Uso típico: validar si un pago requiere factura electrónica o documento
- * equivalente POS (regla de 5 UVT) según `restaurant.fe_regime`.
+ * `scripts/seed-tax-parameters.ts` inserta el año siguiente antes del 1
+ * de enero. Si el año actual no está cargado se lanza 503 — debe disparar
+ * alerta crítica al equipo antes de que un comensal vea el error.
  */
 export async function getCurrentUvt(): Promise<number> {
   const year = new Date().getUTCFullYear();
@@ -21,9 +21,9 @@ export async function getCurrentUvt(): Promise<number> {
 
   if (!row) {
     throw new AppError(
-      `UVT para año ${year} no cargado en tax_parameters. Contactar soporte.`,
-      500,
-      "UVT_NOT_LOADED"
+      `UVT para año ${year} no cargado. Contacta soporte.`,
+      503,
+      "UVT_NOT_CONFIGURED"
     );
   }
 
@@ -31,11 +31,13 @@ export async function getCurrentUvt(): Promise<number> {
 }
 
 /**
- * Umbral de 5 UVT en centavos COP. Valor crítico para decidir tipo de
- * documento DIAN (POS equivalente vs factura electrónica) cuando el
- * restaurante está en régimen de FE obligatoria.
+ * 5 UVT en centavos COP. Umbral DIAN para factura electrónica.
+ *
+ * Ej. 2026: 51.736 × 5 × 100 = 25.868.000 centavos = $258.680 COP.
+ *
+ * Caller debe cachear el valor si hace varias comparaciones en la misma
+ * request — cada invocación es una query a `tax_parameters`.
  */
-export async function getFiveUvtThresholdCents(): Promise<number> {
-  const uvt = await getCurrentUvt();
-  return uvt * 5 * 100;
+export async function getFiveUvtInCents(): Promise<number> {
+  return (await getCurrentUvt()) * 5 * 100;
 }
