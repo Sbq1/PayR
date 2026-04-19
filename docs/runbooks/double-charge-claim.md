@@ -103,7 +103,7 @@ De la clasificación 1.3: **el cobro duplicado es el que NO cierra la orden leg�
 Por ahora el endpoint `/api/payment/refund` es **skeleton** (v1 del plan). No ejecuta Wompi automáticamente. Flujo:
 
 **Opción A — vía Dashboard (recomendado)**:
-1. Login con tu usuario OWNER en el dashboard
+1. Login con tu usuario del restaurante en el dashboard
 2. Ir a **Pagos** (`/payments`)
 3. Filtrar por estado `Aprobado` (o activar toggle "Solo colgados" si es un PENDING stuck)
 4. Localizar la row por `reference` (columna Referencia) — ayuda comparar con el monto y la mesa del ticket

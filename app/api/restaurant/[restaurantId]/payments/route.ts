@@ -87,7 +87,9 @@ export async function GET(
       return Response.json({ error: "Estado inválido" }, { status: 400 });
     }
 
-    const parsedLimit = Number(limitRaw);
+    // Sin ?limit=, searchParams.get devuelve null; Number(null)=0 pasa el
+    // finite check y caía a limit=1. Short-circuit a DEFAULT_LIMIT.
+    const parsedLimit = limitRaw === null ? DEFAULT_LIMIT : Number(limitRaw);
     const limit = Math.min(
       MAX_LIMIT,
       Math.max(

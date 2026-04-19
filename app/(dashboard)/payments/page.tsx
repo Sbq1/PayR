@@ -3,7 +3,7 @@
 // TODO v2: search por referencia, date range, export CSV,
 // rotación QR y refund history.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronRight, Loader2, Receipt, Undo2 } from "lucide-react";
@@ -82,8 +82,18 @@ function formatDate(iso: string) {
 export default function PaymentsPage() {
   const { restaurantId } = useSession();
 
-  const [statusFilter, setStatusFilter] = useState("");
-  const [stuckOnly, setStuckOnly] = useState(false);
+  // Lazy init desde URL evita un doble fetch al entrar desde el banner
+  // (?status=PENDING&stuck=1): sin esto, el primer render dispara un
+  // fetch con filtros vacíos antes de que el useEffect de prefill aplique.
+  const [statusFilter, setStatusFilter] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("status") || "";
+  });
+  const [stuckOnly, setStuckOnly] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const s = new URLSearchParams(window.location.search).get("stuck");
+    return s === "1" || s === "true";
+  });
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,15 +105,6 @@ export default function PaymentsPage() {
   // filtrar por OWNER | MANAGER acá.
   // TODO: gate por session.user.role cuando el schema lo soporte.
   const canRefund = true;
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const s = params.get("status");
-    const stuck = params.get("stuck");
-    if (s) setStatusFilter(s);
-    if (stuck === "1" || stuck === "true") setStuckOnly(true);
-  }, []);
 
   const loadPayments = useCallback(
     async (cursor: string | null) => {
@@ -168,8 +169,6 @@ export default function PaymentsPage() {
     });
   }
 
-  const visiblePayments = useMemo(() => payments, [payments]);
-
   return (
     <div className="space-y-8">
       <div>
@@ -177,9 +176,9 @@ export default function PaymentsPage() {
           Pagos
         </h1>
         <p className="text-[14px] text-[#78716c] mt-1">
-          Historial de transacciones — {visiblePayments.length}
+          Historial de transacciones — {payments.length}
           {nextCursor ? "+" : ""} cargado
-          {visiblePayments.length !== 1 ? "s" : ""}
+          {payments.length !== 1 ? "s" : ""}
         </p>
       </div>
 
@@ -236,7 +235,7 @@ export default function PaymentsPage() {
             </div>
           ))}
         </div>
-      ) : visiblePayments.length === 0 ? (
+      ) : payments.length === 0 ? (
         <Card className="border-0 shadow-none bg-transparent">
           <CardContent className="py-20 text-center flex flex-col items-center justify-center">
             <div className="w-16 h-16 rounded-full bg-[#f5f5f4] flex items-center justify-center mb-5">
@@ -269,7 +268,7 @@ export default function PaymentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {visiblePayments.map((p) => {
+                {payments.map((p) => {
                   const st = statusConfig[p.status] || statusConfig.PENDING;
                   const stuck = isStuck(p);
                   const refundable = isRefundable(p);
