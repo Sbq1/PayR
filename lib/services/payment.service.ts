@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { getPaymentAdapter } from "@/lib/adapters/payment";
 import { getPosAdapter } from "@/lib/adapters/pos";
 import { AppError, NotFoundError, PaymentError } from "@/lib/utils/errors";
+import { logger } from "@/lib/utils/logger";
 import { getFiveUvtInCents } from "@/lib/services/tax.service";
 import type { WompiWebhookEvent, WompiWidgetConfig } from "@/lib/adapters/payment/types";
 
@@ -628,13 +629,32 @@ export async function reconcilePayment(
   if (!txn) return { status: "PENDING" };
 
   // Validación estricta antes de aplicar transición.
+  // Cada MISMATCH se loguea como `payment.reconcile.discrepancy` para
+  // alerta Sentry (§8.1 del plan — crítico: indica tamper o bug de amount).
   if (txn.reference !== payment.reference) {
+    logger.error("payment.reconcile.discrepancy", {
+      field: "reference",
+      paymentId: payment.id,
+      expected: payment.reference,
+      got: txn.reference,
+    });
     return { status: "MISMATCH", field: "reference" };
   }
   if (txn.amount_in_cents !== payment.amount_in_cents) {
+    logger.error("payment.reconcile.discrepancy", {
+      field: "amount",
+      paymentId: payment.id,
+      expected: payment.amount_in_cents,
+      got: txn.amount_in_cents,
+    });
     return { status: "MISMATCH", field: "amount" };
   }
   if (txn.currency !== "COP") {
+    logger.error("payment.reconcile.discrepancy", {
+      field: "currency",
+      paymentId: payment.id,
+      got: txn.currency,
+    });
     return { status: "MISMATCH", field: "currency" };
   }
 

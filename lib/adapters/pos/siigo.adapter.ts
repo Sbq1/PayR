@@ -1,4 +1,5 @@
 import { PosError } from "@/lib/utils/errors";
+import { logger } from "@/lib/utils/logger";
 import type {
   IPosAdapter,
   PosCredentials,
@@ -104,6 +105,8 @@ export class SiigoAdapter implements IPosAdapter {
           );
         }
         if (res.status >= 500) {
+          // Alerta Sentry: `siigo.api.5xx` — plan §8.1 warning
+          logger.error("siigo.api.5xx", { status: res.status, endpoint: "sign-in" });
           throw new PosError(
             "Siigo está temporalmente inaccesible. Intentá de nuevo en unos minutos.",
             "siigo"

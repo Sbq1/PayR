@@ -1,8 +1,15 @@
 /**
- * Logger estructurado para Vercel.
- * Vercel captura stdout/stderr automáticamente en Vercel Logs.
- * Este wrapper agrega timestamp, nivel, y contexto al output JSON.
+ * Logger estructurado para Vercel + Sentry.
+ *
+ * - `info`/`warn` → console (Vercel Logs)
+ * - `error`       → console + Sentry.captureMessage con el `event` como
+ *   fingerprint. Esto habilita alertas en Sentry sobre eventos de negocio
+ *   (p.ej. "webhook.hmac_failure") sin tener que tocar cada call site.
+ *
+ * Nota: NO llamar Sentry en dev (ensucia el feed). Gated por env.
  */
+
+import * as Sentry from "@sentry/nextjs";
 
 type LogLevel = "info" | "warn" | "error";
 
@@ -26,9 +33,26 @@ function log(level: LogLevel, event: string, data?: Record<string, unknown>) {
   switch (level) {
     case "error":
       console.error(output);
+      // Solo production/preview — dev no ensucia Sentry feed.
+      if (process.env.VERCEL_ENV && process.env.VERCEL_ENV !== "development") {
+        Sentry.captureMessage(event, {
+          level: "error",
+          tags: { event_type: event },
+          extra: data,
+          fingerprint: [event], // dedupe por evento (todos los hmac_failure se agrupan)
+        });
+      }
       break;
     case "warn":
       console.warn(output);
+      if (process.env.VERCEL_ENV === "production") {
+        Sentry.captureMessage(event, {
+          level: "warning",
+          tags: { event_type: event },
+          extra: data,
+          fingerprint: [event],
+        });
+      }
       break;
     default:
       console.log(output);

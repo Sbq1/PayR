@@ -112,7 +112,6 @@ async function get(path: string, headers: Record<string, string> = {}) {
 }
 
 function uuidv4(): string {
-  // @ts-expect-error node 19+
   return crypto.randomUUID();
 }
 
