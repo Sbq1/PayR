@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { getPaymentAdapter } from "@/lib/adapters/payment";
 import { getPosAdapter } from "@/lib/adapters/pos";
 import { AppError, NotFoundError, PaymentError } from "@/lib/utils/errors";
+import { getFiveUvtInCents } from "@/lib/services/tax.service";
 import type { WompiWebhookEvent, WompiWidgetConfig } from "@/lib/adapters/payment/types";
 
 type WompiTransaction = WompiWebhookEvent["data"]["transaction"];
@@ -208,6 +209,31 @@ export async function createPayment(params: {
     };
   }
 
+  // 4.5. Validación DIAN 5 UVT (solo para Payments nuevos; reuse ya pasó
+  //      por acá en su creación original y no re-validamos).
+  //
+  //      MANDATORY: total ≥ 5 UVT exige customer_document. Sin doc → 422.
+  //                 Con doc o total ≥ 5 UVT → dian_doc_type='E_INVOICE'.
+  //      OPTIONAL/EXEMPT: dian_doc_type='POS_EQUIVALENT' siempre.
+  //
+  //      Lookup UVT fuera de TX (evita extender el lock de pool por una
+  //      query de catálogo). Cacheamos el valor para no duplicar queries.
+  const currentTotal = order.subtotal + order.tax + tipAmount;
+  let dianDocType: "E_INVOICE" | "POS_EQUIVALENT" = "POS_EQUIVALENT";
+  if (order.restaurants.fe_regime === "MANDATORY") {
+    const fiveUvt = await getFiveUvtInCents();
+    if (currentTotal >= fiveUvt && !customerDocument) {
+      throw new AppError(
+        "El pago supera 5 UVT. Se requiere documento de identificación del adquiriente para facturación electrónica.",
+        422,
+        "DOCUMENT_REQUIRED_5UVT"
+      );
+    }
+    if (customerDocument || currentTotal >= fiveUvt) {
+      dianDocType = "E_INVOICE";
+    }
+  }
+
   // 5. TX corta — solo operaciones DB.
   const { payment, tableId, restaurant, nextVersion } = await db.$transaction(
     async (tx) => {
@@ -281,7 +307,7 @@ export async function createPayment(params: {
             tipAmount > 0 ? tipDisclaimerTextVersion : null,
           customer_document_type: customerDocument?.type ?? null,
           customer_document_number: customerDocument?.number ?? null,
-          // dian_doc_type: null — Fase 3 lo setea con lógica 5 UVT
+          dian_doc_type: dianDocType,
         },
       });
 
