@@ -22,7 +22,10 @@ export interface RefundablePayment {
 interface Props {
   payment: RefundablePayment | null;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (update: {
+    paymentId: string;
+    amountInCentsAdded: number;
+  }) => void;
 }
 
 export function RefundModal({ payment, onClose, onSuccess }: Props) {
@@ -100,7 +103,10 @@ export function RefundModal({ payment, onClose, onSuccess }: Props) {
       if (res.ok) {
         toast.success("Registro de devolución creado");
         reset();
-        onSuccess();
+        onSuccess({
+          paymentId: payment.id,
+          amountInCentsAdded: amountInCents,
+        });
         return;
       }
 

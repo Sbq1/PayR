@@ -360,9 +360,25 @@ export default function PaymentsPage() {
       <RefundModal
         payment={refundTarget}
         onClose={() => setRefundTarget(null)}
-        onSuccess={() => {
+        onSuccess={({ paymentId, amountInCentsAdded }) => {
+          // Optimistic update — preserva scroll y paginación cargada.
+          // Lógica del nuevo status refleja refund.service.ts: si la
+          // suma de refunded iguala o supera el total → REFUNDED,
+          // sino PARTIALLY_REFUNDED. Drift silencioso mitigado con
+          // refresh manual del user si la lógica del server cambia.
+          setPayments((prev) =>
+            prev.map((p) => {
+              if (p.id !== paymentId) return p;
+              const newRefunded = p.refunded_amount + amountInCentsAdded;
+              const fullyRefunded = newRefunded >= p.amount_in_cents;
+              return {
+                ...p,
+                refunded_amount: newRefunded,
+                status: fullyRefunded ? "REFUNDED" : "PARTIALLY_REFUNDED",
+              };
+            }),
+          );
           setRefundTarget(null);
-          loadPayments(null);
         }}
       />
     </div>
