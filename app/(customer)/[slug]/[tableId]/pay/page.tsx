@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useBillStore } from "@/lib/stores/bill.store";
 import { formatCOP } from "@/lib/utils/currency";
+import {
+  customerAuthHeader,
+  clearCustomerSession,
+} from "@/hooks/use-customer-session";
 import { ThemeProvider } from "@/components/restaurant/theme-provider";
 import { RestaurantHeader } from "@/components/restaurant/restaurant-header";
 import { BillSummary } from "@/components/bill/bill-summary";
@@ -13,8 +17,14 @@ import { ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import type { WompiWidgetConfig } from "@/lib/adapters/payment/types";
 
+// Versionado del texto de Ley 2300/2023. Si el texto cambia en el futuro
+// se incrementa este identificador y se guarda junto al timestamp en
+// payments.tip_disclaimer_text_version como evidencia legal.
+const TIP_DISCLAIMER_VERSION = "ley-2300-v1";
+
 export default function PayPage() {
   const params = useParams<{ slug: string; tableId: string }>();
+  const router = useRouter();
   const { data, tipPercentage, tipAmount, getTotal, getUpsellTotal } =
     useBillStore();
 
@@ -23,6 +33,9 @@ export default function PayPage() {
   const [widgetConfig, setWidgetConfig] = useState<WompiWidgetConfig | null>(
     null
   );
+  // Checkbox Ley 2300: obligatorio cuando hay propina. El server rechaza
+  // 400 vía superRefine si tipAmount > 0 && !acceptedTipDisclaimer.
+  const [acceptedTip, setAcceptedTip] = useState(false);
 
   // Si no hay data en store, redirigir a la cuenta
   if (!data) {
@@ -43,28 +56,67 @@ export default function PayPage() {
   const { restaurant, table, bill } = data;
   const grandTotal = getTotal();
   const upsellTotal = getUpsellTotal();
+  const finalTip = tipAmount + upsellTotal;
+  const needsDisclaimer = finalTip > 0;
+  const canPay = !needsDisclaimer || acceptedTip;
 
   async function handleCreatePayment() {
+    if (isCreating) return; // idem-safe pero barato: evita doble fire del mismo click.
     setIsCreating(true);
     setError(null);
 
     try {
       const res = await fetch("/api/payment/create", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // Bearer JWT del comensal. Sin esto el endpoint responde 401.
+          ...customerAuthHeader(params.tableId),
+          // Idempotency-Key: una por intento. Si el usuario hace retry,
+          // genera una nueva — el backend dedupe por (key, session, endpoint)
+          // + hash del body.
+          "Idempotency-Key": crypto.randomUUID(),
+        },
         body: JSON.stringify({
           orderId: data!.orderId,
           slug: params.slug,
           tableId: params.tableId,
           tipPercentage,
-          tipAmount: tipAmount + upsellTotal,
+          tipAmount: finalTip,
           customerEmail: undefined,
+          // Lock optimista: si la orden avanzó mientras el comensal veía
+          // el bill, el server devuelve 409 ORDER_VERSION_MISMATCH y el
+          // frontend forza recarga.
+          expectedVersion: data!.orderVersion,
+          // Ley 2300: evidencia por pago. Se persiste en payments.
+          acceptedTipDisclaimer: needsDisclaimer ? acceptedTip : false,
+          tipDisclaimerTextVersion: TIP_DISCLAIMER_VERSION,
         }),
       });
 
       if (!res.ok) {
-        const body = await res.json().catch(() => ({ error: "Error creando pago" }));
-        throw new Error(body.error);
+        const body = await res
+          .json()
+          .catch(() => ({ error: "Error creando pago" }));
+
+        // 401: sesión expiró o fue revocada — limpia cache y devuelve al
+        // bill para que el hook dispare /session/start con el qrToken.
+        if (res.status === 401) {
+          clearCustomerSession(params.tableId);
+          router.replace(`/${params.slug}/${params.tableId}`);
+          return;
+        }
+        // 409 ORDER_VERSION_MISMATCH: la orden cambió (mesero agregó
+        // ítems, u otra sesión ganó el lock). Re-fetch el bill.
+        if (res.status === 409 && body.code === "ORDER_VERSION_MISMATCH") {
+          setError("La cuenta cambió. Actualizando...");
+          setTimeout(() => {
+            router.replace(`/${params.slug}/${params.tableId}`);
+          }, 1200);
+          return;
+        }
+
+        throw new Error(body.error || "Error creando pago");
       }
 
       const result = await res.json();
@@ -116,6 +168,29 @@ export default function PayPage() {
             />
           </div>
 
+          {/* Disclaimer Ley 2300/2023 — obligatorio si hay propina */}
+          {needsDisclaimer && (
+            <label
+              htmlFor="tip-disclaimer"
+              className="mt-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-start gap-3 cursor-pointer select-none"
+            >
+              <input
+                id="tip-disclaimer"
+                type="checkbox"
+                checked={acceptedTip}
+                onChange={(e) => setAcceptedTip(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-gray-300 flex-shrink-0"
+                style={{ accentColor: "var(--r-primary, #6366f1)" }}
+              />
+              <span className="text-xs text-gray-600 leading-relaxed">
+                Confirmo que la propina de{" "}
+                <strong className="text-gray-900">{formatCOP(finalTip)}</strong>{" "}
+                es <strong>voluntaria</strong> y la agrego libremente (Ley 2300
+                de 2023).
+              </span>
+            </label>
+          )}
+
           {/* Metodos de pago info */}
           <div className="mt-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
             <p className="text-xs text-gray-400 text-center">
@@ -146,24 +221,31 @@ export default function PayPage() {
             />
             )
           ) : (
-            <button
-              onClick={handleCreatePayment}
-              disabled={isCreating}
-              className="glow-btn w-full py-4 rounded-2xl text-base font-bold text-white transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: "var(--r-primary)",
-                boxShadow: "0 8px 24px var(--r-primary)33",
-              }}
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Preparando...
-                </>
-              ) : (
-                `Pagar ${formatCOP(grandTotal)}`
+            <>
+              <button
+                onClick={handleCreatePayment}
+                disabled={isCreating || !canPay}
+                className="glow-btn w-full py-4 rounded-2xl text-base font-bold text-white transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: "var(--r-primary)",
+                  boxShadow: "0 8px 24px var(--r-primary)33",
+                }}
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Preparando...
+                  </>
+                ) : (
+                  `Pagar ${formatCOP(grandTotal)}`
+                )}
+              </button>
+              {needsDisclaimer && !acceptedTip && (
+                <p className="mt-2 text-[11px] text-center text-gray-400">
+                  Marca la casilla para confirmar la propina voluntaria
+                </p>
               )}
-            </button>
+            </>
           )}
         </div>
       </div>
