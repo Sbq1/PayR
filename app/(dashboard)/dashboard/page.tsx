@@ -20,6 +20,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { useSession } from "@/hooks/use-session";
+import { PendingAlertBanner } from "../_components/pending-alert-banner";
 import type { KpiDashboard, KpiPeriod } from "@/types/kpi";
 
 const periodLabels: Record<KpiPeriod, string> = {
@@ -163,6 +164,8 @@ export default function DashboardPage() {
           ))}
         </div>
       </div>
+
+      <PendingAlertBanner />
 
       {loading ? (
         <div className="space-y-8">
