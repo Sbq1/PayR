@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { getPosAdapter } from "@/lib/adapters/pos";
+import { getFiveUvtInCents } from "@/lib/services/tax.service";
 import { NotFoundError } from "@/lib/utils/errors";
 import type { StandardBill } from "@/lib/adapters/pos/types";
 
@@ -18,6 +19,19 @@ export interface BillResponse {
     primaryColor: string;
     secondaryColor: string;
     backgroundColor: string;
+    /**
+     * Régimen DIAN del restaurante. El cliente decide si mostrar el form
+     * de customer_document basado en este valor (MANDATORY + total >=
+     * fiveUvtCents).
+     */
+    feRegime: "MANDATORY" | "OPTIONAL" | "EXEMPT";
+    /**
+     * 5 UVT en centavos COP. Pre-calculado server-side para evitar un
+     * endpoint extra. Vale 0 si feRegime !== 'MANDATORY' (el cliente
+     * no usa el valor en ese caso — evita forzar lookup del UVT cuando
+     * la lógica del umbral no aplica).
+     */
+    fiveUvtCents: number;
   };
   table: {
     id: string;
@@ -166,6 +180,11 @@ export async function getBillForTable(
     });
   }
 
+  // Lazy UVT lookup: solo si MANDATORY, para no forzar que tax_parameters
+  // esté cargado en restaurantes OPTIONAL/EXEMPT.
+  const fiveUvtCents =
+    restaurant.fe_regime === "MANDATORY" ? await getFiveUvtInCents() : 0;
+
   return {
     orderId: order.id,
     orderVersion: order.version,
@@ -176,6 +195,8 @@ export async function getBillForTable(
       primaryColor: restaurant.primary_color,
       secondaryColor: restaurant.secondary_color,
       backgroundColor: restaurant.background_color,
+      feRegime: restaurant.fe_regime,
+      fiveUvtCents,
     },
     table: {
       id: table.id,
