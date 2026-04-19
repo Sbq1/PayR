@@ -1,20 +1,18 @@
-# Workaround para Vercel Hobby (cron limitado a 1/día).
-# GitHub Actions cron: mínimo 5min, best-effort (puede retrasarse hasta ~15min
-# en horas pico). Aceptable pre-piloto; al upgradar a Vercel Pro, restaurar
-# vercel.json y eliminar este archivo.
+# FALLBACK — solo para cuando Vercel está en Hobby (cron limitado a 1/día).
+# Actualmente los crones corren nativos en Vercel Pro (ver vercel.json).
+# Si se cancela el plan Pro:
+#   1. Borrar vercel.json
+#   2. Descomentar el bloque `schedule:` abajo
+#   3. Configurar secrets VERCEL_APP_URL + CRON_SECRET en el repo
 #
-# Secrets requeridos en el repo (Settings → Secrets and variables → Actions):
-#   - VERCEL_APP_URL    → p.ej. https://smart-checkout.vercel.app
-#   - CRON_SECRET       → mismo valor que Vercel env var CRON_SECRET
-name: External Crons (Hobby workaround)
+# Mientras tanto el workflow solo corre manual desde la UI (workflow_dispatch).
+name: External Crons (Hobby fallback — disabled)
 
 on:
-  schedule:
-    # reconcile-payments-hot: originalmente */2, degradado a */5 por límite GH Actions
-    - cron: "*/5 * * * *"
-    # reconcile-payments-zombie + expire-sessions: originalmente */5, mantenido
-    - cron: "*/15 * * * *"
-  workflow_dispatch: # permite disparo manual desde UI
+  # schedule:
+  #   - cron: "*/5 * * * *"   # reconcile-payments-hot (degradado desde */2)
+  #   - cron: "*/15 * * * *"  # reconcile-zombie + expire-sessions
+  workflow_dispatch: # disparo manual desde UI
 
 jobs:
   reconcile-hot:

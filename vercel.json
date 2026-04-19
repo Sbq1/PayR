@@ -1,0 +1,7 @@
+{
+  "crons": [
+    { "path": "/api/cron/reconcile-payments-hot", "schedule": "*/2 * * * *" },
+    { "path": "/api/cron/reconcile-payments-zombie", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/expire-sessions", "schedule": "*/5 * * * *" }
+  ]
+}
