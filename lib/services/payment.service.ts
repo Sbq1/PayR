@@ -478,10 +478,24 @@ export async function handlePaymentWebhook(
           siigoUsername: restaurant.siigo_username,
           siigoAccessKey: restaurant.siigo_access_key,
         });
-        await posAdapter.closeTable(
-          order.siigo_invoice_id,
-          payment.amount_in_cents
-        );
+        await posAdapter.closeTable({
+          invoiceId: order.siigo_invoice_id,
+          amount: payment.amount_in_cents,
+          // dian_doc_type puede ser null en Payments pre-Fase 3 (rows
+          // legacy) — default POS_EQUIVALENT mantiene comportamiento viejo.
+          dianDocType:
+            (payment.dian_doc_type as
+              | "E_INVOICE"
+              | "POS_EQUIVALENT"
+              | null) ?? "POS_EQUIVALENT",
+          customerDocument:
+            payment.customer_document_type && payment.customer_document_number
+              ? {
+                  type: payment.customer_document_type,
+                  number: payment.customer_document_number,
+                }
+              : undefined,
+        });
       }
     } catch (error) {
       // Log pero no falla — el pago ya fue exitoso
@@ -666,10 +680,22 @@ export async function reconcilePayment(
           siigoUsername: restaurant.siigo_username,
           siigoAccessKey: restaurant.siigo_access_key,
         });
-        await posAdapter.closeTable(
-          payment.orders.siigo_invoice_id,
-          payment.amount_in_cents
-        );
+        await posAdapter.closeTable({
+          invoiceId: payment.orders.siigo_invoice_id,
+          amount: payment.amount_in_cents,
+          dianDocType:
+            (payment.dian_doc_type as
+              | "E_INVOICE"
+              | "POS_EQUIVALENT"
+              | null) ?? "POS_EQUIVALENT",
+          customerDocument:
+            payment.customer_document_type && payment.customer_document_number
+              ? {
+                  type: payment.customer_document_type,
+                  number: payment.customer_document_number,
+                }
+              : undefined,
+        });
       } catch (error) {
         console.error("Error closing table in POS:", error);
       }

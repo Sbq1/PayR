@@ -124,7 +124,22 @@ export async function POST(request: NextRequest) {
           siigoUsername: restaurant.siigo_username,
           siigoAccessKey: restaurant.siigo_access_key,
         });
-        await posAdapter.closeTable(payment.orders.siigo_invoice_id, payment.amount_in_cents);
+        await posAdapter.closeTable({
+          invoiceId: payment.orders.siigo_invoice_id,
+          amount: payment.amount_in_cents,
+          dianDocType:
+            (payment.dian_doc_type as
+              | "E_INVOICE"
+              | "POS_EQUIVALENT"
+              | null) ?? "POS_EQUIVALENT",
+          customerDocument:
+            payment.customer_document_type && payment.customer_document_number
+              ? {
+                  type: payment.customer_document_type,
+                  number: payment.customer_document_number,
+                }
+              : undefined,
+        });
       }
     } catch (error) {
       console.error("Error closing table in POS:", error);

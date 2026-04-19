@@ -198,11 +198,38 @@ export class SiigoAdapter implements IPosAdapter {
     }
   }
 
-  async closeTable(invoiceId: string, amount: number): Promise<void> {
+  async closeTable(params: {
+    invoiceId: string;
+    amount: number;
+    dianDocType: "POS_EQUIVALENT" | "E_INVOICE";
+    customerDocument?: { type: string; number: string };
+  }): Promise<void> {
+    const { invoiceId, amount, dianDocType, customerDocument } = params;
+
+    // E_INVOICE exige documento — contrato del service lo garantiza pero
+    // defensive check acá evita un payload inválido a Siigo.
+    if (dianDocType === "E_INVOICE" && !customerDocument) {
+      throw new PosError(
+        "E_INVOICE requiere customerDocument — service no debería llamar acá sin doc",
+        "siigo"
+      );
+    }
+
     const token = await this.authenticate();
 
+    // Observations marca el tipo DIAN para trazabilidad; incluimos el
+    // documento del adquiriente cuando aplica. El payload base (endpoint
+    // payment-receipts) cubre ambos modos porque Siigo emite el
+    // documento correcto según la factura original. Cuando los pilotos
+    // activen FE real, migrar este bloque a `/v1/invoices` con el
+    // payload DIAN completo (CUFE, receiver.*, etc.) validado con
+    // tributarista.
+    const observations =
+      dianDocType === "E_INVOICE" && customerDocument
+        ? `Pago via Smart Checkout — FE ${customerDocument.type} ${customerDocument.number}`
+        : "Pago via Smart Checkout";
+
     try {
-      // Crear recibo de pago (cash receipt) para cerrar la factura
       const res = await fetch(PAYMENT_RECEIPTS_URL, {
         method: "POST",
         headers: {
@@ -218,7 +245,7 @@ export class SiigoAdapter implements IPosAdapter {
               value: amount / 100, // Siigo usa pesos, no centavos
             },
           ],
-          observations: "Pago via Smart Checkout",
+          observations,
         }),
         signal: AbortSignal.timeout(FETCH_TIMEOUT),
       });

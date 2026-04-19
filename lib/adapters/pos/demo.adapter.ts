@@ -138,7 +138,12 @@ export class DemoAdapter implements IPosAdapter {
     return DEMO_BILLS[tableIdentifier] || null;
   }
 
-  async closeTable(_invoiceId: string, _amount: number): Promise<void> {
+  async closeTable(_params: {
+    invoiceId: string;
+    amount: number;
+    dianDocType: "POS_EQUIVALENT" | "E_INVOICE";
+    customerDocument?: { type: string; number: string };
+  }): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 200));
     // En demo, no hacemos nada real
   }

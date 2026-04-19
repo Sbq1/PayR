@@ -50,10 +50,21 @@ export interface IPosAdapter {
 
   /**
    * Cierra una mesa creando un recibo de pago en el POS.
-   * @param invoiceId - ID de la factura a cerrar
-   * @param amount - Monto total pagado en centavos COP
+   *
+   * `dianDocType` define la rama de emisión DIAN:
+   *   - POS_EQUIVALENT: documento equivalente POS (default, consumidor final)
+   *   - E_INVOICE: factura electrónica, requiere `customerDocument`
+   *
+   * Cuando `dianDocType='E_INVOICE'` el adapter debe incluir el documento
+   * del adquiriente en el payload. Si falta, el adapter rechaza (el
+   * service es responsable de no llamar acá sin doc para E_INVOICE).
    */
-  closeTable(invoiceId: string, amount: number): Promise<void>;
+  closeTable(params: {
+    invoiceId: string;
+    amount: number;
+    dianDocType: "POS_EQUIVALENT" | "E_INVOICE";
+    customerDocument?: { type: string; number: string };
+  }): Promise<void>;
 }
 
 /**
