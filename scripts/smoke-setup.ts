@@ -152,14 +152,35 @@ async function main() {
 
     // 7. Order fresco PENDING. Cada run crea uno nuevo (no reuso — los
     //    tests de idempotency/version necesitan orden virgen).
-    //    Limpiamos orders PENDING viejos primero para no acumular.
-    await db.order.deleteMany({
-      where: {
-        restaurant_id: restaurant.id,
-        status: "PENDING",
-        created_at: { lt: new Date(Date.now() - 30 * 60 * 1000) }, // >30min viejos
-      },
-    });
+    //    Limpiamos data vieja en cascada correcta: primero payments/refunds
+    //    que apuntan a orders del restaurante test, después los orders.
+    //    (Los smoke tests crean payments; sin esta cascada falla con FK.)
+    const staleThreshold = new Date(Date.now() - 30 * 60 * 1000);
+    const staleOrderIds = (
+      await db.order.findMany({
+        where: {
+          restaurant_id: restaurant.id,
+          created_at: { lt: staleThreshold },
+        },
+        select: { id: true },
+      })
+    ).map((o) => o.id);
+
+    if (staleOrderIds.length > 0) {
+      // Refunds → payments → order_items → orders (orden según FKs).
+      await db.refund.deleteMany({
+        where: { payments: { order_id: { in: staleOrderIds } } },
+      });
+      await db.payment.deleteMany({
+        where: { order_id: { in: staleOrderIds } },
+      });
+      await db.orderItem.deleteMany({
+        where: { order_id: { in: staleOrderIds } },
+      });
+      await db.order.deleteMany({
+        where: { id: { in: staleOrderIds } },
+      });
+    }
 
     const order = await db.order.create({
       data: {

@@ -215,6 +215,48 @@ async function run() {
     }
   );
 
+  // ---- Section 2.5: Dashboard endpoints (staff-only, negative tests) ----
+  // Tests positivos requieren cookie sc-session (login OWNER) — se cubren en
+  // el checklist manual E2E. Acá solo verificamos que los endpoints existen
+  // y rechazan bien sin auth staff.
+  console.log(`\n${Y}[2.5]${X} Dashboard endpoints (staff-only 401 gate)\n`);
+
+  await test(
+    "GET /api/restaurant/:id/payments sin sc-session → 401",
+    async () => {
+      const r = await get(
+        `/api/restaurant/${fx.restaurantId}/payments`
+      );
+      if (r.status === 401) return { ok: true, detail: "auth gate OK" };
+      return { ok: false, detail: `expected 401, got ${r.status}: ${r.raw.slice(0, 80)}` };
+    }
+  );
+
+  await test(
+    "GET /api/restaurant/:id/payments/stuck-count sin sc-session → 401",
+    async () => {
+      const r = await get(
+        `/api/restaurant/${fx.restaurantId}/payments/stuck-count`
+      );
+      if (r.status === 401) return { ok: true, detail: "auth gate OK" };
+      return { ok: false, detail: `expected 401, got ${r.status}: ${r.raw.slice(0, 80)}` };
+    }
+  );
+
+  await test(
+    "GET /api/restaurant/:id/payments con Bearer comensal (no staff) → 401",
+    async () => {
+      // Bearer JWT es para session del comensal, NO es sc-session de staff.
+      // El endpoint debe rechazar aunque haya Authorization header.
+      const r = await get(
+        `/api/restaurant/${fx.restaurantId}/payments`,
+        { Authorization: `Bearer ${sessionToken}` }
+      );
+      if (r.status === 401) return { ok: true, detail: "no cross-tier leak" };
+      return { ok: false, detail: `expected 401, got ${r.status}` };
+    }
+  );
+
   // ---- Section 3: /api/payment/create ----
   console.log(`\n${Y}[3]${X} /api/payment/create\n`);
 
