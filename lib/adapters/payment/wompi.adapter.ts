@@ -1,27 +1,15 @@
-import { PaymentError } from "@/lib/utils/errors";
-import { logger } from "@/lib/utils/logger";
 import {
   generateWompiChecksum,
   generateIntegritySignature,
   safeEqualHex,
 } from "@/lib/utils/hmac";
-
-const WOMPI_FETCH_TIMEOUT_MS = 8_000;
+import { wompiFetch } from "./wompi-fetch";
 import type {
   IPaymentAdapter,
   WompiCredentials,
   WompiWebhookEvent,
   WompiWidgetConfig,
 } from "./types";
-
-const WOMPI_SANDBOX = "https://sandbox.wompi.co";
-const WOMPI_PRODUCTION = "https://production.wompi.co";
-
-function getBaseUrl(): string {
-  return process.env.WOMPI_ENVIRONMENT === "production"
-    ? WOMPI_PRODUCTION
-    : WOMPI_SANDBOX;
-}
 
 export class WompiAdapter implements IPaymentAdapter {
   constructor(private credentials: WompiCredentials) {}
@@ -76,6 +64,7 @@ export class WompiAdapter implements IPaymentAdapter {
 
   /**
    * Consulta el estado de una transaccion en Wompi.
+   * Wompi exige privateKey para consultas GET (publicKey solo sirve para crear/firmar).
    */
   async getTransaction(transactionId: string): Promise<{
     id: string;
@@ -84,50 +73,18 @@ export class WompiAdapter implements IPaymentAdapter {
     amountInCents: number;
     paymentMethodType: string;
   }> {
-    let res: Response;
-    try {
-      res = await fetch(`${getBaseUrl()}/v1/transactions/${transactionId}`, {
-        headers: {
-          // Wompi exige privateKey para consultas GET de transacciones.
-          // publicKey solo sirve para crear/firmar.
-          Authorization: `Bearer ${this.credentials.privateKey}`,
-        },
-        signal: AbortSignal.timeout(WOMPI_FETCH_TIMEOUT_MS),
-      });
-    } catch (err) {
-      // AbortError → timeout. TypeError → network/DNS.
-      const isTimeout =
-        err instanceof Error &&
-        (err.name === "TimeoutError" || err.name === "AbortError");
-      const event = isTimeout ? "wompi.timeout" : "wompi.network_error";
-      logger.error(event, {
-        transactionId,
-        timeoutMs: WOMPI_FETCH_TIMEOUT_MS,
-        error: err instanceof Error ? err.message : String(err),
-      });
-      throw new PaymentError(
-        isTimeout
-          ? `Timeout consultando transacción (${WOMPI_FETCH_TIMEOUT_MS}ms)`
-          : `Error de red consultando transacción`,
-        isTimeout ? "WOMPI_TIMEOUT" : "WOMPI_NETWORK"
-      );
-    }
+    const { data } = await wompiFetch<{ data: {
+      id: string;
+      status: string;
+      reference: string;
+      amount_in_cents: number;
+      payment_method_type: string;
+    } }>(
+      `/v1/transactions/${transactionId}`,
+      { bearerToken: this.credentials.privateKey },
+      { operation: "getTransaction", transactionId }
+    );
 
-    if (!res.ok) {
-      const isTransient = res.status >= 500 || res.status === 429;
-      if (isTransient) {
-        logger.error("wompi.5xx", {
-          status: res.status,
-          transactionId,
-        });
-      }
-      throw new PaymentError(
-        `Error consultando transacción (${res.status})${isTransient ? " [transient]" : ""}`,
-        isTransient ? "WOMPI_5XX" : "WOMPI_ERROR"
-      );
-    }
-
-    const { data } = await res.json();
     return {
       id: data.id,
       status: data.status,

@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { getPaymentAdapter } from "@/lib/adapters/payment";
 import { getPosAdapter } from "@/lib/adapters/pos";
+import { wompiFetch } from "@/lib/adapters/payment/wompi-fetch";
 import { decrypt } from "@/lib/utils/crypto";
 import { AppError, NotFoundError, PaymentError } from "@/lib/utils/errors";
 import { logger } from "@/lib/utils/logger";
@@ -540,36 +541,34 @@ async function checkWompiTransactionStatus(
  * Consulta Wompi API y retorna el objeto transaction completo si existe.
  * Compartido entre `checkWompiTransactionStatus` (retry en createPayment) y
  * `reconcilePayment` (verify + cron de reconciliación).
+ *
+ * Retorna `null` tanto para "no existe" (2xx vacío, 4xx) como para fallos
+ * transient (timeout / network / 5xx). La diferencia: los transient ya
+ * fueron emitidos a Sentry por `wompiFetch` (eventos wompi.timeout /
+ * wompi.network_error / wompi.5xx). Los 4xx esperados no ensucian Sentry.
  */
 async function fetchWompiTransactionByReference(
-  publicKey: string,
+  privateKey: string,
   reference: string,
   timeoutMs = 10_000
 ): Promise<WompiTransaction | null> {
-  const env = (process.env.WOMPI_ENVIRONMENT || "sandbox")
-    .replace(/\\n|\n/g, "")
-    .trim();
-  const baseUrl =
-    env === "production"
-      ? "https://production.wompi.co"
-      : "https://sandbox.wompi.co";
-
   try {
-    const res = await fetch(
-      `${baseUrl}/v1/transactions?reference=${encodeURIComponent(reference)}`,
-      {
-        headers: { Authorization: `Bearer ${publicKey}` },
-        signal: AbortSignal.timeout(timeoutMs),
-      }
+    const { data } = await wompiFetch<{ data: WompiTransaction[] }>(
+      `/v1/transactions?reference=${encodeURIComponent(reference)}`,
+      { bearerToken: privateKey, timeoutMs },
+      { operation: "fetchByReference", reference }
     );
-    if (!res.ok) return null;
-    const { data } = await res.json();
     if (Array.isArray(data) && data.length > 0) {
-      return data[0] as WompiTransaction;
+      return data[0];
     }
     return null;
-  } catch {
-    return null;
+  } catch (err) {
+    // wompiFetch ya emitió logger.error para transient. Mantener semántica
+    // de retornar null: los callers (checkWompiTransactionStatus y
+    // reconcilePayment) interpretan null como "seguir en PENDING" y el
+    // cron reconcile-hot retomará en el próximo tick.
+    if (err instanceof PaymentError) return null;
+    throw err;
   }
 }
 

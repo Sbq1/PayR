@@ -13,6 +13,7 @@
 | [`wompi-down.md`](./wompi-down.md) | Pagos fallan masivamente (Wompi issue) | < 15 min pausar flujo |
 | [`uptime-alert.md`](./uptime-alert.md) | Sentry Uptime reporta sitio down | < 5 min triage |
 | [`qr-rotate-single.md`](./qr-rotate-single.md) | QR físico expuesto (foto redes, lote viejo, etc.) | < 4 h rotar / < 24 h reemplazo |
+| [`sentry-alerts.md`](./sentry-alerts.md) | Config de reglas Sentry + cómo testearlas (no es runbook de incidente, es setup) | N/A — hacer antes del piloto |
 
 ### 🟡 Pendientes de escribir (known gaps)
 
@@ -57,16 +58,18 @@ Si vas a agregar un runbook nuevo → seguí la estructura de `double-charge-cla
 
 ## 🔗 Alertas Sentry que linkean acá
 
-Cuando Sentry dispara, el email debería mencionar el runbook correspondiente. Hoy no automatizamos eso (requiere custom template en Sentry). Por ahora, cheat sheet mental:
+Configuración completa de reglas (thresholds, canales, cómo testear) → [`sentry-alerts.md`](./sentry-alerts.md).
 
-| Sentry alert | Runbook |
+Mapeo alerta → runbook de respuesta:
+
+| Sentry alert (`event_type`) | Runbook |
 |---|---|
-| 🔴 Webhook HMAC failure | `webhook-hmac-mass-failure.md` (TODO) |
-| 🔴 Payment API exception | Ad-hoc (revisar stack trace) |
-| 🔴 Reconcile discrepancy | `double-charge-claim.md` + escalar lead-dev |
-| 🟡 Siigo API 5xx surge | `siigo-down.md` (TODO) |
-| 🟡 Webhook processing errors | Ad-hoc |
-| 🟡 Webhook replay rejected | Ad-hoc (posible tamper) |
+| 🔴 `webhook.hmac_failure` | `webhook-hmac-mass-failure.md` (TODO) |
+| 🔴 `payment.dead_letter` / `payment.dead_letter.failed` | `wompi-down.md` §2.3 (huérfanos al volver servicio) |
+| 🔴 `payment.reconcile.discrepancy` | `double-charge-claim.md` + escalar lead-dev |
+| 🔴 `wompi.timeout` / `wompi.5xx` / `wompi.network_error` | `wompi-down.md` |
+| 🟡 `siigo.api.5xx` | `siigo-down.md` (TODO) |
+| 🟡 `webhook.replay_rejected` / `webhook.invalid_timestamp` | Ad-hoc (posible tamper) |
 | ✅ Uptime monitoring | `uptime-alert.md` |
 
 ---

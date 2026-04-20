@@ -213,8 +213,7 @@ Secciones:
 
 - [ ] Feature flag `PAYMENTS_DISABLED` pre-cableado en `payment.service.ts` y UI
 - [ ] Banner de incidente dinámico (lee `PAYMENTS_DISABLED` desde server)
-- [ ] Sentry alert: `wompi.createTransaction.timeout > 10 en 30 min`
-- [ ] Sentry alert: `payment.status = 'ERROR' > 5% en 10 min`
+- [ ] Sentry alerts configuradas según [sentry-alerts.md](sentry-alerts.md) — `wompi.timeout`, `wompi.5xx`, `wompi.network_error` cubren el gap de detección de outage
 - [ ] Broadcast WhatsApp automatizado a restaurantes (Twilio o similar)
 - [ ] Test: simulacro de outage en staging — confirmar que bloqueo + reanudación funcionan sin data loss
 
