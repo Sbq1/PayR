@@ -175,17 +175,11 @@ Contacto escalada: [TODO completar con nombres/teléfonos]
 
 ---
 
-## 📞 Contactos rápidos (llenar antes del Día 1)
+## 📞 Contactos rápidos
 
-| Contacto | Teléfono / Email | Cuándo |
-|---|---|---|
-| Dueño del restaurante piloto | | Problemas de operación |
-| Soporte Wompi | | Webhooks perdidos, API caída |
-| Soporte Siigo | | POS no cierra mesas |
-| Supabase support | support@supabase.io | DB caída, PITR restore |
-| Vercel support | vercel.com/help | Deploy failures persistentes |
-| Asesor legal (Ley 2300) | | Reclamo formal de comensal |
-| Tributarista (DIAN) | | Duda sobre documento emitido |
+**Source of truth**: [`contacts.md`](./contacts.md) — abrí ese archivo en otra pestaña durante el servicio.
+
+Si alguno de estos contactos NO está lleno en `contacts.md`, **no abras el piloto**. Es un pre-requisito.
 
 ---
 
@@ -196,7 +190,7 @@ Contacto escalada: [TODO completar con nombres/teléfonos]
 - [ ] Manual E2E de dashboard validado (banner + payments + refund modal)
 - [ ] Runbooks escritos y leídos: double-charge, wompi-down, db-restore, uptime-alert, qr-rotate-single
 - [ ] Checklist Día 1 (este doc) leído 2x
-- [ ] Contactos de escalada completados arriba
+- [ ] `docs/contacts.md` 100% completo (Wompi, Siigo, Supabase, Vercel, asesores, restaurante piloto)
 - [ ] Supabase PITR… opcional hoy, **obligatorio** cuando hay 2+ restaurantes activos
 - [ ] Feature flag `PAYMENTS_DISABLED` en Vercel env vars (aunque el código no lo use aún — pre-cablear para cuando se implemente)
 - [ ] QRs firmados impresos y entregados al restaurante piloto

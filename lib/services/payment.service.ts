@@ -69,6 +69,19 @@ export async function createPayment(params: {
     sessionId,
   } = params;
 
+  // 0. Kill switch operacional. Setear `PAYMENTS_DISABLED=true` en Vercel env
+  //    vars + redeploy cuando hay incidente (Wompi caído, data corruption en
+  //    progreso de restore, etc.). Los runbooks `wompi-down.md §2.1` y
+  //    `db-restore.md §1.3` referencian este flag. Flag es string-typed para
+  //    evitar ambigüedad (Vercel guarda env vars como strings).
+  if (process.env.PAYMENTS_DISABLED === "true") {
+    throw new AppError(
+      "Pagos temporalmente pausados. Paga al mesero o intenta en unos minutos.",
+      503,
+      "PAYMENTS_DISABLED"
+    );
+  }
+
   // 1. Fail-fast: sin NEXT_PUBLIC_APP_URL no podemos construir redirectUrl;
   //    mejor cortar antes de tocar DB que mandar al user a localhost en prod.
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;

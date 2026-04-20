@@ -1,0 +1,90 @@
+# Backup diario de tablas críticas, encriptado con passphrase + subido como
+# artifact de GitHub (retención 90 días gratis).
+#
+# Defensa en profundidad complementaria a los daily backups de Supabase.
+# Si la cuenta Supabase se compromete, acá tenés una copia fuera de ese
+# blast radius (aunque siga en GitHub — no es perfecto, pero dos lugares
+# con credenciales independientes).
+#
+# Setup requerido (una vez):
+#   1. Generar passphrase fuerte: openssl rand -base64 48
+#   2. Guardarla en tu password manager offline (1Password, Bitwarden, etc.)
+#   3. Repo → Settings → Secrets and variables → Actions → New secret:
+#        Name: BACKUP_PASSPHRASE
+#        Value: <la passphrase>
+#   4. Confirmar que DATABASE_URL ya está como secret (para el script)
+#
+# Restore (cuando lo necesites):
+#   1. Actions → Daily DB Backup → workflow run → Download artifact
+#   2. Descomprimir: unzip backup-*.zip
+#   3. Decriptar:
+#        openssl enc -aes-256-cbc -pbkdf2 -d \
+#          -in backup.json.enc \
+#          -out backup.json \
+#          -pass env:BACKUP_PASSPHRASE
+#   4. Inspeccionar/importar: jq keys backup.json / script de restore
+#
+# Ver runbook `docs/runbooks/db-restore.md` §2.1 para el flujo completo.
+name: Daily DB Backup
+
+on:
+  schedule:
+    # 3am UTC = 10pm hora Colombia (noche, bajo tráfico)
+    - cron: "0 3 * * *"
+  workflow_dispatch: # permite disparo manual desde UI
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Dump DB to JSON
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx tsx scripts/backup-daily.ts > backup.json
+
+      - name: Sanity check — file is non-empty JSON
+        run: |
+          SIZE=$(stat -c%s backup.json)
+          if [ "$SIZE" -lt 100 ]; then
+            echo "ERROR: backup.json demasiado chico ($SIZE bytes)"
+            exit 1
+          fi
+          # Verificar que es JSON válido y tiene _meta
+          jq -e '._meta.snapshot_at' backup.json > /dev/null
+          echo "Backup size: $SIZE bytes"
+          jq '._meta.counts' backup.json
+
+      - name: Encrypt backup
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          openssl enc -aes-256-cbc -pbkdf2 -iter 100000 \
+            -in backup.json \
+            -out backup.json.enc \
+            -pass env:BACKUP_PASSPHRASE
+          rm backup.json  # no dejar el plaintext
+
+      - name: Upload encrypted artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ github.run_id }}-${{ github.run_attempt }}
+          path: backup.json.enc
+          retention-days: 90
+          if-no-files-found: error

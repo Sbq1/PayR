@@ -81,11 +81,10 @@ El plan §9.2 exige simulacros trimestrales del `db-restore.md` en staging. Otro
 
 ## 📞 Contactos de escalada
 
-(TODO: completar con datos reales)
+**Source of truth**: [`../contacts.md`](../contacts.md) — un solo doc con todos los contactos
+(Wompi, Siigo, Supabase, Vercel, Upstash, Resend, asesores legales, tributarista,
+restaurantes piloto, on-call humano).
 
-- **Wompi soporte**: ...
-- **Siigo soporte**: ...
-- **Supabase**: support@supabase.io + status.supabase.com
-- **Vercel**: vercel.com/help + @vercel twitter
-- **Resend**: support@resend.com
-- **Upstash**: support@upstash.com
+Si estás en un incidente y necesitás un teléfono **ya**, abrí `docs/contacts.md`.
+Si el contacto no está ahí, es porque todavía no se llenó — hacelo apenas puedas
+y dejá el doc actualizado para el próximo incidente.

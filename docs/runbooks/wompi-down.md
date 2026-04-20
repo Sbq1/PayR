@@ -68,18 +68,29 @@ Si `approved` sigue subiendo normal pero `pending_stuck` también → ES Wompi w
 
 **Opción rápida (5 min)** — variable de entorno:
 ```bash
-# En Vercel → Settings → Env Vars
-PAYMENTS_DISABLED=true
-# Redeploy último build (Deployments → 3 dots → Redeploy)
+# 1. Vercel Dashboard → Settings → Environment Variables → Add
+#    Name: PAYMENTS_DISABLED
+#    Value: true
+#    Environment: Production (✓)
+#    Sensitive: No (es un flag operacional, no un secret)
+#
+# 2. Redeploy último build (Deployments → 3 dots → Redeploy)
+#    O push un empty commit: git commit --allow-empty -m "trigger" && git push
 ```
 
-El backend chequea `process.env.PAYMENTS_DISABLED === 'true'` en `/api/payment/create` y devuelve `503 SERVICE_UNAVAILABLE` con mensaje para UI.
+El backend chequea `process.env.PAYMENTS_DISABLED === 'true'` en el primer paso de
+`createPayment` ([payment.service.ts](../../lib/services/payment.service.ts) línea ~72) y
+lanza `AppError` → 503 con code `PAYMENTS_DISABLED`. El comensal ve: *"Pagos
+temporalmente pausados. Paga al mesero o intenta en unos minutos."*
 
-> ⚠️ Este feature flag debe existir en el código antes de necesitarlo.
-> Si no existe cuando leas esto → TODO: pre-cablear en `payment.service.ts::createPayment` y en UI `/pay` page.
+Para **reactivar**:
+```bash
+# Opción 1: eliminar la env var → Redeploy
+# Opción 2: setear PAYMENTS_DISABLED=false → Redeploy
+```
 
-**Opción alternativa (si el flag no está)**:
-- Despachar hotfix: colocar banner en `/pay` con `<div>Pagos temporalmente deshabilitados — pagá al mesero</div>` y deshabilitar el botón.
+> El flag es string-typed, no boolean. "true" (string exacto, lowercase) activa.
+> Cualquier otro valor o vacío → flag OFF.
 
 ### 2.2 Caso B — Degradación parcial (funciona intermitente)
 

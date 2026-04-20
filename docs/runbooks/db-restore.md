@@ -75,13 +75,12 @@ Ejemplo: si el primer "doble cobro" llegó a WhatsApp 14:32 UTC-5, restaurá a *
 
 **Antes** de restaurar, bloquear nuevos pagos para no generar más inconsistencia:
 
-**Opción rápida** — env var en Vercel:
+**Env var en Vercel** → redeploy:
 ```
 PAYMENTS_DISABLED=true
 ```
-(TODO: pre-cablear en `payment.service.ts::createPayment` — ver runbook `wompi-down.md` §2.1)
-
-**Si el flag no existe** — despliegue de emergencia con banner "Servicio en mantenimiento, volvemos en 30min" y botón de pagar deshabilitado.
+Implementado en `payment.service.ts::createPayment` (línea ~72).
+Ver procedimiento exacto en [`wompi-down.md §2.1`](./wompi-down.md#21-caso-a--outage-total-nadie-puede-pagar).
 
 ### 1.4 Comunicar (paralelo al restore)
 
@@ -320,10 +319,73 @@ vercel env rm PAYMENTS_DISABLED production
 
 ---
 
+## 8. Fallback — Restore desde GitHub Artifact
+
+Si por alguna razón **Supabase PITR no está disponible** (no activado, expirado,
+o la cuenta Supabase comprometida), tenemos backups cifrados en GitHub via el
+workflow `.github/workflows/backup-daily.yml` (retención 90 días).
+
+Este es un **Plan B con RPO de 24h** (el último backup es de las 3am UTC del
+día anterior). Usar solo si Opción A (Supabase PITR) no sirve.
+
+### 8.1 Descargar el artifact más reciente
+
+```
+GitHub Repo → Actions → "Daily DB Backup" → última run exitosa
+→ scroll abajo a "Artifacts" → descargar el .zip
+```
+
+### 8.2 Descifrar
+
+```bash
+unzip backup-<run-id>-<attempt>.zip
+# Descifrar con la passphrase de tu password manager
+export BACKUP_PASSPHRASE="<la passphrase>"
+openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -d \
+  -in backup.json.enc \
+  -out backup.json \
+  -pass env:BACKUP_PASSPHRASE
+
+# Verificar integridad
+jq '._meta' backup.json
+# Debería mostrar snapshot_at + counts de cada tabla
+```
+
+### 8.3 Restaurar selectivamente
+
+El formato es JSON, más flexible que un dump SQL. Podés:
+
+**Restore completo** — crear un script (no existe aún) que tome el JSON y
+haga upsert de cada tabla en orden FK-safe: `restaurants → users → tables
+→ qr_codes → orders → order_items → payments → refunds → etc.`
+
+**Restore parcial** — consultar el JSON para recuperar registros específicos
+que se perdieron:
+```bash
+# Ej: recuperar payments de un restaurante específico del día
+jq '.payments[] | select(.orders.slug == "<SLUG>")' backup.json
+```
+
+### 8.4 Limitaciones conocidas
+
+- **RPO 24h**: cualquier escritura entre el último backup y el incidente se
+  pierde (a menos que también tengas PITR)
+- **Mismo ecosystem**: tanto Supabase como GitHub podrían ser comprometidos
+  conjuntamente. Para verdadero offsite, agregar destino en Cloudflare R2 /
+  Backblaze B2 post-piloto.
+- **Volumen**: cuando el snapshot supere 10 MB cifrado, considerar migrar
+  de artifacts a S3-compatible storage.
+
+---
+
 ## Dependencias preventivas (TODO antes del piloto)
 
 - [ ] **PITR habilitado en Supabase prod** — verificar en Database → Backups
-- [ ] **Feature flag `PAYMENTS_DISABLED`** pre-cableado en código
-- [ ] **Export SQL diario ingestado a S3** (backup offsite — defensa extra contra compromise del Supabase account)
-- [ ] **Script `backup-audit.ts`** que semanalmente chequea que PITR sigue activo (alerta si alguien lo desactivó)
+- [x] **Feature flag `PAYMENTS_DISABLED`** pre-cableado en código
+      (implementado en `payment.service.ts::createPayment`)
+- [x] **Backup diario a GitHub Artifacts cifrado**
+      (ver §8 arriba, workflow `.github/workflows/backup-daily.yml`)
+- [ ] **BACKUP_PASSPHRASE configurada en GitHub Secrets** — sin esto el
+      workflow falla, y sin passphrase el artifact es ruido
 - [ ] **Simulacro trimestral realizado** al menos 1 vez antes del piloto
+      (incluyendo restore de prueba desde artifact)
