@@ -1,13 +1,15 @@
 /**
  * E2E — /api/cron/expire-sessions
  *
- * 6 casos:
- *  1) Order PAYING con lock stale sin payment APPROVED → liberado
- *  2) Order PAYING con lock stale PERO con payment APPROVED → NO liberado
- *  3) Session vencida con revoked_at NULL → revoked_at set
- *  4) Idempotency key vencida → borrada
- *  5) ProcessedWebhook >180d → borrado
- *  6) ProcessedWebhook <180d → queda
+ * 8 casos:
+ *  1)  Order PAYING con lock stale sin payment APPROVED → liberado
+ *  1b) Orphan PAYING con locks NULL + updated_at viejo → liberado
+ *  1c) Orphan PAYING con locks NULL + updated_at reciente → NO liberado
+ *  2)  Order PAYING con lock stale PERO con payment APPROVED → NO liberado
+ *  3)  Session vencida con revoked_at NULL → revoked_at set
+ *  4)  Idempotency key vencida → borrada
+ *  5)  ProcessedWebhook >180d → borrado
+ *  6)  ProcessedWebhook <180d → queda
  *
  * Uso:
  *   npx tsx --env-file=.env.local scripts/test-cron-expire-sessions.ts
@@ -100,6 +102,36 @@ async function main() {
     });
     orderIds.push(orderA.id);
 
+    // Caso 1b: orphan PAYING con locks NULL + updated_at viejo (legacy piloto)
+    const orderAOrphan = await db.order.create({
+      data: {
+        restaurant_id: restaurant.id,
+        table_id: table.id,
+        subtotal: 10000,
+        total: 10000,
+        status: "PAYING",
+      },
+    });
+    orderIds.push(orderAOrphan.id);
+    await db.$executeRaw`
+      UPDATE orders
+         SET updated_at = NOW() - INTERVAL '40 minutes'
+       WHERE id = ${orderAOrphan.id}
+    `;
+
+    // Caso 1c: orphan PAYING con locks NULL pero reciente — guard anti-liberación
+    // prematura (un pago in-flight no debe ser barrido por el cron).
+    const orderAFresh = await db.order.create({
+      data: {
+        restaurant_id: restaurant.id,
+        table_id: table.id,
+        subtotal: 10000,
+        total: 10000,
+        status: "PAYING",
+      },
+    });
+    orderIds.push(orderAFresh.id);
+
     // Caso 2: order PAYING stale CON payment APPROVED
     const orderB = await db.order.create({
       data: {
@@ -191,6 +223,22 @@ async function main() {
     assert(
       "1) Lock stale SIN APPROVED → liberado (PAYING → PENDING)",
       orderAfterA?.status === "PENDING" && orderAfterA?.lock_expires_at === null
+    );
+
+    const orderAfterAOrphan = await db.order.findUnique({
+      where: { id: orderAOrphan.id },
+    });
+    assert(
+      "1b) Orphan locks=NULL + updated_at viejo → liberado",
+      orderAfterAOrphan?.status === "PENDING"
+    );
+
+    const orderAfterAFresh = await db.order.findUnique({
+      where: { id: orderAFresh.id },
+    });
+    assert(
+      "1c) Orphan locks=NULL reciente → NO liberado (protege pago in-flight)",
+      orderAfterAFresh?.status === "PAYING"
     );
 
     const orderAfterB = await db.order.findUnique({ where: { id: orderB.id } });

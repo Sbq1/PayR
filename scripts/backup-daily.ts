@@ -25,7 +25,12 @@
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+if (!process.env.DATABASE_URL) {
+  console.error("Backup failed: DATABASE_URL no está seteado (revisar GitHub Secret)");
+  process.exit(1);
+}
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const db = new PrismaClient({ adapter });
 
 async function main() {

@@ -25,6 +25,11 @@ export async function GET(request: NextRequest) {
   const [locksReleased, sessionsRevoked, idempotencyPurged, webhooksPurged] =
     await db.$transaction(
       async (tx) => {
+        // Orphans con locks NULL (data legacy del piloto viejo) nunca caen
+        // en `lock_expires_at < NOW()` y la orden queda PAYING para siempre
+        // — el checkout entra en loop "la cuenta cambió" porque cada intento
+        // de lockear bumpea version. Guard de edad con updated_at protege
+        // cualquier pago en curso (<30min) contra liberación prematura.
         const locks = await tx.$executeRaw`
           UPDATE orders
              SET status = 'PENDING',
@@ -33,7 +38,10 @@ export async function GET(request: NextRequest) {
                  lock_expires_at = NULL,
                  locked_by_session_id = NULL
            WHERE status = 'PAYING'
-             AND lock_expires_at < NOW()
+             AND (
+               lock_expires_at < NOW()
+               OR (lock_expires_at IS NULL AND updated_at < NOW() - INTERVAL '30 minutes')
+             )
              AND NOT EXISTS (
                SELECT 1 FROM payments
                 WHERE payments.order_id = orders.id
