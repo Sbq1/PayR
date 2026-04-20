@@ -1,9 +1,12 @@
 import { PaymentError } from "@/lib/utils/errors";
+import { logger } from "@/lib/utils/logger";
 import {
   generateWompiChecksum,
   generateIntegritySignature,
   safeEqualHex,
 } from "@/lib/utils/hmac";
+
+const WOMPI_FETCH_TIMEOUT_MS = 8_000;
 import type {
   IPaymentAdapter,
   WompiCredentials,
@@ -81,20 +84,44 @@ export class WompiAdapter implements IPaymentAdapter {
     amountInCents: number;
     paymentMethodType: string;
   }> {
-    const res = await fetch(
-      `${getBaseUrl()}/v1/transactions/${transactionId}`,
-      {
+    let res: Response;
+    try {
+      res = await fetch(`${getBaseUrl()}/v1/transactions/${transactionId}`, {
         headers: {
           Authorization: `Bearer ${this.credentials.publicKey}`,
         },
-        signal: AbortSignal.timeout(10_000),
-      }
-    );
+        signal: AbortSignal.timeout(WOMPI_FETCH_TIMEOUT_MS),
+      });
+    } catch (err) {
+      // AbortError → timeout. TypeError → network/DNS.
+      const isTimeout =
+        err instanceof Error &&
+        (err.name === "TimeoutError" || err.name === "AbortError");
+      const event = isTimeout ? "wompi.timeout" : "wompi.network_error";
+      logger.error(event, {
+        transactionId,
+        timeoutMs: WOMPI_FETCH_TIMEOUT_MS,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      throw new PaymentError(
+        isTimeout
+          ? `Timeout consultando transacción (${WOMPI_FETCH_TIMEOUT_MS}ms)`
+          : `Error de red consultando transacción`,
+        isTimeout ? "WOMPI_TIMEOUT" : "WOMPI_NETWORK"
+      );
+    }
 
     if (!res.ok) {
       const isTransient = res.status >= 500 || res.status === 429;
+      if (isTransient) {
+        logger.error("wompi.5xx", {
+          status: res.status,
+          transactionId,
+        });
+      }
       throw new PaymentError(
-        `Error consultando transacción (${res.status})${isTransient ? " [transient]" : ""}`
+        `Error consultando transacción (${res.status})${isTransient ? " [transient]" : ""}`,
+        isTransient ? "WOMPI_5XX" : "WOMPI_ERROR"
       );
     }
 

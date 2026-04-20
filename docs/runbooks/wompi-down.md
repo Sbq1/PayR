@@ -9,7 +9,11 @@
 
 Señales (en orden de probabilidad de detección):
 
-1. **Sentry alert**: `wompi.createTransaction.timeout > 10 en 30 min` o `payment.status = 'ERROR' > 5% en 10 min`
+1. **Sentry alerts** (event_type tag):
+   - `wompi.timeout` — fetch abortado por timeout 8s. Red saturada o Wompi lento.
+   - `wompi.5xx` — Wompi responde 500/502/503/504 o 429. Incidente de su lado.
+   - `wompi.network_error` — DNS/TCP falló antes de hablar HTTP. Red nuestra o DNS de Wompi.
+   Threshold recomendado: ≥3 eventos del mismo tipo en 5 min → página on-call.
 2. **Restaurantes reportan**: comensales dicen "la app dice error al pagar"
 3. **Uptime monitor externo** (BetterStack) falla `/api/health` si depende de Wompi
 4. **Panel Wompi status**: https://status.wompi.co/ muestra incidente activo

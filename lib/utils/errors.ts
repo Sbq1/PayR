@@ -26,8 +26,8 @@ export class PosError extends AppError {
 }
 
 export class PaymentError extends AppError {
-  constructor(message: string) {
-    super(`Payment Error: ${message}`, 502, "PAYMENT_ERROR");
+  constructor(message: string, code: string = "PAYMENT_ERROR") {
+    super(`Payment Error: ${message}`, 502, code);
     this.name = "PaymentError";
   }
 }
