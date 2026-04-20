@@ -12,14 +12,18 @@
 | [`db-restore.md`](./db-restore.md) | Data corruption, compromise, migración destructiva | < 30 min RTO |
 | [`wompi-down.md`](./wompi-down.md) | Pagos fallan masivamente (Wompi issue) | < 15 min pausar flujo |
 | [`uptime-alert.md`](./uptime-alert.md) | Sentry Uptime reporta sitio down | < 5 min triage |
+| [`qr-rotate-single.md`](./qr-rotate-single.md) | QR físico expuesto (foto redes, lote viejo, etc.) | < 4 h rotar / < 24 h reemplazo |
 
 ### 🟡 Pendientes de escribir (known gaps)
 
 - `webhook-hmac-mass-failure.md` — cuando Sentry alert "HMAC failure" dispara masivo (posible rotación de secret no propagada)
 - `siigo-down.md` — Siigo API 5xx sostenido, POS no cierra mesas
-- `qr-rotate-single.md` — rotar `token_version` de un QR comprometido (sin UI, vía SQL)
-- `qr-secret-rotation.md` — rotación global de `QR_SECRET` con ventana dual
+- `qr-secret-rotation.md` — rotación global de `QR_SECRET` con ventana dual (14 días)
 - `restaurant-subscription-cancelled.md` — qué hacer cuando un restaurante deja de pagar
+
+### 📋 Operacional (no runbook de incidente)
+
+- [`../pilot-day-1.md`](../pilot-day-1.md) — **checklist del Día 1 de piloto**. Qué monitorear, cómo responder, cómo cerrar el día. Leer 2x antes de abrir el primer piloto.
 
 Prioridad post-piloto según recurrencia real.
 
