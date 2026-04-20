@@ -6,6 +6,7 @@ import { Navbar } from "./components/landing/Navbar";
 import { Hero } from "./components/landing/Hero";
 import { SocialProof } from "./components/landing/SocialProof"; /* Let's rename inside but keep import path for now or rename path? Let's just keep path for now to avoid breaking imports elsewhere if any */
 import { ProductShowcase } from "./components/landing/ProductShowcase";
+import { VideoDemo } from "./components/landing/VideoDemo";
 import { Features } from "./components/landing/Features";
 import { Journey } from "./components/landing/Journey";
 import { Pricing } from "./components/landing/Pricing";
@@ -28,6 +29,7 @@ export default function HomePage() {
         <Hero />
         <SocialProof />
         <ProductShowcase />
+        <VideoDemo />
         <Features />
         <Journey />
         <Pricing />
