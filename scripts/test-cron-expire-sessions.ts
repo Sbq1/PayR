@@ -1,11 +1,13 @@
 /**
  * E2E — /api/cron/expire-sessions
  *
- * 8 casos:
+ * 10 casos:
  *  1)  Order PAYING con lock stale sin payment APPROVED → liberado
  *  1b) Orphan PAYING con locks NULL + updated_at viejo → liberado
  *  1c) Orphan PAYING con locks NULL + updated_at reciente → NO liberado
  *  2)  Order PAYING con lock stale PERO con payment APPROVED → NO liberado
+ *  2b) Order PAYING con lock stale PERO con payment PARTIALLY_REFUNDED → NO liberado
+ *  2c) Order PAYING con lock stale PERO con payment REFUNDED → NO liberado
  *  3)  Session vencida con revoked_at NULL → revoked_at set
  *  4)  Idempotency key vencida → borrada
  *  5)  ProcessedWebhook >180d → borrado
@@ -156,6 +158,58 @@ async function main() {
       },
     });
 
+    // Caso 2b: order PAYING stale CON payment PARTIALLY_REFUNDED — NO liberado.
+    // Un payment aprobado y luego devuelto parcial ya pasó por el sistema;
+    // tratarlo como "sin pagar" en el guard rompe la cadena de estado.
+    const orderBPartial = await db.order.create({
+      data: {
+        restaurant_id: restaurant.id,
+        table_id: table.id,
+        subtotal: 10000,
+        total: 10000,
+        status: "PAYING",
+        locked_at: new Date(Date.now() - 10 * 60_000),
+        lock_expires_at: new Date(Date.now() - 60_000),
+      },
+    });
+    orderIds.push(orderBPartial.id);
+    const refBPartial = `${tag}-partial-b`;
+    createdRefs.push(refBPartial);
+    await db.payment.create({
+      data: {
+        order_id: orderBPartial.id,
+        reference: refBPartial,
+        amount_in_cents: 10000,
+        refunded_amount: 3000,
+        status: "PARTIALLY_REFUNDED",
+      },
+    });
+
+    // Caso 2c: order PAYING stale CON payment REFUNDED — NO liberado.
+    const orderBRefunded = await db.order.create({
+      data: {
+        restaurant_id: restaurant.id,
+        table_id: table.id,
+        subtotal: 10000,
+        total: 10000,
+        status: "PAYING",
+        locked_at: new Date(Date.now() - 10 * 60_000),
+        lock_expires_at: new Date(Date.now() - 60_000),
+      },
+    });
+    orderIds.push(orderBRefunded.id);
+    const refBRefunded = `${tag}-refunded-b`;
+    createdRefs.push(refBRefunded);
+    await db.payment.create({
+      data: {
+        order_id: orderBRefunded.id,
+        reference: refBRefunded,
+        amount_in_cents: 10000,
+        refunded_amount: 10000,
+        status: "REFUNDED",
+      },
+    });
+
     // Caso 3: session vencida
     const sessionExpired = await db.session.create({
       data: {
@@ -245,6 +299,22 @@ async function main() {
     assert(
       "2) Lock stale CON APPROVED → NO liberado (sigue PAYING)",
       orderAfterB?.status === "PAYING" && orderAfterB?.lock_expires_at !== null
+    );
+
+    const orderAfterBPartial = await db.order.findUnique({
+      where: { id: orderBPartial.id },
+    });
+    assert(
+      "2b) Lock stale CON PARTIALLY_REFUNDED → NO liberado",
+      orderAfterBPartial?.status === "PAYING"
+    );
+
+    const orderAfterBRefunded = await db.order.findUnique({
+      where: { id: orderBRefunded.id },
+    });
+    assert(
+      "2c) Lock stale CON REFUNDED → NO liberado",
+      orderAfterBRefunded?.status === "PAYING"
     );
 
     const sessAfterExpired = await db.session.findUnique({ where: { id: sessionExpired.id } });

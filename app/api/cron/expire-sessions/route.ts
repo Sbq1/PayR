@@ -30,6 +30,11 @@ export async function GET(request: NextRequest) {
         // — el checkout entra en loop "la cuenta cambió" porque cada intento
         // de lockear bumpea version. Guard de edad con updated_at protege
         // cualquier pago en curso (<30min) contra liberación prematura.
+        //
+        // Guard de payments terminales incluye PARTIALLY_REFUNDED y REFUNDED:
+        // un payment que fue aprobado y después devuelto (total o parcial)
+        // NO debe tratarse como "sin pagar" — el dinero pasó por el sistema
+        // y el order debería reflejar ese flow, no ser liberado a PENDING.
         const locks = await tx.$executeRaw`
           UPDATE orders
              SET status = 'PENDING',
@@ -45,7 +50,7 @@ export async function GET(request: NextRequest) {
              AND NOT EXISTS (
                SELECT 1 FROM payments
                 WHERE payments.order_id = orders.id
-                  AND payments.status = 'APPROVED'
+                  AND payments.status IN ('APPROVED', 'PARTIALLY_REFUNDED', 'REFUNDED')
              )
         `;
         const sessions = await tx.$executeRaw`

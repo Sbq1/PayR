@@ -130,14 +130,19 @@ export async function createRefund(
       throw err;
     }
 
-    // Propagar order.status. Regla skeleton: si ningún payment de la
-    // orden quedó APPROVED, la orden se mueve al estado más "avanzado"
-    // del refund (REFUNDED si todos los payments están REFUNDED;
-    // PARTIALLY_REFUNDED si al menos uno sigue así).
+    // Sincronizar order.status: post-refund el estado del order debe
+    // ser función pura de sus payments, independiente del snapshot
+    // previo. Esto cubre:
+    //   - Order en PAID → PARTIALLY_REFUNDED / REFUNDED (caso normal)
+    //   - Order ya en PARTIALLY_REFUNDED de un refund anterior
+    //   - Order en estado inconsistente (histórico de piloto viejo —
+    //     orphan PAYING que quedó stuck antes del fix de locks NULL).
+    //     Sin este sync, un refund sobre un payment cuyo order nunca
+    //     llegó a PAID deja el order con status incoherente para
+    //     siempre, invisible a cualquier dashboard query.
     //
-    // Re-leemos el order.status DESPUÉS del update del payment para
-    // no usar el snapshot stale del read inicial (que pudo haber sido
-    // PAID / PARTIALLY_REFUNDED de un refund previo).
+    // Guard CANCELLED: no sobrescribir órdenes canceladas manualmente
+    // — eso requiere intervención humana para entender qué pasó.
     //
     // v2 manejará escenarios con múltiples payments APPROVED (orden
     // pagada con 2 métodos distintos p.ej.).
@@ -145,17 +150,22 @@ export async function createRefund(
       where: { order_id: payment.order_id, status: "APPROVED" },
       select: { id: true },
     });
-    // Re-lectura del order DESPUÉS del update del payment — evita usar
-    // el snapshot stale del read inicial (que pudo venir de un refund
-    // previo en la misma orden).
+    const anyRefunded = await tx.payment.findFirst({
+      where: {
+        order_id: payment.order_id,
+        status: { in: ["PARTIALLY_REFUNDED", "REFUNDED"] },
+      },
+      select: { id: true },
+    });
     const currentOrder = await tx.order.findUnique({
       where: { id: payment.order_id },
       select: { status: true },
     });
     if (
       !anyApproved &&
-      (currentOrder?.status === "PAID" ||
-        currentOrder?.status === "PARTIALLY_REFUNDED")
+      anyRefunded &&
+      currentOrder?.status !== "CANCELLED" &&
+      currentOrder?.status !== "REFUNDED"
     ) {
       const anyPartial = await tx.payment.findFirst({
         where: {
