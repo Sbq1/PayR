@@ -523,12 +523,12 @@ export async function handlePaymentWebhook(
  * Retorna el status de Wompi, o null si no existe transacción.
  */
 async function checkWompiTransactionStatus(
-  restaurant: { wompi_public_key: string | null },
+  restaurant: { wompi_private_key: string | null },
   reference: string
 ): Promise<string | null> {
-  if (!restaurant.wompi_public_key) return null;
+  if (!restaurant.wompi_private_key) return null;
   const txn = await fetchWompiTransactionByReference(
-    restaurant.wompi_public_key,
+    restaurant.wompi_private_key,
     reference,
     5_000
   );
@@ -635,7 +635,7 @@ export async function reconcilePayment(
   }
 
   const txn = await fetchWompiTransactionByReference(
-    restaurant.wompi_public_key,
+    restaurant.wompi_private_key,
     reference
   );
 

@@ -88,7 +88,9 @@ export class WompiAdapter implements IPaymentAdapter {
     try {
       res = await fetch(`${getBaseUrl()}/v1/transactions/${transactionId}`, {
         headers: {
-          Authorization: `Bearer ${this.credentials.publicKey}`,
+          // Wompi exige privateKey para consultas GET de transacciones.
+          // publicKey solo sirve para crear/firmar.
+          Authorization: `Bearer ${this.credentials.privateKey}`,
         },
         signal: AbortSignal.timeout(WOMPI_FETCH_TIMEOUT_MS),
       });
