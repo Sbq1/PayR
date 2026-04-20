@@ -81,18 +81,21 @@ async function log(
   }
 }
 
-// Note: log() es async ahora por headers() de Next, pero los callers
-// suelen ser fire-and-forget (no await). Retornamos void explícitamente
-// para preservar la API previa — si Next propaga una excepción será
-// capturada por el unhandledRejection handler.
+// log() es async ahora por headers() de Next, pero los callers mantienen
+// la API síncrona (fire-and-forget). Si el log interno falla, lo
+// reportamos a console en vez de tragar el error silenciosamente — así
+// un bug en el logger no queda invisible.
+function fireAndLog(level: LogLevel, event: string, data?: Record<string, unknown>): void {
+  log(level, event, data).catch((err) => {
+    console.error("[logger] failed to emit log", { event, err: String(err) });
+  });
+}
+
 export const logger = {
-  info: (event: string, data?: Record<string, unknown>): void => {
-    void log("info", event, data);
-  },
-  warn: (event: string, data?: Record<string, unknown>): void => {
-    void log("warn", event, data);
-  },
-  error: (event: string, data?: Record<string, unknown>): void => {
-    void log("error", event, data);
-  },
+  info: (event: string, data?: Record<string, unknown>): void =>
+    fireAndLog("info", event, data),
+  warn: (event: string, data?: Record<string, unknown>): void =>
+    fireAndLog("warn", event, data),
+  error: (event: string, data?: Record<string, unknown>): void =>
+    fireAndLog("error", event, data),
 };
