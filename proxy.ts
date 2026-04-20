@@ -15,6 +15,14 @@ function getJwtSecret(): Uint8Array {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Correlation ID — propagado desde el cliente o generado acá.
+  // Disponible en route handlers vía headers().get("x-request-id")
+  // y en la response para debug desde el cliente.
+  const requestId =
+    request.headers.get("x-request-id") ?? crypto.randomUUID();
+  const forwardHeaders = new Headers(request.headers);
+  forwardHeaders.set("x-request-id", requestId);
+
   const protectedPaths = [
     "/dashboard",
     "/settings",
@@ -26,17 +34,21 @@ export async function proxy(request: NextRequest) {
   ];
 
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
-  if (!isProtected) return NextResponse.next();
+  if (!isProtected) {
+    const res = NextResponse.next({ request: { headers: forwardHeaders } });
+    res.headers.set("x-request-id", requestId);
+    return res;
+  }
 
   const token = request.cookies.get(COOKIE_NAME)?.value;
 
   if (!token) {
-    return redirectToLogin(request, pathname);
+    return redirectToLogin(request, pathname, requestId);
   }
 
   const secret = getJwtSecret();
   if (secret.length === 0) {
-    return redirectToLogin(request, pathname);
+    return redirectToLogin(request, pathname, requestId);
   }
 
   try {
@@ -44,10 +56,11 @@ export async function proxy(request: NextRequest) {
     const user = payload.user as { id?: string } | undefined;
     const sv = payload.sv as number | undefined;
     if (!user?.id || typeof sv !== "number") {
-      return redirectToLogin(request, pathname);
+      return redirectToLogin(request, pathname, requestId);
     }
 
-    const response = NextResponse.next();
+    const response = NextResponse.next({ request: { headers: forwardHeaders } });
+    response.headers.set("x-request-id", requestId);
 
     const exp = payload.exp;
     const nowSec = Math.floor(Date.now() / 1000);
@@ -68,20 +81,28 @@ export async function proxy(request: NextRequest) {
 
     return response;
   } catch {
-    const response = redirectToLogin(request, pathname);
+    const response = redirectToLogin(request, pathname, requestId);
     response.cookies.delete(COOKIE_NAME);
     return response;
   }
 }
 
-function redirectToLogin(request: NextRequest, callbackUrl: string) {
+function redirectToLogin(
+  request: NextRequest,
+  callbackUrl: string,
+  requestId: string
+) {
   const loginUrl = new URL("/login", request.url);
   loginUrl.searchParams.set("callbackUrl", callbackUrl);
-  return NextResponse.redirect(loginUrl);
+  const res = NextResponse.redirect(loginUrl);
+  res.headers.set("x-request-id", requestId);
+  return res;
 }
 
 export const proxyConfig = {
   matcher: [
+    // Correlation IDs en todo el tráfico relevante.
+    "/api/:path*",
     "/dashboard/:path*",
     "/settings/:path*",
     "/tables/:path*",
