@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { getPaymentAdapter } from "@/lib/adapters/payment";
 import { getPosAdapter } from "@/lib/adapters/pos";
+import { decrypt } from "@/lib/utils/crypto";
 import { AppError, NotFoundError, PaymentError } from "@/lib/utils/errors";
 import { logger } from "@/lib/utils/logger";
 import { getFiveUvtInCents } from "@/lib/services/tax.service";
@@ -528,7 +529,7 @@ async function checkWompiTransactionStatus(
 ): Promise<string | null> {
   if (!restaurant.wompi_private_key) return null;
   const txn = await fetchWompiTransactionByReference(
-    restaurant.wompi_private_key,
+    decrypt(restaurant.wompi_private_key),
     reference,
     5_000
   );
@@ -635,7 +636,7 @@ export async function reconcilePayment(
   }
 
   const txn = await fetchWompiTransactionByReference(
-    restaurant.wompi_private_key,
+    decrypt(restaurant.wompi_private_key),
     reference
   );
 
